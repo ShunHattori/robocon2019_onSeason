@@ -1,13 +1,21 @@
 #include "mbed.h"
 #include "Encoder.h"
 
-Encoder encoder_XAxis_1(PG_4, PG_7);
+Encoder encoder_XAxis_1(PD_15, PF_12);
 Serial PC(USBTX, USBRX);
 DigitalOut LED(LED1);
+DigitalOut LEDtest(LED2);
 InterruptIn button(USER_BUTTON);
+InterruptIn enctest(PF_12);
 
-void button_pressed(){
-    PC.printf("Pulse:%ld\r\n",encoder_XAxis_1.getPulse());
+void button_pressed()
+{
+    //PC.printf("Pulse:%ld\r\n",encoder_XAxis_1.getPulse());
+}
+
+void test()
+{
+    LEDtest = !LEDtest;
 }
 
 int main()
@@ -15,14 +23,14 @@ int main()
     PC.baud(9600);
     button.mode(PullDown);
     button.rise(&button_pressed);
-    encoder_XAxis_1.setPulse(0);
-    PC.printf("got encoder pulse:%ld\r\n", encoder_XAxis_1.getPulse());
+    enctest.rise(&test);
+    // encoder_XAxis_1.setPulse(0);
+    //PC.printf("got encoder pulse:%ld\r\n", encoder_XAxis_1.getPulse());
     LED = 1;
 
-    while (1)
+    for (;;)
     {
-        static long dammy_pulse_temp = 0;
-        encoder_XAxis_1.setPulse(dammy_pulse_temp++);
-        wait(0.02);
+        PC.printf("got encoder pulse:%ld\r\n", encoder_XAxis_1.getPulse());
+        wait(0.2);
     }
 }
