@@ -1,7 +1,10 @@
 #include "mbed.h"
 #include "Encoder.h"
+#include "MWodometry.h"
 
 Encoder encoder_XAxis_1(PD_15, PF_12);
+MWodometry odometry_XAxis_1(encoder_XAxis_1, 48, 5);
+
 Serial PC(USBTX, USBRX);
 DigitalOut LED(LED1);
 DigitalOut LEDtest(LED2);
@@ -28,9 +31,10 @@ int main()
     //PC.printf("got encoder pulse:%ld\r\n", encoder_XAxis_1.getPulse());
     LED = 1;
 
+    encoder_XAxis_1.EnableDebugOutput(PB_7);
     for (;;)
     {
-        PC.printf("got encoder pulse:%ld\r\n", encoder_XAxis_1.getPulse());
+        PC.printf("encoder pulse:%ld\todometry value:%ld\n\r", encoder_XAxis_1.getPulse(), odometry_XAxis_1.getDistance());
         wait(0.2);
     }
 }
