@@ -1,11 +1,13 @@
 #include "mbed.h"
 #include "Encoder.h"
 #include "MWodometry.h"
-#include "DriveTrain.h"
+#include "LocationManager.h"
+#include "OmniKinematics.h"
+#include "MotorDriverAdapter.h"
 
 Encoder encoder_XAxis_1(PD_15, PF_12);
 MWodometry odometry_XAxis_1(encoder_XAxis_1, 48, 5);
-DriveTrain<int> Robot(45, 83, 125);
+LocationManager<int> Robot(45, 83, 125);
 
 Serial PC(USBTX, USBRX);
 DigitalOut LED(LED1);
