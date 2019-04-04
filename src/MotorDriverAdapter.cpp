@@ -19,14 +19,14 @@ MotorDriverAdapter::MotorDriverAdapter(PinName FRcw, PinName FRccw, PinName FLcw
     BRN = new PwmOut(BRCCWPin);
     BLR = new PwmOut(BLCWPin);
     BLN = new PwmOut(BLCCWPin);
-    FRR->period_us(100);
-    FRN->period_us(100);
-    FLR->period_us(100);
-    FLN->period_us(100);
-    BRR->period_us(100);
-    BRN->period_us(100);
-    BLR->period_us(100);
-    BLN->period_us(100);
+    FRR->period_us(30);
+    FRN->period_us(30);
+    FLR->period_us(30);
+    FLN->period_us(30);
+    BRR->period_us(30);
+    BRN->period_us(30);
+    BLR->period_us(30);
+    BLN->period_us(30);
 }
 
 void MotorDriverAdapter::apply(float pwm[4])

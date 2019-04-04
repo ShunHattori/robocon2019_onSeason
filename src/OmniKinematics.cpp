@@ -1,6 +1,6 @@
 #include "OmniKinematics.h"
 
-void OmniKinematics::getOutput(float x, float y, float yaw, float pwm[])
+void OmniKinematics::getOutput(float x, float y, float yaw, float pwm[4])
 {
     XVector = x;
     YVector = y;

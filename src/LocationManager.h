@@ -3,6 +3,7 @@
 #include "mbed.h"
 #include "encoder.h"
 #include "MWodometry.h"
+#include "DriveTrain.h"
 #include <vector>
 
 template <typename TYPE>
@@ -13,14 +14,16 @@ class LocationManager
     /*
     *   desc: コンストラクタ
     */
-    LocationManager(TYPE x = 0, TYPE y = 0, TYPE yaw = 0)
+    LocationManager(DriveTrain &_obj, TYPE x = 0, TYPE y = 0, TYPE yaw = 0)
     {
-        XPoint.resize(20);
-        YPoint.resize(20);
-        YawData.resize(20);
-        XPoint.insert(XPoint.begin(), x);
-        YPoint.insert(YPoint.begin(), y);
-        YawData.insert(YawData.begin(), yaw);
+        DRObj = _obj;
+        XPointArray.resize(100);
+        YPointArray.resize(100);
+        YawPointArray.resize(100);
+        XPointArray.insert(XPointArray.begin(), x);
+        YPointArray.insert(YPointArray.begin(), y);
+        YawPointArray.insert(YawPointArray.begin(), yaw);
+        currentPointNumber = 0;
     }
 
     /*
@@ -30,9 +33,9 @@ class LocationManager
     */
     void addPoint(TYPE x, TYPE y)
     {
-        XPoint.push_back(x);
-        YPoint.push_back(y);
-        YawData.push_back(getYawData());
+        XPointArray.push_back(x);
+        YPointArray.push_back(y);
+        YawPointArray.push_back(getYawStatsData());
     }
 
     /*
@@ -42,9 +45,10 @@ class LocationManager
     */
     void addPoint(TYPE x, TYPE y, TYPE yaw)
     {
-        XPoint.push_back(x);
-        YPoint.push_back(y);
-        YawData.push_back(yaw);
+        XPointArray.push_back(x);
+        YPointArray.push_back(y);
+        YawPointArray.push_back(yaw);
+        pointArraySize++;
     }
 
     /*
@@ -52,17 +56,17 @@ class LocationManager
     *   param:  Vector型のオブジェクト
     *   return: 引数のオブジェクトの先頭要素
     */
-    int getXData()
+    int getXLocationData()
     {
-        return XPoint.front();
+        return XPointArray.front();
     }
-    int getYData()
+    int getYLocationData()
     {
-        return YPoint.front();
+        return YPointArray.front();
     }
-    int getYawData()
+    int getYawStatsData()
     {
-        return YawData.front();
+        return YawPointArray.front();
     }
     /*
     *   desc:   自己位置を更新
@@ -71,11 +75,27 @@ class LocationManager
     */
     void setCurrentPoint(TYPE x, TYPE y, TYPE yaw)
     {
-        XPoint.insert(XPoint.begin(), x);
-        YPoint.insert(YPoint.begin(), y);
-        YawData.insert(YawData.begin(), yaw);
+        XPointArray.insert(XPointArray.begin(), x);
+        YPointArray.insert(YPointArray.begin(), y);
+        YawPointArray.insert(YawPointArray.begin(), yaw);
+    }
+
+    void update()
+    {
+    }
+
+    bool isHere()
+    {
+        XLocationData = XPointArray.front() + currentPointNumber;
+        YLocationData = YPointArray.front() + currentPointNumber;
+        YawStatsData = YawPointArray.front() + currentPointNumber;
     }
 
   private:
-    std::vector<int> XPoint, YPoint, YawData;
+    std::vector<int> XPointArray, YPointArray, YawPointArray;
+    DriveTrain *DRObj;
+    uint8_t currentPointNumber, pointArraySize;
+    int XLocationData, YLocationData, YawStatsData; //取得する現在位置の変数
+    int XTargetData, YTargetData, YawTargetData;
+    int XCurrentLocation, YCurrentLocation, YawCurrentStats;
 };
