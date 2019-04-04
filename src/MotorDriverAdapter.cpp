@@ -78,7 +78,7 @@ void MotorDriverAdapter::apply(float pwm[4])
         BRR->write(0);
         BRN->write(0);
     }
-    
+
     if (0 < pwm[0])
     {
         BLR->write(pwm[0]);

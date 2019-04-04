@@ -5,32 +5,32 @@
 
 class OmniKinematics
 {
-  public:
-    /*
+public:
+  /*
     *   desc:   三輪ロボット,四輪ロボットのどちらかを指定するコンストラクタ
     *   param:  ロボットの駆動輪数, e.g. OmniKinematics Omni(4);
     */
-    OmniKinematics(uint8_t wheel) : wheelNumber(wheel), maxAllocateOutput(0.2){};
-    
-    /*
+  OmniKinematics(uint8_t wheel) : wheelNumber(wheel), maxAllocateOutput(0.2){};
+
+  /*
     *   desc:   MDにかかる最大PWMを設定(0.1~1.0)
     *   param:  maxPWM(float)
     *   return: none
     */
-    void setMaxPWM(float maxPwm)
-    {
-        maxAllocateOutput = maxPwm;
-    }
+  void setMaxPWM(float maxPwm)
+  {
+    maxAllocateOutput = maxPwm;
+  }
 
-    /*
+  /*
     *   desc:   ロボット全体の移動方向を指定し、MDにかけるPWMを取得
     *   param:  x,y,yaw方向の移動量(float) 駆動輪数に応じたfloat配列
     *   return: none(引数に代入)
     */
-    void getOutput(float x, float y, float yaw, float pwm[]);
+  void getOutput(float x, float y, float yaw, float pwm[]);
 
-  private:
-    uint8_t wheelNumber;
-    float XVector, YVector, YawVector;
-    float maxAllocateOutput;
+private:
+  uint8_t wheelNumber;
+  float XVector, YVector, YawVector;
+  float maxAllocateOutput;
 };

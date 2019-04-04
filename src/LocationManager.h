@@ -3,7 +3,6 @@
 #include "mbed.h"
 #include "encoder.h"
 #include "MWodometry.h"
-#include "DriveTrain.h"
 #include <vector>
 
 template <typename TYPE>
@@ -14,9 +13,8 @@ class LocationManager
     /*
     *   desc: コンストラクタ
     */
-    LocationManager(DriveTrain &_obj, TYPE x = 0, TYPE y = 0, TYPE yaw = 0)
+    LocationManager(TYPE x = 0, TYPE y = 0, TYPE yaw = 0)
     {
-        DRObj = _obj;
         XPointArray.resize(100);
         YPointArray.resize(100);
         YawPointArray.resize(100);
@@ -89,11 +87,12 @@ class LocationManager
         XLocationData = XPointArray.front() + currentPointNumber;
         YLocationData = YPointArray.front() + currentPointNumber;
         YawStatsData = YawPointArray.front() + currentPointNumber;
+
+        return 1; //仮
     }
 
   private:
     std::vector<int> XPointArray, YPointArray, YawPointArray;
-    DriveTrain *DRObj;
     uint8_t currentPointNumber, pointArraySize;
     int XLocationData, YLocationData, YawStatsData; //取得する現在位置の変数
     int XTargetData, YTargetData, YawTargetData;

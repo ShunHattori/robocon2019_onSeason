@@ -1,10 +1,10 @@
 #include "DriveTrain.h"
 
-DriveTrain::update(float vec[])
+void DriveTrain::update(float vec[])
 {
     //三点接地エンコーダによる移動距離計算
     XEncodedDistanceDiff = abs(XAxis_1->getDistance() - XAxis_2->getDistance());
-    currentYaw = asin(XEncodedDistanceDiff / (2 * encoderAttachDiff));
+    currentYaw = (asin(XEncodedDistanceDiff / (2 * encoderAttachDiff))) * 180 / M_PI;
 
     currentX += ((XAxis_1->getDistance() + XAxis_2->getDistance()) / 2) * cos(currentYaw * M_PI / 180);
     currentY += -((XAxis_1->getDistance() + XAxis_2->getDistance()) / 2) * sin(currentYaw * M_PI / 180);
@@ -29,7 +29,9 @@ DriveTrain::update(float vec[])
         stats = 1;
     }
     else
+    {
         stats = 0;
+    }
 
     if (stats)
     {
@@ -67,7 +69,7 @@ DriveTrain::update(float vec[])
                 vec[1] = mapFloat(errorY, 0, decreaseRadius, 0.1, 0.9);
         }
 
-        vec[2] = errorYaw;
+        vec[2] = mapFloat(errorYaw, 0, 45, 0, 0.9);
     }
 }
 
