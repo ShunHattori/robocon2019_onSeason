@@ -24,16 +24,26 @@ void DriveTrain::update()
     errorY = targetY - currentY;
     errorYaw = targetYaw - currentYaw;
 
-    if ((-123456 < errorX && errorX < 123456) && (-123456 < errorY && errorY < 123456) && (-123456 < errorYaw && errorYaw < 123456))
+    if ((-allocateError < errorX && errorX < allocateError) && (-allocateError < errorY && errorY < allocateError) && (-allocateError < errorYaw && errorYaw < allocateError))
     {
-        stats = 1;
+        if (ConfirmStatsInitialFlag)
+        {
+            ConfirmStats.start();
+            ConfirmStatsInitialFlag = 0;
+        }
+        if (ConfirmStats.read_ms() > 100)
+        {
+            stats = 1;
+        }
     }
     else
     {
         stats = 0;
+        ConfirmStats.reset();
+        ConfirmStatsInitialFlag = 1;
     }
 
-    if (stats)//本来は反転
+    if (stats) //本来は反転 def(stats), for testing(!stats)
     {
         if (-allocateError < errorX && errorX < allocateError)
         {
@@ -46,8 +56,6 @@ void DriveTrain::update()
             if (errorX >= 0)
                 Vec[0] = Max;
         }
-        else if (errorX == 0)
-            Vec[0] = 0;
         else
         {
             if (errorX < 0)
@@ -67,8 +75,6 @@ void DriveTrain::update()
             if (errorY >= 0)
                 Vec[1] = Max;
         }
-        else if (errorY == 0)
-            Vec[1] = 0;
         else
         {
             if (errorY < 0)
@@ -86,9 +92,103 @@ void DriveTrain::update()
             Vec[2] = mapFloat(errorYaw, 0, 45, 0, Max);
         }
     }
-    else    //ここに加速制御
+    else //ここに加速制御
     {
-        
+
+        if (abs(errorX) >= decreaseRadius) //for X error
+        {
+            if (0 < errorX) //increase P control
+            {
+                Vec[0] += 300;
+                xReachedMaxPWM = Vec[0];
+            }
+            else
+            {
+                Vec[0] -= 300;
+                xReachedMaxPWM = -Vec[0];
+            }
+            if (Vec[0] > Max) //constrain
+            {
+                Vec[0] = Max;
+            }
+            else
+            {
+                Vec[0] = -Max;
+            }
+        }
+        else
+        { //decrease curved control
+            if (-allocateError < errorX && errorX < allocateError)
+            {
+                Vec[0] = 0;
+            }
+            else if (errorX <= -decreaseRadius || decreaseRadius <= errorX)
+            {
+                if (errorX <= 0)
+                    Vec[0] = -Max;
+                if (errorX >= 0)
+                    Vec[0] = Max;
+            }
+            else
+            {
+                if (errorX < 0)
+                    Vec[0] = mapFloat(errorX, 0, -decreaseRadius, -Min, -xReachedMaxPWM);
+                else
+                    Vec[0] = mapFloat(errorX, 0, decreaseRadius, Min, xReachedMaxPWM);
+            }
+        }
+
+        if (abs(errorY) >= decreaseRadius) //for Y error
+        {
+            if (0 < errorY) //increase P control
+            {
+                Vec[1] += 300;
+                xReachedMaxPWM = Vec[1];
+            }
+            else
+            {
+                Vec[1] -= 300;
+                xReachedMaxPWM = -Vec[1];
+            }
+            if (Vec[1] > Max) //constrain
+            {
+                Vec[1] = Max;
+            }
+            else
+            {
+                Vec[1] = -Max;
+            }
+        }
+        else
+        { //decrease curved control
+            if (-allocateError < errorY && errorY < allocateError)
+            {
+                Vec[1] = 0;
+            }
+            else if (errorY <= -decreaseRadius || decreaseRadius <= errorY)
+            {
+                if (errorY <= 0)
+                    Vec[1] = -Max;
+                if (errorY >= 0)
+                    Vec[1] = Max;
+            }
+            else
+            {
+                if (errorY < 0)
+                    Vec[1] = mapFloat(errorY, 0, -decreaseRadius, -Min, -xReachedMaxPWM);
+                else
+                    Vec[1] = mapFloat(errorY, 0, decreaseRadius, Min, xReachedMaxPWM);
+            }
+        }
+
+        if (-2 < errorYaw && errorYaw < 2) //for Yaw control
+        {
+            Vec[2] = 0;
+        }
+        else
+        {
+            Vec[2] = mapFloat(errorYaw, 0, 45, 0, Max);
+        }
     }
 }
 

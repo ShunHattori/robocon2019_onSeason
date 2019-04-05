@@ -19,11 +19,28 @@ public:
     decreaseRadius = DecreaseRadius;
     Max = 2000;
     Min = 500;
+    ConfirmStatsInitialFlag = 1;
   }
 
+  /*
+  * desc:   速度制御アルゴリズム
+  * param:  none
+  * return: none
+  */
   void update();
-  void getCurrentLocation(int, int, double);
-  bool getStats() { return stats; } //移動の進行状況を返す 1=移動完了,0=移動中
+
+  /*
+  * desc:   移動の進行状況を取得する
+  * param:  none
+  * return: 1=移動完了,0=移動中
+  */
+  bool getStats() { return stats; }
+
+  /*
+  * desc:   各軸の出力を取得する
+  * param:  none
+  * return: 各軸の出力値(min~max内)(int)
+  */
   int getXVector()
   {
     return Vec[0];
@@ -37,6 +54,11 @@ public:
     return Vec[2];
   }
 
+  /*
+  * desc:   出力の最大値を設定する
+  * param:  最大値(int)(500~9700)
+  * return: none
+  */
   void setMaxOutput(int max)
   {
     if (500 < max && max < 9700)
@@ -45,6 +67,11 @@ public:
     }
   }
 
+  /*
+  * desc:   出力の最小値を設定する
+  * param:  最小値(int)(100~3500)
+  * return: none
+  */
   void setMinOutput(int min)
   {
     if (100 < min && min < 3500)
@@ -56,7 +83,7 @@ public:
 private:
   LocationManager<int> *LCM;
   MWodometry *XAxis_1, *XAxis_2, *YAxis_1;
-
+  Timer ConfirmStats;
   /*
     *   current~ : 現在のロボットの位置を保存している
     *   target~  : ロボットの目標位置 
@@ -77,6 +104,8 @@ private:
 
   int Vec[3];
   int Max, Min;
+  int xReachedMaxPWM, yReachedMaxPWM;
+  bool ConfirmStatsInitialFlag;
 
   float mapFloat(float value, float in_min, float in_max, float out_min, float out_max);
 };

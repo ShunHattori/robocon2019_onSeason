@@ -7,6 +7,16 @@
 #include "MotorDriverAdapter.h"
 
 /***********************************************************/
+/*
+*   ENCODER_PULSE_PER_ROUND         :   取り付けエンコーダの分解能
+*   ENCODER_ATTACHED_WHEEL_RADIUS   :   計測輪の半径
+*   DISTANCE_BETWEEN_ENCODER_WHEELS :   同軸の計測輪取り付け距離
+*   PERMIT_ERROR_CIRCLE_RADIUS      :   停止地点の許容誤差判定円の半径
+*   DECREASE_PWM_CIRCLE_RADIUS      :   減速開始判定円の半径
+*   ESTIMATE_MAX_PWM                :   MDに出力される想定最大PWM
+*   ESTIMATE_MIN_PWM                :   MDに出力される想定最小PWM
+*   DRIVETRAIN_UPDATE_CYCLE         :   速度計算アルゴリズムの更新周期(s)
+*/
 const uint8_t ENCODER_PULSE_PER_ROUND = 48;
 const uint8_t ENCODER_ATTACHED_WHEEL_RADIUS = 5;
 const uint8_t DISTANCE_BETWEEN_ENCODER_WHEELS = 60;
@@ -73,5 +83,23 @@ int main()
         wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
         PC.printf("%d,%d,%d,%d\r\n", output[0], output[1], output[2], output[3]);
         driveWheel.apply(output);
+
+        /*           LocationManagerテスト           */
+        robotLocation.addPoint(100, 0);
+        robotLocation.addPoint(0, 100);
+
+        robotLocation.sendNext(); //ここで一つ目の100,0が参照可能になる
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+        robotLocation.sendNext(); //0,100が参照可能になる
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+        /*                                           */
     }
 }
