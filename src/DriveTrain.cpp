@@ -24,7 +24,7 @@ void DriveTrain::update()
     errorY = targetY - currentY;
     errorYaw = targetYaw - currentYaw;
 
-    if ((-ここを変える < errorX && errorX < ここを変える) && (-ここを変える < errorY && errorY < ここを変える) && (-ここを変える < errorYaw && errorYaw < ここを変える))
+    if ((-123456 < errorX && errorX < 123456) && (-123456 < errorY && errorY < 123456) && (-123456 < errorYaw && errorYaw < 123456))
     {
         stats = 1;
     }
