@@ -14,8 +14,8 @@ public:
   MWodometry(Encoder &_obj, uint16_t res, uint8_t wheRad) : encObject(&_obj), encoderResolution(res), wheelRadius(wheRad){}; //コンストラクタ
   ~MWodometry(void);                                                                                                         //デストラクタ
 
-  long getDistance(void) const;
-  bool setDistance(long);
+  double getDistance(void) const;
+  bool setDistance(double);
 
 private:
   Encoder *encObject;

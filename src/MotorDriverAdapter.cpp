@@ -19,27 +19,43 @@ MotorDriverAdapter::MotorDriverAdapter(PinName FRcw, PinName FRccw, PinName FLcw
     BRN = new PwmOut(BRCCWPin);
     BLR = new PwmOut(BLCWPin);
     BLN = new PwmOut(BLCCWPin);
-    FRR->period_us(30);
-    FRN->period_us(30);
-    FLR->period_us(30);
-    FLN->period_us(30);
-    BRR->period_us(30);
-    BRN->period_us(30);
-    BLR->period_us(30);
-    BLN->period_us(30);
+    FRR->period_us(35);
+    FRN->period_us(35);
+    FLR->period_us(35);
+    FLN->period_us(35);
+    BRR->period_us(35);
+    BRN->period_us(35);
+    BLR->period_us(35);
+    BLN->period_us(35);
+    for(int i = 0; i < 4; i++)
+    {
+        prevPWM[i] = 0;
+    }
+    
 }
 
-void MotorDriverAdapter::apply(float pwm[4])
+void MotorDriverAdapter::apply(int pwm[4])
 {
-    if (0 < pwm[0])
+    for (int i = 0; i < 4; i++)
     {
-        FRR->write(pwm[0]);
+        pwm[i] = RCconstant * prevPWM[i] + (1 - RCconstant) * pwm[i];
+        prevPWM[i] = pwm[i];
+    }
+
+    duty[0] = pwm[0] / 10000.0;
+    duty[1] = pwm[1] / 10000.0;
+    duty[2] = pwm[2] / 10000.0;
+    duty[3] = pwm[3] / 10000.0;
+
+    if (0 < duty[0])
+    {
+        FRR->write((abs(duty[0])));
         FRN->write(0);
     }
-    else if (pwm[0] < 0)
+    else if (duty[0] < 0)
     {
         FRR->write(0);
-        FRN->write(pwm[0]);
+        FRN->write(abs(duty[0]));
     }
     else
     {
@@ -47,15 +63,15 @@ void MotorDriverAdapter::apply(float pwm[4])
         FRN->write(0);
     }
 
-    if (0 < pwm[0])
+    if (0 < duty[1])
     {
-        FLR->write(pwm[0]);
+        FLR->write(abs(duty[1]));
         FLN->write(0);
     }
-    else if (pwm[0] < 0)
+    else if (duty[1] < 0)
     {
         FLR->write(0);
-        FLN->write(pwm[0]);
+        FLN->write(abs(duty[1]));
     }
     else
     {
@@ -63,15 +79,15 @@ void MotorDriverAdapter::apply(float pwm[4])
         FLN->write(0);
     }
 
-    if (0 < pwm[0])
+    if (0 < duty[2])
     {
-        BRR->write(pwm[0]);
+        BRR->write(abs(duty[2]));
         BRN->write(0);
     }
-    else if (pwm[0] < 0)
+    else if (duty[2] < 0)
     {
         BRR->write(0);
-        BRN->write(pwm[0]);
+        BRN->write(abs(duty[2]));
     }
     else
     {
@@ -79,15 +95,15 @@ void MotorDriverAdapter::apply(float pwm[4])
         BRN->write(0);
     }
 
-    if (0 < pwm[0])
+    if (0 < duty[3])
     {
-        BLR->write(pwm[0]);
+        BLR->write(abs(duty[3]));
         BLN->write(0);
     }
-    else if (pwm[0] < 0)
+    else if (duty[3] < 0)
     {
         BLR->write(0);
-        BLN->write(pwm[0]);
+        BLN->write(abs(duty[3]));
     }
     else
     {

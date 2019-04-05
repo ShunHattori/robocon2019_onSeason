@@ -17,11 +17,41 @@ public:
     encoderAttachDiff = ENCATCdiff;
     allocateError = AllocateError;
     decreaseRadius = DecreaseRadius;
+    Max = 2000;
+    Min = 500;
   }
 
-  void update(float vec[]);
-  void getCurrentLocation(int, int, float);
+  void update();
+  void getCurrentLocation(int, int, double);
   bool getStats() { return stats; } //移動の進行状況を返す 1=移動完了,0=移動中
+  int getXVector()
+  {
+    return Vec[0];
+  }
+  int getYVector()
+  {
+    return Vec[1];
+  }
+  int getYawVector()
+  {
+    return Vec[2];
+  }
+
+  void setMaxOutput(int max)
+  {
+    if (500 < max && max < 9700)
+    {
+      Max = max;
+    }
+  }
+
+  void setMinOutput(int min)
+  {
+    if (100 < min && min < 3500)
+    {
+      Min = min;
+    }
+  }
 
 private:
   LocationManager<int> *LCM;
@@ -37,13 +67,16 @@ private:
     *   allocateError       :   停止地点の許容誤差
     *   decreaseRadius      :   減速開始判定円の半径
     */
-  int currentX, currentY;
-  int targetX, targetY, XEncodedDistanceDiff;
-  int errorX, errorY, errorYaw;
+  double currentX, currentY;
+  double targetX, targetY, XEncodedDistanceDiff;
+  double errorX, errorY, errorYaw;
   bool stats;
-  float currentYaw, targetYaw;
-  float encoderAttachDiff;
+  double currentYaw, targetYaw;
+  int encoderAttachDiff;
   int allocateError, decreaseRadius;
+
+  int Vec[3];
+  int Max, Min;
 
   float mapFloat(float value, float in_min, float in_max, float out_min, float out_max);
 };

@@ -1,6 +1,6 @@
 #include "DriveTrain.h"
 
-void DriveTrain::update(float vec[])
+void DriveTrain::update()
 {
     //三点接地エンコーダによる移動距離計算
     XEncodedDistanceDiff = abs(XAxis_1->getDistance() - XAxis_2->getDistance());
@@ -24,7 +24,7 @@ void DriveTrain::update(float vec[])
     errorY = targetY - currentY;
     errorYaw = targetYaw - currentYaw;
 
-    if ((-allocateError < errorX || errorX < allocateError) && (-allocateError < errorY || errorY < allocateError) && (-allocateError < errorYaw || errorYaw < allocateError))
+    if ((-ここを変える < errorX && errorX < ここを変える) && (-ここを変える < errorY && errorY < ここを変える) && (-ここを変える < errorYaw && errorYaw < ここを変える))
     {
         stats = 1;
     }
@@ -33,43 +33,62 @@ void DriveTrain::update(float vec[])
         stats = 0;
     }
 
-    if (stats)
+    if (stats)//本来は反転
     {
-        if (errorX <= -decreaseRadius || decreaseRadius <= errorX)
+        if (-allocateError < errorX && errorX < allocateError)
+        {
+            Vec[0] = 0;
+        }
+        else if (errorX <= -decreaseRadius || decreaseRadius <= errorX)
         {
             if (errorX <= 0)
-                vec[0] = -0.9;
+                Vec[0] = -Max;
             if (errorX >= 0)
-                vec[0] = 0.9;
+                Vec[0] = Max;
         }
         else if (errorX == 0)
-            vec[0] = 0;
+            Vec[0] = 0;
         else
         {
             if (errorX < 0)
-                vec[0] = mapFloat(errorX, 0, -decreaseRadius, -0.1, -0.9);
+                Vec[0] = mapFloat(errorX, 0, -decreaseRadius, -Min, -Max);
             else
-                vec[0] = mapFloat(errorX, 0, decreaseRadius, 0.1, 0.9);
+                Vec[0] = mapFloat(errorX, 0, decreaseRadius, Min, Max);
         }
 
-        if (errorY <= -decreaseRadius || decreaseRadius <= errorY)
+        if (-allocateError < errorY && errorY < allocateError)
+        {
+            Vec[1] = 0;
+        }
+        else if (errorY <= -decreaseRadius || decreaseRadius <= errorY)
         {
             if (errorY <= 0)
-                vec[1] = -0.9;
+                Vec[1] = -Max;
             if (errorY >= 0)
-                vec[1] = 0.9;
+                Vec[1] = Max;
         }
         else if (errorY == 0)
-            vec[1] = 0;
+            Vec[1] = 0;
         else
         {
             if (errorY < 0)
-                vec[1] = mapFloat(errorY, 0, -decreaseRadius, -0.1, -0.9);
+                Vec[1] = mapFloat(errorY, 0, -decreaseRadius, -Min, -Max);
             else
-                vec[1] = mapFloat(errorY, 0, decreaseRadius, 0.1, 0.9);
+                Vec[1] = mapFloat(errorY, 0, decreaseRadius, Min, Max);
         }
 
-        vec[2] = mapFloat(errorYaw, 0, 45, 0, 0.9);
+        if (-2 < errorYaw && errorYaw < 2)
+        {
+            Vec[2] = 0;
+        }
+        else
+        {
+            Vec[2] = mapFloat(errorYaw, 0, 45, 0, Max);
+        }
+    }
+    else    //ここに加速制御
+    {
+        
     }
 }
 

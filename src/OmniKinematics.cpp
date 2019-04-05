@@ -1,6 +1,6 @@
 #include "OmniKinematics.h"
 
-void OmniKinematics::getOutput(float x, float y, float yaw, float pwm[4])
+void OmniKinematics::getOutput(int x, int y, int yaw, int pwm[4])
 {
     XVector = x;
     YVector = y;
@@ -12,7 +12,7 @@ void OmniKinematics::getOutput(float x, float y, float yaw, float pwm[4])
         pwm[1] = +XVector + YVector - YawVector;
         pwm[2] = +XVector + YVector + YawVector;
         pwm[3] = -XVector + YVector - YawVector;
-        float max = 0;
+        int max = 0;
         for (int i = 0; i < 4; i++)
         {
             if (max < abs(pwm[i]))
@@ -34,7 +34,7 @@ void OmniKinematics::getOutput(float x, float y, float yaw, float pwm[4])
         pwm[1] = +XVector / 2 - YVector * sqrt(3) / 2 + YawVector;
         pwm[2] = +XVector / 2 + YVector * sqrt(3) / 2 + YawVector;
 
-        float max = 0;
+        int max = 0;
         for (int i = 0; i < 3; i++)
         {
             if (max < abs(pwm[i]))
