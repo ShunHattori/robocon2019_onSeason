@@ -31,6 +31,5 @@ public:
 private:
   Encoder *encObject;
   uint16_t encoderResolution;
-  int16_t distance;
   uint8_t wheelRadius;
 };

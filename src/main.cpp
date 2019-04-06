@@ -20,10 +20,10 @@
 const uint8_t ENCODER_PULSE_PER_ROUND = 48;
 const uint8_t ENCODER_ATTACHED_WHEEL_RADIUS = 5;
 const uint8_t DISTANCE_BETWEEN_ENCODER_WHEELS = 60;
-const uint8_t PERMIT_ERROR_CIRCLE_RADIUS = 5;
-const uint8_t DECREASE_PWM_CIRCLE_RADIUS = 50;
-const uint16_t ESTIMATE_MAX_PWM = 9000;
-const uint16_t ESTIMATE_MIN_PWM = 500;
+const uint8_t PERMIT_ERROR_CIRCLE_RADIUS = 3;
+const uint8_t DECREASE_PWM_CIRCLE_RADIUS = 30;
+const uint16_t ESTIMATE_MAX_PWM = 2500;
+const uint16_t ESTIMATE_MIN_PWM = 20;
 const float DRIVETRAIN_UPDATE_CYCLE = 0.2;
 
 Encoder encoder_XAxis_2(PA_4, PB_4);
@@ -79,26 +79,29 @@ int main()
     {
         //PC.printf("encoder pulse:%ld\todometry value:%ld\n\r", encoder_XAxis_1.getPulse(), odometry_XAxis_1.getDistance());
         //wait(0.2);
-        PC.printf("%d,%d,%d\r\n", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
-        wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
-        PC.printf("%d,%d,%d,%d\r\n", output[0], output[1], output[2], output[3]);
-        driveWheel.apply(output);
+        //PC.printf("%lf\n\r", odometry_YAxis_1.getDistance());
+        ///PC.printf("%d,%d,%d\r\n", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
+        ///wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+        //PC.printf("%d,%d,%d,%d\r\n", output[0], output[1], output[2], output[3]);
+        ///driveWheel.apply(output);
 
         /*           LocationManagerテスト           */
-        robotLocation.addPoint(100, 0);
-        robotLocation.addPoint(0, 100);
+        robotLocation.addPoint(100, 0, 0);
+        robotLocation.addPoint(0, 100, 0);
 
         robotLocation.sendNext(); //ここで一つ目の100,0が参照可能になる
         while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
         {
             wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
             driveWheel.apply(output);
+            PC.printf("%d", robotLocation.getXLocationData());
         }
         robotLocation.sendNext(); //0,100が参照可能になる
         while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
         {
             wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
             driveWheel.apply(output);
+            PC.printf("%d", robotLocation.getXLocationData());
         }
         /*                                           */
     }

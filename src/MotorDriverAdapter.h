@@ -24,6 +24,6 @@ private:
   PwmOut *FRR, *FRN, *FLR, *FLN, *BRR, *BRN, *BLR, *BLN;
   float duty[4];
 
-  static const float RCconstant = 0.9;
+  static const float RCconstant = 0.7;
   int prevPWM[4];
 };

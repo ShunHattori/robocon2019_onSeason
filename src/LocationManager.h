@@ -15,9 +15,9 @@ class LocationManager
     */
     LocationManager(TYPE x = 0, TYPE y = 0, TYPE yaw = 0)
     {
-        XPointArray.resize(100);
-        YPointArray.resize(100);
-        YawPointArray.resize(100);
+        XPointArray.resize(0);
+        YPointArray.resize(0);
+        YawPointArray.resize(0);
         XPointArray.insert(XPointArray.begin(), x);
         YPointArray.insert(YPointArray.begin(), y);
         YawPointArray.insert(YawPointArray.begin(), yaw);
@@ -82,15 +82,15 @@ class LocationManager
     */
     int getXLocationData()
     {
-        return XPointArray.front() + currentPointNumber;
+        return (XPointArray.at(currentPointNumber));
     }
     int getYLocationData()
     {
-        return YPointArray.front() + currentPointNumber;
+        return (YPointArray.at(currentPointNumber));
     }
     int getYawStatsData()
     {
-        return YawPointArray.front() + currentPointNumber;
+        return (YawPointArray.at(currentPointNumber));
     }
     /*
     *   desc:   自己位置を更新
