@@ -99,19 +99,19 @@ void DriveTrain::update()
         {
             if (0 < errorX) //increase P control
             {
-                Vec[0] += 300;
+                Vec[0] += 50;
                 xReachedMaxPWM = Vec[0];
             }
             else
             {
-                Vec[0] -= 300;
+                Vec[0] -= 50;
                 xReachedMaxPWM = -Vec[0];
             }
             if (Vec[0] > Max) //constrain
             {
                 Vec[0] = Max;
             }
-            else
+            else if(Vec[0] < -Max)
             {
                 Vec[0] = -Max;
             }
@@ -142,19 +142,19 @@ void DriveTrain::update()
         {
             if (0 < errorY) //increase P control
             {
-                Vec[1] += 300;
+                Vec[1] += 50;
                 xReachedMaxPWM = Vec[1];
             }
             else
             {
-                Vec[1] -= 300;
+                Vec[1] -= 50;
                 xReachedMaxPWM = -Vec[1];
             }
             if (Vec[1] > Max) //constrain
             {
                 Vec[1] = Max;
             }
-            else
+            else if (Vec[1] < -Max)
             {
                 Vec[1] = -Max;
             }
