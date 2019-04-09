@@ -49,6 +49,7 @@ class LocationManager
     void sendNext()
     {
         currentPointNumber++;
+        wait(0.3);
     }
 
     /*

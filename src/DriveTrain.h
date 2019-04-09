@@ -54,6 +54,18 @@ public:
     return Vec[2];
   }
 
+  int getCurrentXPosition()
+  {
+    return currentX;
+  }
+  int getCurrentYPosition()
+  {
+    return currentY;
+  }
+  int getCurrentYawPosition()
+  {
+    return currentYaw;
+  }
   /*
   * desc:   出力の最大値を設定する
   * param:  最大値(int)(500~9700)

@@ -5,6 +5,7 @@
 #include "DriveTrain.h"
 #include "OmniKinematics.h"
 #include "MotorDriverAdapter.h"
+#include "NewHavenDisplay.h"
 
 /***********************************************************/
 /*
@@ -20,10 +21,10 @@
 const uint8_t ENCODER_PULSE_PER_ROUND = 48;
 const uint8_t ENCODER_ATTACHED_WHEEL_RADIUS = 5;
 const uint8_t DISTANCE_BETWEEN_ENCODER_WHEELS = 60;
-const uint8_t PERMIT_ERROR_CIRCLE_RADIUS = 3;
-const uint8_t DECREASE_PWM_CIRCLE_RADIUS = 30;
+const uint8_t PERMIT_ERROR_CIRCLE_RADIUS = 5;
+const uint8_t DECREASE_PWM_CIRCLE_RADIUS = 70;
 const uint16_t ESTIMATE_MAX_PWM = 2500;
-const uint16_t ESTIMATE_MIN_PWM = 20;
+const uint16_t ESTIMATE_MIN_PWM = 10;
 const float DRIVETRAIN_UPDATE_CYCLE = 0.2;
 
 Encoder encoder_XAxis_2(PA_4, PB_4);
@@ -41,10 +42,14 @@ int output[4] = {};
 /***********************************************************/
 
 Serial PC(USBTX, USBRX);
+Serial LCD(PD_5, PD_6, 9600);
+Serial Zeal(PD_1, PD_0, 9600);
 DigitalOut BUILD_IN_LED_YELLOW(LED1);
 DigitalOut BUILD_IN_LED_BLUE(LED2);
+DigitalOut LED(PG_0); //メイン処理フロー動作確認用LED
 InterruptIn button(USER_BUTTON);
 InterruptIn DEBUG_ENCODER_PULSE(PF_12);
+NewHavenDisplay LCDmanager(LCD);
 
 void button_pressed()
 {
@@ -61,6 +66,8 @@ void LED_BLUE_FRIPPER()
 int main()
 {
     PC.baud(9600);
+    Zeal.baud(9600);
+    LCD.baud(9600);
     button.mode(PullDown);
     button.rise(&button_pressed);
     DEBUG_ENCODER_PULSE.rise(&LED_BLUE_FRIPPER);
@@ -75,8 +82,47 @@ int main()
     //robotLocation.setCurrentPoint(100, 642, 45);
     //robotLocation.setCurrentPoint(90, 42, 531);
 
+    char buffer[32];
+    uint bfCount = 0;
+
+    /*  NewHavenDisplayテスト  */
+    LCDmanager.clear();
+    LCDmanager.home();
+    LCDmanager.display();
+    LCDmanager.setContrast(50);
+    LCD.printf("device ready");
+    LCDmanager.setCursor(2, 5);
+    LCD.printf("cursor moved");
+    /*                         */
+
     for (;;)
     {
+        /*
+        if(Zeal.readable()){
+            LCD.putc(Zeal.getc());
+        }*/
+        /*
+        if (Zeal.readable())
+        {
+            PC.printf("%d\r\n",bfCount);
+            buffer[bfCount] = Zeal.getc();
+            if (buffer[bfCount] == '\n')
+            {
+                LCD.putc(0xFE);
+                LCD.putc(0x51);
+                LCD.putc(0xFE);
+                LCD.putc(0x46);
+                for (int i = 0; i <= bfCount-2; i++)
+                {
+                    LCD.putc(buffer[i]);
+                }
+                bfCount = 0;
+            }
+            else
+            {
+                bfCount++;
+            }
+        }*/
         //PC.printf("encoder pulse:%ld\todometry value:%ld\n\r", encoder_XAxis_1.getPulse(), odometry_XAxis_1.getDistance());
         //wait(0.2);
         //PC.printf("%lf\n\r", odometry_YAxis_1.getDistance());
@@ -86,23 +132,34 @@ int main()
         ///driveWheel.apply(output);
 
         /*           LocationManagerテスト           */
-        robotLocation.addPoint(100, 0, 0);
         robotLocation.addPoint(0, 100, 0);
+        robotLocation.addPoint(0, 500, 0);
 
         robotLocation.sendNext(); //ここで一つ目の100,0が参照可能になる
         while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
         {
             wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
             driveWheel.apply(output);
-            PC.printf("%d", robotLocation.getXLocationData());
+            PC.printf("%d\r\n", accelAlgorithm.getCurrentYPosition());
         }
+        LED = 1;
+        wait(2);
+        LED = 0;
         robotLocation.sendNext(); //0,100が参照可能になる
         while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
         {
             wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
             driveWheel.apply(output);
-            PC.printf("%d", robotLocation.getXLocationData());
+            PC.printf("%d\r\n", accelAlgorithm.getCurrentYPosition());
         }
+
+        while (1)
+        {
+            wheel.getOutput(0, 0, 0, output);
+            driveWheel.apply(output);
+            PC.printf("%d\r\n", accelAlgorithm.getCurrentYPosition());
+        }
+
         /*                                           */
     }
 }
