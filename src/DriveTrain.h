@@ -54,6 +54,11 @@ public:
     return Vec[2];
   }
 
+  /*
+  * desc:   現在のロボットの位置を取得する
+  * param:  none
+  * return: 各軸座標(int)
+  */
   int getCurrentXPosition()
   {
     return currentX;
@@ -66,6 +71,25 @@ public:
   {
     return currentYaw;
   }
+
+  /*
+  * desc:   現在のロボットの位置を上書きする
+  * param:  各軸座標(int)
+  * return: none
+  */
+  void setCurrentXPosition(int position)
+  {
+    currentX = position;
+  }
+  void setCurrentYPosition(int position)
+  {
+    currentY = position;
+  }
+  void setCurrentYawPosition(int position)
+  {
+    currentYaw = position;
+  }
+
   /*
   * desc:   出力の最大値を設定する
   * param:  最大値(int)(500~9700)

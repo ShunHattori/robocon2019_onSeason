@@ -13,7 +13,7 @@ public:
   OmniKinematics(uint8_t wheel) : wheelNumber(wheel), maxAllocateOutput(0.2){};
 
   /*
-    *   desc:   MDにかかる最大PWMを設定(10~95)
+    *   desc:   MDにかかる最大PWMを設定(10~10000)
     *   param:  maxPWM(int)
     *   return: none
     */
@@ -24,10 +24,10 @@ public:
 
   /*
     *   desc:   ロボット全体の移動方向を指定し、MDにかけるPWMを取得
-    *   param:  x,y,yaw方向の移動量(int) 駆動輪数に応じたint配列
+    *   param:  x,y,yaw方向の移動量(int) 駆動輪数に応じたfloat配列
     *   return: none(引数に代入)
     */
-  void getOutput(int x, int y, int yaw, int pwm[]);
+  void getOutput(int x, int y, int yaw, float pwm[]);
 
 private:
   uint8_t wheelNumber;
