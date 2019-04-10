@@ -5,7 +5,13 @@
     },
     "C_Cpp.errorSquiggles": "Disabled",
     "files.associations": {
-        "cmath": "cpp"
+        "cmath": "cpp",
+        "cstdlib": "cpp",
+        "initializer_list": "cpp",
+        "type_traits": "cpp",
+        "vector": "cpp",
+        "xstring": "cpp",
+        "xutility": "cpp"
     },
     "C_Cpp.intelliSenseEngineFallback": "Enabled"
 }

@@ -43,7 +43,7 @@ DriveTrain accelAlgorithm(robotLocation, odometry_XAxis_1, odometry_XAxis_2, odo
 Ticker updateOutput;
 OmniKinematics wheel(4);
 MotorDriverAdapter driveWheel(PB_10, PB_11, PE_12, PE_14, PD_12, PD_13, PE_8, PE_10);
-int output[4] = {};
+float output[4] = {};
 /***********************************************************/
 
 Serial PC(USBTX, USBRX);
