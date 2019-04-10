@@ -7,6 +7,11 @@
 #include "MotorDriverAdapter.h"
 #include "NewHavenDisplay.h"
 
+//#define NEWHAVENDISPLAY_TEST
+//#define ZEAL_BTMODULE_TEST
+//#define LOCATIONMANAGER_TEST
+//#define LIDARLITE_TEST
+
 /***********************************************************/
 /*
 *   ENCODER_PULSE_PER_ROUND         :   取り付けエンコーダの分解能
@@ -63,6 +68,13 @@ void LED_BLUE_FRIPPER()
     BUILD_IN_LED_BLUE = !BUILD_IN_LED_BLUE;
 }
 
+#include "LidarLite.h"
+#define LIDARLite1_SDA PB_9   //SDA pin on 767ZI
+#define LIDARLite1_SCL PB_8  //SCL pin on 767ZI
+
+LidarLite sensor1(LIDARLite1_SDA, LIDARLite1_SCL); //Define LIDAR Lite sensor 1
+Timer dt;
+
 int main()
 {
     PC.baud(9600);
@@ -82,10 +94,8 @@ int main()
     //robotLocation.setCurrentPoint(100, 642, 45);
     //robotLocation.setCurrentPoint(90, 42, 531);
 
-    char buffer[32];
-    uint bfCount = 0;
-
     /*  NewHavenDisplayテスト  */
+    #ifdef NEWHAVENDISPLAY_TEST
     LCDmanager.clear();
     LCDmanager.home();
     LCDmanager.display();
@@ -93,15 +103,29 @@ int main()
     LCD.printf("device ready");
     LCDmanager.setCursor(2, 5);
     LCD.printf("cursor moved");
-    /*                         */
+    #endif
+
+    #ifdef LIDARLITE_TEST
+    dt.start();
+    while(1)
+    {
+        //sensor1.refreshRange();
+        //sensor1.refreshVelocity();
+        sensor1.refreshRange();
+        PC.printf("range: %d cm, rate: %.2f Hz\n\r", sensor1.getRange_cm(), 1/dt.read());
+        dt.reset();
+    }
+    #endif
 
     for (;;)
     {
-        /*
+        #ifdef ZEAL_BTMODULE_TEST
+        
+        static char buffer[32];
+        static uint8_t bfCount = 0;
         if(Zeal.readable()){
             LCD.putc(Zeal.getc());
-        }*/
-        /*
+        }
         if (Zeal.readable())
         {
             PC.printf("%d\r\n",bfCount);
@@ -122,7 +146,9 @@ int main()
             {
                 bfCount++;
             }
-        }*/
+        }
+        #endif
+        
         //PC.printf("encoder pulse:%ld\todometry value:%ld\n\r", encoder_XAxis_1.getPulse(), odometry_XAxis_1.getDistance());
         //wait(0.2);
         //PC.printf("%lf\n\r", odometry_YAxis_1.getDistance());
@@ -132,6 +158,7 @@ int main()
         ///driveWheel.apply(output);
 
         /*           LocationManagerテスト           */
+        #ifdef LOCATIONMANAGER_TEST
         robotLocation.addPoint(0, 100, 0);
         robotLocation.addPoint(0, 500, 0);
 
@@ -159,7 +186,6 @@ int main()
             driveWheel.apply(output);
             PC.printf("%d\r\n", accelAlgorithm.getCurrentYPosition());
         }
-
-        /*                                           */
+        #endif
     }
 }
