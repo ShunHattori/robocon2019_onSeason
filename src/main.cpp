@@ -10,7 +10,7 @@
 //#define NEWHAVENDISPLAY_TEST
 //#define ZEAL_BTMODULE_TEST
 //#define LOCATIONMANAGER_TEST
-//#define LIDARLITE_TEST
+#define LIDARLITE_TEST
 
 /***********************************************************/
 /*
@@ -114,6 +114,19 @@ int main()
         sensor1.refreshRange();
         PC.printf("range: %d cm, rate: %.2f Hz\n\r", sensor1.getRange_cm(), 1/dt.read());
         dt.reset();
+        
+        robotLocation.addPoint(0, 100, 0);
+        robotLocation.sendNext(); //0,100が参照可能になる
+        accelAlgorithm.switchMode();
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            accelAlgorithm.setSensorDistance(sensor1.getRange_cm());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+            PC.printf("%d\r\n", accelAlgorithm.getCurrentYPosition());
+                    sensor1.refreshRange();
+            PC.printf("range: %d cm, rate: %.2f Hz\n\r", sensor1.getRange_cm(), 1/dt.read());
+        }       
     }
     #endif
 
@@ -186,6 +199,6 @@ int main()
             driveWheel.apply(output);
             PC.printf("%d\r\n", accelAlgorithm.getCurrentYPosition());
         }
-        #endif
+        #endif        
     }
 }

@@ -2,6 +2,7 @@
 
 void DriveTrain::update()
 {
+    if(encoderMode){
     //三点接地エンコーダによる移動距離計算
     XEncodedDistanceDiff = abs(XAxis_1->getDistance() - XAxis_2->getDistance());
     currentYaw = (asin(XEncodedDistanceDiff / (2 * encoderAttachDiff))) * 180 / M_PI;
@@ -19,6 +20,24 @@ void DriveTrain::update()
     targetX = LCM->getXLocationData();
     targetY = LCM->getYLocationData();
     targetYaw = LCM->getYawStatsData();
+
+    }
+    else{   //sensor mode
+    XEncodedDistanceDiff = abs(XAxis_1->getDistance() - XAxis_2->getDistance());
+    currentYaw = (asin(XEncodedDistanceDiff / (2 * encoderAttachDiff))) * 180 / M_PI;
+
+    currentX += ((XAxis_1->getDistance() + XAxis_2->getDistance()) / 2) * cos(currentYaw * M_PI / 180);
+    XAxis_1->setDistance(0);
+    XAxis_2->setDistance(0);
+    currentX += (YAxis_1->getDistance() * sin(currentYaw * M_PI / 180));
+    YAxis_1->setDistance(0);
+
+    currentY = sensorDistance;
+
+        targetX = LCM->getXLocationData();
+        targetY = LCM->getYLocationData();
+        targetYaw = LCM->getYawStatsData();
+    }
 
     errorX = targetX - currentX;
     errorY = targetY - currentY;

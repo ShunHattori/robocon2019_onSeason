@@ -20,6 +20,7 @@ public:
     Max = 2000;
     Min = 500;
     ConfirmStatsInitialFlag = 1;
+    encoderMode = 1;
   }
 
   /*
@@ -52,6 +53,14 @@ public:
   int getYawVector()
   {
     return Vec[2];
+  }
+
+  void setSensorDistance(int distance){
+    sensorDistance = distance;
+  }
+
+  void switchMode(){
+    encoderMode = !encoderMode;
   }
 
   int getCurrentXPosition()
@@ -115,9 +124,10 @@ private:
   int allocateError, decreaseRadius;
 
   int Vec[3];
+  int sensorDistance;
   int Max, Min;
   int xReachedMaxPWM, yReachedMaxPWM;
-  bool ConfirmStatsInitialFlag;
+  bool ConfirmStatsInitialFlag, encoderMode;
 
   float mapFloat(float value, float in_min, float in_max, float out_min, float out_max);
 };
