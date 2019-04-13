@@ -2,18 +2,22 @@
 
 void DriveTrain::update()
 {
-    if(encoderMode){
+    if(1){//encodermode
     //三点接地エンコーダによる移動距離計算
-    XEncodedDistanceDiff = abs(XAxis_1->getDistance() - XAxis_2->getDistance());
-    currentYaw = (asin(XEncodedDistanceDiff / (2 * encoderAttachDiff))) * 180 / M_PI;
+    XEncodedDistanceDiff = (XAxis_1->getDistance() - SubXAxis->getDistance());
+    currentYaw += (asin(XEncodedDistanceDiff / (2 * encoderAttachDiff))) * 180 / 3.1415;
 
-    currentX += ((XAxis_1->getDistance() + XAxis_2->getDistance()) / 2) * cos(currentYaw * M_PI / 180);
-    currentY += -((XAxis_1->getDistance() + XAxis_2->getDistance()) / 2) * sin(currentYaw * M_PI / 180);
+    //それぞれの計測輪の座標を保存して戻す処理をする
+
+    currentX += ((XAxis_1->getDistance() + SubXAxis->getDistance()) / 2);// * cos(currentYaw * 3.1415 / 180);
+    //currentY += -((XAxis_1->getDistance() + SubXAxis->getDistance()) / 2) * sin(currentYaw * 3.1415 / 180);
+
+
+    //currentX += YAxis_1->getDistance() * sin(currentYaw * 3.1415 / 180);
+    currentY += YAxis_1->getDistance();// * cos(currentYaw * 3.1415 / 180));
+    //currentX += (XAxis_1->getDistance() + SubXAxis->getDistance())/2;
     XAxis_1->setDistance(0);
-    XAxis_2->setDistance(0);
-
-    currentX += (YAxis_1->getDistance() * sin(currentYaw * M_PI / 180));
-    currentY += (YAxis_1->getDistance() * cos(currentYaw * M_PI / 180));
+    SubXAxis->setDistance(0);
     YAxis_1->setDistance(0);
 
     //常に最新座標を受け取り続ける
@@ -23,13 +27,13 @@ void DriveTrain::update()
 
     }
     else{   //sensor mode
-    XEncodedDistanceDiff = abs(XAxis_1->getDistance() - XAxis_2->getDistance());
-    currentYaw = (asin(XEncodedDistanceDiff / (2 * encoderAttachDiff))) * 180 / M_PI;
+    XEncodedDistanceDiff = abs(XAxis_1->getDistance() - SubXAxis->getDistance());
+    currentYaw += (asin(XEncodedDistanceDiff / (2 * encoderAttachDiff))) * 180 / 3.1415;
 
-    currentX += ((XAxis_1->getDistance() + XAxis_2->getDistance()) / 2) * cos(currentYaw * M_PI / 180);
+    currentX += ((XAxis_1->getDistance() + SubXAxis->getDistance()) / 2) * cos(currentYaw * 3.1415 / 180);
     XAxis_1->setDistance(0);
-    XAxis_2->setDistance(0);
-    currentX += (YAxis_1->getDistance() * sin(currentYaw * M_PI / 180));
+    SubXAxis->setDistance(0);
+    currentX += (YAxis_1->getDistance() * sin(currentYaw * 3.1415 / 180));
     YAxis_1->setDistance(0);
 
     currentY = sensorDistance;
@@ -102,13 +106,13 @@ void DriveTrain::update()
                 Vec[1] = mapFloat(errorY, 0, decreaseRadius, Min, Max);
         }
 
-        if (-2 < errorYaw && errorYaw < 2)
+        if (-1 < errorYaw && errorYaw < 1)
         {
             Vec[2] = 0;
         }
         else
         {
-            Vec[2] = mapFloat(errorYaw, 0, 45, 0, Max);
+            Vec[2] = mapFloat(errorYaw, -10, 10, -Max, Max);
         }
     }
     else //ここに加速制御
@@ -118,12 +122,12 @@ void DriveTrain::update()
         {
             if (0 < errorX) //increase P control
             {
-                Vec[0] += 50;
+                Vec[0] += 400;
                 xReachedMaxPWM = Vec[0];
             }
             else
             {
-                Vec[0] -= 50;
+                Vec[0] -= 400;
                 xReachedMaxPWM = -Vec[0];
             }
             if (Vec[0] > Max) //constrain
@@ -161,12 +165,12 @@ void DriveTrain::update()
         {
             if (0 < errorY) //increase P control
             {
-                Vec[1] += 50;
+                Vec[1] += 400;
                 xReachedMaxPWM = Vec[1];
             }
             else
             {
-                Vec[1] -= 50;
+                Vec[1] -= 400;
                 xReachedMaxPWM = -Vec[1];
             }
             if (Vec[1] > Max) //constrain
@@ -200,13 +204,13 @@ void DriveTrain::update()
             }
         }
 
-        if (-2 < errorYaw && errorYaw < 2) //for Yaw control
+        if (-1 < errorYaw && errorYaw < 1) //for Yaw control
         {
             Vec[2] = 0;
         }
         else
         {
-            Vec[2] = mapFloat(errorYaw, 0, 45, 0, Max);
+            Vec[2] = mapFloat(errorYaw, -10, 10, -Max, Max);
         }
     }
 }

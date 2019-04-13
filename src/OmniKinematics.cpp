@@ -8,10 +8,10 @@ void OmniKinematics::getOutput(int x, int y, int yaw, float pwm[4])
 
     if (wheelNumber == 4)
     {
-        pwm[0] = -XVector + YVector + YawVector;
-        pwm[1] = +XVector + YVector - YawVector;
-        pwm[2] = +XVector + YVector + YawVector;
-        pwm[3] = -XVector + YVector - YawVector;
+        pwm[0] = +XVector + YVector + YawVector;
+        pwm[1] = +XVector - YVector - YawVector;
+        pwm[2] = +XVector - YVector + YawVector;
+        pwm[3] = +XVector + YVector - YawVector;
         int max = 0;
         for (int i = 0; i < 4; i++)
         {

@@ -53,12 +53,12 @@ bool Encoder::EnableDebugOutput(PinName _pin)
 
 long Encoder::getPulse()
 {
-    return pulse / 2; //二逓倍
+    return pulse; //二逓倍
 }
 
 bool Encoder::setPulse(long _pulse)
 {
-    pulse = _pulse * 2; //二逓倍
+    pulse = _pulse; //二逓倍
     return 1;
 }
 

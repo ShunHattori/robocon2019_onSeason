@@ -12,7 +12,7 @@ public:
     {
         LCM = &lcmObj;
         XAxis_1 = &X1;
-        XAxis_2 = &X2;
+        SubXAxis = &X2;
         YAxis_1 = &Y1;
         encoderAttachDiff = ENCATCdiff;
         allocateError = AllocateError;
@@ -129,7 +129,7 @@ public:
 
 private:
     LocationManager<int> *LCM;
-    MWodometry *XAxis_1, *XAxis_2, *YAxis_1;
+    MWodometry *XAxis_1, *SubXAxis, *YAxis_1;
     Timer ConfirmStats;
     /*
      *   current~ : 現在のロボットの位置を保存している
