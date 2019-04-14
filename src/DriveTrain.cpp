@@ -4,29 +4,29 @@ void DriveTrain::update()
 {
     if (1)
     { //encodermode
+        /* ちゃんとパルス取れてるか見るためにコメントアウト
         //X軸の２つの計測輪と取り付け位置からロボットの角度を計算する
         XEncodedDistanceDiff = (XAxis_1->getDistance() - SubXAxis->getDistance());
-        currentYaw += (asin(XEncodedDistanceDiff / (2 * encoderAttachDiff))) * 180 / 3.1415;
+        currentYaw += (asin(XEncodedDistanceDiff / encoderAttachDiff)) * 180 / 3.1415;
 
         //各計測輪の移動量とロボットの傾きから全体の移動量を計算する
         currentX += ((XAxis_1->getDistance() + SubXAxis->getDistance()) / 2) * cos(currentYaw * 3.1415 / 180);
         currentY += ((XAxis_1->getDistance() + SubXAxis->getDistance()) / 2) * sin(currentYaw * 3.1415 / 180);
         currentX += YAxis_1->getDistance() * sin(currentYaw * 3.1415 / 180);
         currentY += YAxis_1->getDistance() * cos(currentYaw * 3.1415 / 180);
+        テストには下のコードを使う LCDのＣＰに各エンコーダの移動距離が表示されるはず*/
+        currentX += XAxis_1->getDistance();
+        currentY += SubXAxis->getDistance();
+        currentYaw += YAxis_1->getDistance();
         XAxis_1->setDistance(0);
         SubXAxis->setDistance(0);
         YAxis_1->setDistance(0);
-
-        //常に最新座標を受け取り続ける
-        targetX = LCM->getXLocationData();
-        targetY = LCM->getYLocationData();
-        targetYaw = LCM->getYawStatsData();
     }
     else
     { //sensor mode
         //X軸の２つの計測輪と取り付け位置からロボットの角度を計算する
         XEncodedDistanceDiff = abs(XAxis_1->getDistance() - SubXAxis->getDistance());
-        currentYaw += (asin(XEncodedDistanceDiff / (2 * encoderAttachDiff))) * 180 / 3.1415;
+        currentYaw += (asin(XEncodedDistanceDiff / encoderAttachDiff)) * 180 / 3.1415;
 
         //X軸は計測輪,Y軸は測距センサで自己位置を計算する　※移動後Y軸現在位置を更新してあげる必要あり
         currentX += ((XAxis_1->getDistance() + SubXAxis->getDistance()) / 2) * cos(currentYaw * 3.1415 / 180);
@@ -35,12 +35,11 @@ void DriveTrain::update()
         XAxis_1->setDistance(0);
         SubXAxis->setDistance(0);
         YAxis_1->setDistance(0);
-
-        targetX = LCM->getXLocationData();
-        targetY = LCM->getYLocationData();
-        targetYaw = LCM->getYawStatsData();
     }
-
+    //常に最新座標を受け取り続ける
+    targetX = LCM->getXLocationData();
+    targetY = LCM->getYLocationData();
+    targetYaw = LCM->getYawStatsData();
     //取得した目標位置と現在位置で偏差を計算する
     errorX = targetX - currentX;
     errorY = targetY - currentY;
@@ -107,7 +106,7 @@ void DriveTrain::update()
                 Vec[1] = mapFloat(errorY, 0, decreaseRadius, Min, Max);
         }
 
-        if (-1 < errorYaw && errorYaw < 1)
+        if (-0.7 < errorYaw && errorYaw < 0.7)
         {
             Vec[2] = 0;
         }
@@ -205,7 +204,7 @@ void DriveTrain::update()
             }
         }
 
-        if (-1 < errorYaw && errorYaw < 1) //for Yaw control
+        if (-0.7 < errorYaw && errorYaw < 0.7) //for Yaw control
         {
             Vec[2] = 0;
         }

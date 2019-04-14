@@ -31,7 +31,7 @@
 #define DECREASE_PWM_CIRCLE_RADIUS 30
 #define ESTIMATE_MAX_PWM 0.3
 #define ESTIMATE_MIN_PWM 0.1
-#define DRIVETRAIN_UPDATE_CYCLE 0.2
+#define DRIVETRAIN_UPDATE_CYCLE 0.15
 
 Encoder encoder_XAxis_1(PA_4, PB_5);
 Encoder SUBencoder(PC_6, PB_15);
@@ -73,11 +73,11 @@ Ticker debugLCD;
 void debug_LCD()
 {
     LCDmanager.clear();
-    LCD.printf("CP:%d,%d,%d", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), accelAlgorithm.getCurrentYawPosition());
+    LCD.printf("CP:%.2lf,%.2lf,%.2lf", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), accelAlgorithm.getCurrentYawPosition());
     LCDmanager.setCursor(2, 0);
     LCD.printf("TP:%d,%d,%d", robotLocation.getXLocationData(), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
     LCDmanager.setCursor(3, 0);
-    LCD.printf("CV:%d,%d,%d", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
+    LCD.printf("CV:%.2lf,%.2lf,%.2lf", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
 }
 #endif
 

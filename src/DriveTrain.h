@@ -45,15 +45,15 @@ class DriveTrain
      * param:  none
      * return: 各軸の出力値(min~max内)
      */
-    int getXVector()
+    double getXVector()
     {
         return Vec[0];
     }
-    int getYVector()
+    double getYVector()
     {
         return Vec[1];
     }
-    int getYawVector()
+    double getYawVector()
     {
         return Vec[2];
     }
@@ -71,35 +71,35 @@ class DriveTrain
     /*
      * desc:   現在のロボットの位置を取得する
      * param:  none
-     * return: 各軸座標(int)
+     * return: 各軸座標(double)
      */
-    int getCurrentXPosition()
+    double getCurrentXPosition()
     {
         return currentX;
     }
-    int getCurrentYPosition()
+    double getCurrentYPosition()
     {
         return currentY;
     }
-    int getCurrentYawPosition()
+    double getCurrentYawPosition()
     {
         return currentYaw;
     }
 
     /*
      * desc:   現在のロボットの位置を上書きする
-     * param:  各軸座標(int)
+     * param:  各軸座標(double)
      * return: none
      */
-    void setCurrentXPosition(int position)
+    void setCurrentXPosition(double position)
     {
         currentX = position;
     }
-    void setCurrentYPosition(int position)
+    void setCurrentYPosition(double position)
     {
         currentY = position;
     }
-    void setCurrentYawPosition(int position)
+    void setCurrentYawPosition(double position)
     {
         currentYaw = position;
     }
@@ -109,7 +109,7 @@ class DriveTrain
      * param:  最大値
      * return: none
      */
-    void setMaxOutput(int max)
+    void setMaxOutput(double max)
     {
         Max = max;
     }
@@ -119,7 +119,7 @@ class DriveTrain
      * param:  最小値
      * return: none
      */
-    void setMinOutput(int min)
+    void setMinOutput(double min)
     {
         Min = min;
     }
