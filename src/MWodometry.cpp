@@ -5,7 +5,7 @@ MWodometry::~MWodometry(void)
     printf("Instance removed.");
 }
 
-double MWodometry::getDistance(void) const
+double MWodometry::getDistance(void)
 {
     return ((2 * M_PI * wheelRadius) * encObject->getPulse() / encoderResolution);
 }

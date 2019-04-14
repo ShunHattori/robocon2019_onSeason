@@ -7,7 +7,7 @@
 
 class DriveTrain
 {
-public:
+  public:
     DriveTrain(LocationManager<int> &lcmObj, MWodometry &X1, MWodometry &X2, MWodometry &Y1, int ENCATCdiff, int AllocateError, int DecreaseRadius)
     {
         LCM = &lcmObj;
@@ -17,8 +17,8 @@ public:
         encoderAttachDiff = ENCATCdiff;
         allocateError = AllocateError;
         decreaseRadius = DecreaseRadius;
-        Max = 2000;
-        Min = 500;
+        Max = 0.3;
+        Min = 0.05;
         ConfirmStatsInitialFlag = 1;
         encoderMode = 1;
     }
@@ -35,14 +35,15 @@ public:
      * param:  none
      * return: 1=移動完了,0=移動中
      */
-    bool getStats() {
+    bool getStats()
+    {
         return stats;
     }
 
     /*
      * desc:   各軸の出力を取得する
      * param:  none
-     * return: 各軸の出力値(min~max内)(int)
+     * return: 各軸の出力値(min~max内)
      */
     int getXVector()
     {
@@ -57,11 +58,13 @@ public:
         return Vec[2];
     }
 
-    void setSensorDistance(int distance){
+    void setSensorDistance(int distance)
+    {
         sensorDistance = distance;
     }
 
-    void switchMode(){
+    void switchMode()
+    {
         encoderMode = !encoderMode;
     }
 
@@ -103,31 +106,25 @@ public:
 
     /*
      * desc:   出力の最大値を設定する
-     * param:  最大値(int)(500~9700)
+     * param:  最大値
      * return: none
      */
     void setMaxOutput(int max)
     {
-        if (500 < max && max < 9700)
-        {
-            Max = max;
-        }
+        Max = max;
     }
 
     /*
      * desc:   出力の最小値を設定する
-     * param:  最小値(int)(100~3500)
+     * param:  最小値
      * return: none
      */
     void setMinOutput(int min)
     {
-        if (100 < min && min < 3500)
-        {
-            Min = min;
-        }
+        Min = min;
     }
 
-private:
+  private:
     LocationManager<int> *LCM;
     MWodometry *XAxis_1, *SubXAxis, *YAxis_1;
     Timer ConfirmStats;
@@ -146,13 +143,13 @@ private:
     double errorX, errorY, errorYaw;
     bool stats;
     double currentYaw, targetYaw;
-    int encoderAttachDiff;
-    int allocateError, decreaseRadius;
+    float encoderAttachDiff;
+    float allocateError, decreaseRadius;
 
-    int Vec[3];
-    int sensorDistance;
-    int Max, Min;
-    int xReachedMaxPWM, yReachedMaxPWM;
+    float Vec[3];
+    float sensorDistance;
+    float Max, Min;
+    float xReachedMaxPWM, yReachedMaxPWM;
     bool ConfirmStatsInitialFlag, encoderMode;
 
     float mapFloat(float value, float in_min, float in_max, float out_min, float out_max);

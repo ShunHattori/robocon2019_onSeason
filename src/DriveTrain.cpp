@@ -2,51 +2,51 @@
 
 void DriveTrain::update()
 {
-    if(1){//encodermode
-    //三点接地エンコーダによる移動距離計算
-    XEncodedDistanceDiff = (XAxis_1->getDistance() - SubXAxis->getDistance());
-    currentYaw += (asin(XEncodedDistanceDiff / (2 * encoderAttachDiff))) * 180 / 3.1415;
+    if (1)
+    { //encodermode
+        //X軸の２つの計測輪と取り付け位置からロボットの角度を計算する
+        XEncodedDistanceDiff = (XAxis_1->getDistance() - SubXAxis->getDistance());
+        currentYaw += (asin(XEncodedDistanceDiff / (2 * encoderAttachDiff))) * 180 / 3.1415;
 
-    //それぞれの計測輪の座標を保存して戻す処理をする
+        //各計測輪の移動量とロボットの傾きから全体の移動量を計算する
+        currentX += ((XAxis_1->getDistance() + SubXAxis->getDistance()) / 2) * cos(currentYaw * 3.1415 / 180);
+        currentY += ((XAxis_1->getDistance() + SubXAxis->getDistance()) / 2) * sin(currentYaw * 3.1415 / 180);
+        currentX += YAxis_1->getDistance() * sin(currentYaw * 3.1415 / 180);
+        currentY += YAxis_1->getDistance() * cos(currentYaw * 3.1415 / 180);
+        XAxis_1->setDistance(0);
+        SubXAxis->setDistance(0);
+        YAxis_1->setDistance(0);
 
-    currentX += ((XAxis_1->getDistance() + SubXAxis->getDistance()) / 2);// * cos(currentYaw * 3.1415 / 180);
-    //currentY += -((XAxis_1->getDistance() + SubXAxis->getDistance()) / 2) * sin(currentYaw * 3.1415 / 180);
-
-
-    //currentX += YAxis_1->getDistance() * sin(currentYaw * 3.1415 / 180);
-    currentY += YAxis_1->getDistance();// * cos(currentYaw * 3.1415 / 180));
-    //currentX += (XAxis_1->getDistance() + SubXAxis->getDistance())/2;
-    XAxis_1->setDistance(0);
-    SubXAxis->setDistance(0);
-    YAxis_1->setDistance(0);
-
-    //常に最新座標を受け取り続ける
-    targetX = LCM->getXLocationData();
-    targetY = LCM->getYLocationData();
-    targetYaw = LCM->getYawStatsData();
-
+        //常に最新座標を受け取り続ける
+        targetX = LCM->getXLocationData();
+        targetY = LCM->getYLocationData();
+        targetYaw = LCM->getYawStatsData();
     }
-    else{   //sensor mode
-    XEncodedDistanceDiff = abs(XAxis_1->getDistance() - SubXAxis->getDistance());
-    currentYaw += (asin(XEncodedDistanceDiff / (2 * encoderAttachDiff))) * 180 / 3.1415;
+    else
+    { //sensor mode
+        //X軸の２つの計測輪と取り付け位置からロボットの角度を計算する
+        XEncodedDistanceDiff = abs(XAxis_1->getDistance() - SubXAxis->getDistance());
+        currentYaw += (asin(XEncodedDistanceDiff / (2 * encoderAttachDiff))) * 180 / 3.1415;
 
-    currentX += ((XAxis_1->getDistance() + SubXAxis->getDistance()) / 2) * cos(currentYaw * 3.1415 / 180);
-    XAxis_1->setDistance(0);
-    SubXAxis->setDistance(0);
-    currentX += (YAxis_1->getDistance() * sin(currentYaw * 3.1415 / 180));
-    YAxis_1->setDistance(0);
-
-    currentY = sensorDistance;
+        //X軸は計測輪,Y軸は測距センサで自己位置を計算する　※移動後Y軸現在位置を更新してあげる必要あり
+        currentX += ((XAxis_1->getDistance() + SubXAxis->getDistance()) / 2) * cos(currentYaw * 3.1415 / 180);
+        currentX += (YAxis_1->getDistance() * sin(currentYaw * 3.1415 / 180));
+        currentY = sensorDistance;
+        XAxis_1->setDistance(0);
+        SubXAxis->setDistance(0);
+        YAxis_1->setDistance(0);
 
         targetX = LCM->getXLocationData();
         targetY = LCM->getYLocationData();
         targetYaw = LCM->getYawStatsData();
     }
 
+    //取得した目標位置と現在位置で偏差を計算する
     errorX = targetX - currentX;
     errorY = targetY - currentY;
     errorYaw = targetYaw - currentYaw;
 
+    //ロボットの自己位置が指定された許容範囲内であればstatsを更新する
     if ((-allocateError < errorX && errorX < allocateError) && (-allocateError < errorY && errorY < allocateError) && (-allocateError < errorYaw && errorYaw < allocateError))
     {
         if (ConfirmStatsInitialFlag)
@@ -66,7 +66,8 @@ void DriveTrain::update()
         ConfirmStatsInitialFlag = 1;
     }
 
-    if (stats) //本来は反転 def(stats), for testing(!stats)
+    //statsにより出力の計算を切り替える
+    if (stats)
     {
         if (-allocateError < errorX && errorX < allocateError)
         {
@@ -122,19 +123,19 @@ void DriveTrain::update()
         {
             if (0 < errorX) //increase P control
             {
-                Vec[0] += 400;
+                Vec[0] += 0.05;
                 xReachedMaxPWM = Vec[0];
             }
             else
             {
-                Vec[0] -= 400;
+                Vec[0] -= 0.05;
                 xReachedMaxPWM = -Vec[0];
             }
             if (Vec[0] > Max) //constrain
             {
                 Vec[0] = Max;
             }
-            else if(Vec[0] < -Max)
+            else if (Vec[0] < -Max)
             {
                 Vec[0] = -Max;
             }
@@ -165,12 +166,12 @@ void DriveTrain::update()
         {
             if (0 < errorY) //increase P control
             {
-                Vec[1] += 400;
+                Vec[1] += 0.05;
                 xReachedMaxPWM = Vec[1];
             }
             else
             {
-                Vec[1] -= 400;
+                Vec[1] -= 0.05;
                 xReachedMaxPWM = -Vec[1];
             }
             if (Vec[1] > Max) //constrain

@@ -53,10 +53,10 @@ void MotorDriverAdapter::apply(float pwm[4])
         prevPWM[i] = pwm[i];
     }
 
-    duty[0] = pwm[0] / 10000.0;
-    duty[1] = pwm[1] / 10000.0;
-    duty[2] = pwm[2] / 10000.0;
-    duty[3] = pwm[3] / 10000.0;
+    duty[0] = pwm[0];
+    duty[1] = pwm[1];
+    duty[2] = pwm[2];
+    duty[3] = pwm[3];
 
     if (0 < duty[0])
     {

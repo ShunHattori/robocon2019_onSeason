@@ -14,7 +14,7 @@ public:
 
   /*
     *   desc:   入力されたPWMを元にピンに出力する
-    *   param:  pwm[4](float) 0~10000
+    *   param:  pwm[4](float)
     *   return: none
     */
   void apply(float pwm[4]);

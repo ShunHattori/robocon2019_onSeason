@@ -11,7 +11,7 @@ public:
   *   param:  Encoder型のオブジェクト,エンコーダの分解能
   *   return: none 
   */
-  MWodometry(Encoder &_obj, uint16_t res, uint8_t wheRad) : encObject(&_obj), encoderResolution(res), wheelRadius(wheRad){}; //コンストラクタ
+  MWodometry(Encoder &_obj, int res, float wheRad) : encObject(&_obj), encoderResolution(res), wheelRadius(wheRad){}; //コンストラクタ
   ~MWodometry(void);                                                                                                         //デストラクタ
 
   /*
@@ -19,7 +19,7 @@ public:
   * param:  none
   * return: 計測輪移動距離(double)
   */
-  double getDistance(void) const;
+  double getDistance(void);
 
   /*
   * desc:   引数の距離データから現在位置を上書きする
@@ -30,6 +30,6 @@ public:
 
 private:
   Encoder *encObject;
-  uint16_t encoderResolution;
-  uint8_t wheelRadius;
+  int encoderResolution;
+  float wheelRadius;
 };
