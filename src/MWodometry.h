@@ -3,6 +3,7 @@
 #include "mbed.h"
 #include "math.h"
 #include "Encoder.h"
+#include "QEI.h"
 
 class MWodometry
 {
@@ -11,7 +12,7 @@ public:
   *   param:  Encoder型のオブジェクト,エンコーダの分解能
   *   return: none 
   */
-  MWodometry(Encoder &_obj, int res, float wheRad) : encObject(&_obj), encoderResolution(res), wheelRadius(wheRad){}; //コンストラクタ
+  MWodometry(QEI &_obj, int res, float wheRad) : QEIobj(&_obj), encoderResolution(res), wheelRadius(wheRad){};               //コンストラクタ
   ~MWodometry(void);                                                                                                         //デストラクタ
 
   /*
@@ -29,7 +30,7 @@ public:
   void setDistance(double);
 
 private:
-  Encoder *encObject;
+  QEI *QEIobj;
   int encoderResolution;
   float wheelRadius;
 };
