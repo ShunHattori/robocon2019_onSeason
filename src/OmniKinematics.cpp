@@ -7,10 +7,10 @@ void OmniKinematics::getOutput(float x, float y, float yaw, float pwm[4])
     YawVector = yaw;
 
     //逆運動学を使って各軸の移動量からモータの回転方向・量を計算する
-    pwm[0] = +XVector + YVector + YawVector;
+    pwm[0] = +XVector + YVector - YawVector;
     pwm[1] = +XVector - YVector + YawVector;
     pwm[2] = +XVector - YVector - YawVector;
-    pwm[3] = +XVector + YVector - YawVector;
+    pwm[3] = +XVector + YVector + YawVector;
 
     //計算上の最大出力を求める
     float max = 0;

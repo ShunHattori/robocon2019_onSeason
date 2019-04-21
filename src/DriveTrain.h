@@ -21,6 +21,9 @@ class DriveTrain
         Min = 0.05;
         ConfirmStatsInitialFlag = 1;
         encoderMode = 1;
+        currentX = 0;
+        currentY = 0;
+        currentYaw = 0;
     }
 
     /*
@@ -138,7 +141,7 @@ class DriveTrain
      *   allocateError       :   停止地点の許容誤差
      *   decreaseRadius      :   減速開始判定円の半径
      */
-    double currentX, currentY;
+    double currentX, currentY,tempX,tempSub,tempY;
     double targetX, targetY, XEncodedDistanceDiff;
     double errorX, errorY, errorYaw;
     bool stats;

@@ -5,32 +5,40 @@ void DriveTrain::update()
     if (1)
     { //encodermode
         /* ちゃんとパルス取れてるか見るためにコメントアウト
-        //X軸の２つの計測輪と取り付け位置からロボットの角度を計算する
-        XEncodedDistanceDiff = (XAxis_1->getDistance() - SubXAxis->getDistance());
-        currentYaw += (asin(XEncodedDistanceDiff / encoderAttachDiff)) * 180 / 3.1415;
+        //X軸の２つの計測輪と取り付け位置からロボットの角度を計算する*/
+
+        tempX = XAxis_1->getDistance();
+        XAxis_1->setDistance(0);
+        tempSub = SubXAxis->getDistance();
+        SubXAxis->setDistance(0);
+        tempY = YAxis_1->getDistance();
+        YAxis_1->setDistance(0);
+        XEncodedDistanceDiff = (tempX - tempSub);
+        currentYaw = (asin(XEncodedDistanceDiff / encoderAttachDiff)) * 180 / 3.1415;
 
         //各計測輪の移動量とロボットの傾きから全体の移動量を計算する
-        currentX += ((XAxis_1->getDistance() + SubXAxis->getDistance()) / 2) * cos(currentYaw * 3.1415 / 180);
-        currentY += ((XAxis_1->getDistance() + SubXAxis->getDistance()) / 2) * sin(currentYaw * 3.1415 / 180);
-        currentX += YAxis_1->getDistance() * sin(currentYaw * 3.1415 / 180);
-        currentY += YAxis_1->getDistance() * cos(currentYaw * 3.1415 / 180);
-        テストには下のコードを使う LCDのＣＰに各エンコーダの移動距離が表示されるはず*/
-        currentX += XAxis_1->getDistance();
-        currentY += SubXAxis->getDistance();
-        currentYaw += YAxis_1->getDistance();
-        XAxis_1->setDistance(0);
-        SubXAxis->setDistance(0);
-        YAxis_1->setDistance(0);
+        /*currentX += ((tempX + tempSub) / 2) * cos(currentYaw * 3.1415 / 180);
+        currentY -= ((tempX + tempSub) / 2) * sin(currentYaw * 3.1415 / 180);
+        currentX -= tempY * sin(currentYaw * 3.1415 / 180);
+        currentY += tempY * cos(currentYaw * 3.1415 / 180);*/
+
+        currentX += tempX * cos(currentYaw * 3.1415 / 180);
+        currentY += tempY * cos(currentYaw * 3.1415 / 180);
+
+        /*テストには下のコードを使う LCDのＣＰに各エンコーダの移動距離が表示されるはず
+        currentX = tempX;
+        currentY = tempSub;
+        currentYaw = tempY;*/
     }
     else
     { //sensor mode
         //X軸の２つの計測輪と取り付け位置からロボットの角度を計算する
-        XEncodedDistanceDiff = abs(XAxis_1->getDistance() - SubXAxis->getDistance());
+        XEncodedDistanceDiff = abs(tempX - tempSub);
         currentYaw += (asin(XEncodedDistanceDiff / encoderAttachDiff)) * 180 / 3.1415;
 
         //X軸は計測輪,Y軸は測距センサで自己位置を計算する　※移動後Y軸現在位置を更新してあげる必要あり
-        currentX += ((XAxis_1->getDistance() + SubXAxis->getDistance()) / 2) * cos(currentYaw * 3.1415 / 180);
-        currentX += (YAxis_1->getDistance() * sin(currentYaw * 3.1415 / 180));
+        currentX += ((tempX + tempSub) / 2) * cos(currentYaw * 3.1415 / 180);
+        currentX += (tempY * sin(currentYaw * 3.1415 / 180));
         currentY = sensorDistance;
         XAxis_1->setDistance(0);
         SubXAxis->setDistance(0);
@@ -106,13 +114,13 @@ void DriveTrain::update()
                 Vec[1] = mapFloat(errorY, 0, decreaseRadius, Min, Max);
         }
 
-        if (-0.7 < errorYaw && errorYaw < 0.7)
+        if (-0.3 < errorYaw && errorYaw < 0.3)
         {
             Vec[2] = 0;
         }
         else
         {
-            Vec[2] = mapFloat(errorYaw, -10, 10, -Max, Max);
+            Vec[2] = mapFloat(errorYaw, -30, 30, -0.2, 0.2);
         }
     }
     else //ここに加速制御
@@ -204,13 +212,13 @@ void DriveTrain::update()
             }
         }
 
-        if (-0.7 < errorYaw && errorYaw < 0.7) //for Yaw control
+        if (-0.3 < errorYaw && errorYaw < 0.3) //for Yaw control
         {
             Vec[2] = 0;
         }
         else
         {
-            Vec[2] = mapFloat(errorYaw, -10, 10, -Max, Max);
+            Vec[2] = mapFloat(errorYaw, -30, 30, -0.2, 0.2);
         }
     }
 }

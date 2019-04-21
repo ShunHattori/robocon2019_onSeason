@@ -7,10 +7,11 @@ MWodometry::~MWodometry(void)
 
 double MWodometry::getDistance(void)
 {
-    return ((2 * M_PI * wheelRadius) * encObject->getPulse() / encoderResolution);
+    return ((2 * M_PI * wheelRadius) * QEIobj->getPulses() / encoderResolution);
 }
 
 void MWodometry::setDistance(double overloadDistance)
 {
-    encObject->setPulse(double((overloadDistance * encoderResolution) / (2 * M_PI * wheelRadius)));
+    QEIobj->qei_reset();
+    //QEIobj->setPulse(double((overloadDistance * encoderResolution) / (2 * M_PI * wheelRadius)));
 }
