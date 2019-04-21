@@ -4,17 +4,17 @@
 #include "math.h"
 #include "MWodometry.h"
 #include "LocationManager.h"
+#include "MPU9250.h"
 
 class DriveTrain
 {
   public:
-    DriveTrain(LocationManager<int> &lcmObj, MWodometry &X1, MWodometry &X2, MWodometry &Y1, int ENCATCdiff, int AllocateError, int DecreaseRadius)
+    DriveTrain(LocationManager<int> &lcmObj, MWodometry &X1, MWodometry &Y1, MPU9250 &IMUobj, int AllocateError, int DecreaseRadius)
     {
         LCM = &lcmObj;
         XAxis_1 = &X1;
-        SubXAxis = &X2;
         YAxis_1 = &Y1;
-        encoderAttachDiff = ENCATCdiff;
+        imu = &IMUobj;
         allocateError = AllocateError;
         decreaseRadius = DecreaseRadius;
         Max = 0.3;
@@ -129,8 +129,9 @@ class DriveTrain
 
   private:
     LocationManager<int> *LCM;
-    MWodometry *XAxis_1, *SubXAxis, *YAxis_1;
+    MWodometry *XAxis_1, *YAxis_1;
     Timer ConfirmStats;
+    MPU9250 *imu;
     /*
      *   current~ : 現在のロボットの位置を保存している
      *   target~  : ロボットの目標位置
@@ -141,12 +142,11 @@ class DriveTrain
      *   allocateError       :   停止地点の許容誤差
      *   decreaseRadius      :   減速開始判定円の半径
      */
-    double currentX, currentY,tempX,tempSub,tempY;
-    double targetX, targetY, XEncodedDistanceDiff;
+    double currentX, currentY, tempX, tempY,tempYaw;
+    double targetX, targetY;
     double errorX, errorY, errorYaw;
     bool stats;
     double currentYaw, targetYaw;
-    float encoderAttachDiff;
     float allocateError, decreaseRadius;
 
     float Vec[3];

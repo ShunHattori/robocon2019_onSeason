@@ -4,17 +4,12 @@ void DriveTrain::update()
 {
     if (1)
     { //encodermode
-        /* ちゃんとパルス取れてるか見るためにコメントアウト
-        //X軸の２つの計測輪と取り付け位置からロボットの角度を計算する*/
 
         tempX = XAxis_1->getDistance();
         XAxis_1->setDistance(0);
-        tempSub = SubXAxis->getDistance();
-        SubXAxis->setDistance(0);
         tempY = YAxis_1->getDistance();
         YAxis_1->setDistance(0);
-        XEncodedDistanceDiff = (tempX - tempSub);
-        currentYaw = (asin(XEncodedDistanceDiff / encoderAttachDiff)) * 180 / 3.1415;
+        currentYaw = imu->getYaw();
 
         //各計測輪の移動量とロボットの傾きから全体の移動量を計算する
         /*currentX += ((tempX + tempSub) / 2) * cos(currentYaw * 3.1415 / 180);
@@ -32,16 +27,13 @@ void DriveTrain::update()
     }
     else
     { //sensor mode
-        //X軸の２つの計測輪と取り付け位置からロボットの角度を計算する
-        XEncodedDistanceDiff = abs(tempX - tempSub);
-        currentYaw += (asin(XEncodedDistanceDiff / encoderAttachDiff)) * 180 / 3.1415;
 
         //X軸は計測輪,Y軸は測距センサで自己位置を計算する　※移動後Y軸現在位置を更新してあげる必要あり
+        currentYaw = imu->getYaw();
         currentX += ((tempX + tempSub) / 2) * cos(currentYaw * 3.1415 / 180);
         currentX += (tempY * sin(currentYaw * 3.1415 / 180));
         currentY = sensorDistance;
         XAxis_1->setDistance(0);
-        SubXAxis->setDistance(0);
         YAxis_1->setDistance(0);
     }
     //常に最新座標を受け取り続ける

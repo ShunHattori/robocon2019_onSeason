@@ -6,6 +6,7 @@
 #include "MotorDriverAdapter.h"
 #include "NewHavenDisplay.h"
 #include "QEI.h"
+#include "MPU9250.h"
 
 #define LOCATIONMANAGER_TEST
 //#define NEWHAVENDISPLAY_TEST
@@ -36,14 +37,13 @@
 #define DRIVETRAIN_UPDATE_CYCLE 0.15
 
 Timer QEITimer;
+MPU9250 IMU;
 QEI encoder_XAxis_1(PB_5, PC_7, NC, ENCODER_PULSE_PER_ROUND, &QEITimer);
-QEI SUBencoder(PC_6, PB_15, NC, ENCODER_PULSE_PER_ROUND, &QEITimer);
 QEI encoder_YAxis_1(PF_13, PE_9, NC, ENCODER_PULSE_PER_ROUND, &QEITimer);
 MWodometry odometry_XAxis_1(encoder_XAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA);
-MWodometry SUBodometry(SUBencoder, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_NEXUS_ROBOT);
 MWodometry odometry_YAxis_1(encoder_YAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA);
 LocationManager<int> robotLocation(0, 0, 0);
-DriveTrain accelAlgorithm(robotLocation, odometry_XAxis_1, SUBodometry, odometry_YAxis_1, DISTANCE_BETWEEN_ENCODER_WHEELS, PERMIT_ERROR_CIRCLE_RADIUS, DECREASE_PWM_CIRCLE_RADIUS);
+DriveTrain accelAlgorithm(robotLocation, odometry_XAxis_1, odometry_YAxis_1, IMU, PERMIT_ERROR_CIRCLE_RADIUS, DECREASE_PWM_CIRCLE_RADIUS);
 Ticker updateOutput;
 OmniKinematics wheel(4);
 MotorDriverAdapter driveWheel(PB_10, PB_11, PE_12, PE_14, PD_12, PD_13, PE_8, PE_10);
@@ -79,6 +79,7 @@ Timer dt;
 int main()
 {
     PC.baud(9600);
+    IMU.setup(PB_9, PB_8);
     accelAlgorithm.setMaxOutput(ESTIMATE_MAX_PWM);
     accelAlgorithm.setMinOutput(ESTIMATE_MIN_PWM);
     updateOutput.attach(callback(&accelAlgorithm, &DriveTrain::update), DRIVETRAIN_UPDATE_CYCLE);
