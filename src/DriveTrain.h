@@ -104,7 +104,7 @@ class DriveTrain
     }
     void setCurrentYawPosition(double position)
     {
-        currentYaw = position;
+        currentYaw = -position;
     }
 
     /*

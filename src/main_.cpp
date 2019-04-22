@@ -8,7 +8,10 @@
 #include "QEI.h"
 #include "MPU9250.h"
 
-#define LOCATIONMANAGER_TEST
+//#define TEST_COURSE_1
+#define TEST_COURSE_2
+//#define IMUSENSOR_TEST
+//#define LOCATIONMANAGER_TEST
 //#define NEWHAVENDISPLAY_TEST
 //#define ZEAL_BTMODULE_TEST
 //#define LIDARLITE_TEST
@@ -30,7 +33,7 @@
 #define ENCODER_ATTACHED_WHEEL_RADIUS_BY_NEXUS_ROBOT 5.0
 #define ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA 5.08
 #define DISTANCE_BETWEEN_ENCODER_WHEELS 72
-#define PERMIT_ERROR_CIRCLE_RADIUS 3.5
+#define PERMIT_ERROR_CIRCLE_RADIUS 2 //3.5
 #define DECREASE_PWM_CIRCLE_RADIUS 120
 #define ESTIMATE_MAX_PWM 0.6
 #define ESTIMATE_MIN_PWM 0.04
@@ -38,8 +41,8 @@
 
 Timer QEITimer;
 MPU9250 IMU;
-QEI encoder_XAxis_1(PB_5, PC_7, NC, ENCODER_PULSE_PER_ROUND, &QEITimer);
-QEI encoder_YAxis_1(PF_13, PE_9, NC, ENCODER_PULSE_PER_ROUND, &QEITimer);
+QEI encoder_XAxis_1(PB_5, PC_7, NC, ENCODER_PULSE_PER_ROUND, &QEITimer,QEI::X2_ENCODING);
+QEI encoder_YAxis_1(PF_13, PE_9, NC, ENCODER_PULSE_PER_ROUND, &QEITimer,QEI::X2_ENCODING);
 MWodometry odometry_XAxis_1(encoder_XAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA);
 MWodometry odometry_YAxis_1(encoder_YAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA);
 LocationManager<int> robotLocation(0, 0, 0);
@@ -53,6 +56,7 @@ float output[4] = {};
 Serial PC(USBTX, USBRX);
 DigitalOut shoot1(PG_0); //フリップ用信号ピン
 DigitalOut shoot2(PD_1); //フリップ用信号ピン
+DigitalOut IMUReady(LED2);
 
 #ifdef ENABLE_LCD_DEBUG
 NewHavenDisplay LCDmanager(LCD);
@@ -84,7 +88,12 @@ int main()
     accelAlgorithm.setMinOutput(ESTIMATE_MIN_PWM);
     updateOutput.attach(callback(&accelAlgorithm, &DriveTrain::update), DRIVETRAIN_UPDATE_CYCLE);
     wheel.setMaxPWM(ESTIMATE_MAX_PWM);
-
+    IMUReady = 1;
+#ifdef IMUSENSOR_TEST
+    for(;;){ /ジャイロテスト
+        PC.printf("%.2lf\r\n",IMU.gyro_Yaw());
+    }
+#endif
 #ifdef ENABLE_LCD_DEBUG
     debugLCD.attach(debug_LCD, 0.2);
 #endif
@@ -161,11 +170,13 @@ int main()
         robotLocation.sendNext();
         while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
         {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
             wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
             driveWheel.apply(output);
         }
         for (int i = 0; i < 100; i++) //完全停止用
         {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
             wheel.getOutput(0, 0, 0, output);
             driveWheel.apply(output);
         }
@@ -183,17 +194,92 @@ int main()
         robotLocation.sendNext();
         while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
         {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
             wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
             driveWheel.apply(output);
         }
         robotLocation.sendNext();
         while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
         {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
             wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
             driveWheel.apply(output);
         }
         while (1)
         {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+#endif
+
+#ifdef TEST_COURSE_1
+        robotLocation.addPoint(100, 0, 45);
+        robotLocation.addPoint(0, 0, 0);
+        robotLocation.sendNext();
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+        for (int i = 0; i < 100; i++) //完全停止用
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(0, 0, 0, output);
+            driveWheel.apply(output);
+        }
+        robotLocation.sendNext();
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+        while (1)
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+#endif
+#ifdef TEST_COURSE_2
+        robotLocation.addPoint(170, 0, 0);
+        robotLocation.addPoint(170, -140, 0);
+        robotLocation.addPoint(0, -140, 0);
+        robotLocation.addPoint(0, 0, 0);
+
+        robotLocation.sendNext();
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+        robotLocation.sendNext();
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+        robotLocation.sendNext();
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+        robotLocation.sendNext();
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+        while (1)
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
             wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
             driveWheel.apply(output);
         }

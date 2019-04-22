@@ -2,7 +2,6 @@
 
 #include "mbed.h"
 #include "math.h"
-#include "Encoder.h"
 #include "QEI.h"
 
 class MWodometry

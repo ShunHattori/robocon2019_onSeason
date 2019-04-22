@@ -9,16 +9,16 @@ void DriveTrain::update()
         XAxis_1->setDistance(0);
         tempY = YAxis_1->getDistance();
         YAxis_1->setDistance(0);
-        currentYaw = imu->getYaw();
+        //currentYaw = imu->gyro_Yaw();
 
         //各計測輪の移動量とロボットの傾きから全体の移動量を計算する
-        /*currentX += ((tempX + tempSub) / 2) * cos(currentYaw * 3.1415 / 180);
-        currentY -= ((tempX + tempSub) / 2) * sin(currentYaw * 3.1415 / 180);
-        currentX -= tempY * sin(currentYaw * 3.1415 / 180);
-        currentY += tempY * cos(currentYaw * 3.1415 / 180);*/
-
         currentX += tempX * cos(currentYaw * 3.1415 / 180);
+        currentY -= tempX * sin(currentYaw * 3.1415 / 180);
+        currentX += tempY * sin(currentYaw * 3.1415 / 180);
         currentY += tempY * cos(currentYaw * 3.1415 / 180);
+
+        //currentX += tempX * cos(currentYaw * 3.1415 / 180);
+        //currentY += tempY * cos(currentYaw * 3.1415 / 180);
 
         /*テストには下のコードを使う LCDのＣＰに各エンコーダの移動距離が表示されるはず
         currentX = tempX;
@@ -29,8 +29,8 @@ void DriveTrain::update()
     { //sensor mode
 
         //X軸は計測輪,Y軸は測距センサで自己位置を計算する　※移動後Y軸現在位置を更新してあげる必要あり
-        currentYaw = imu->getYaw();
-        currentX += ((tempX + tempSub) / 2) * cos(currentYaw * 3.1415 / 180);
+        //currentYaw = imu->gyro_Yaw();
+        currentX += tempX * cos(currentYaw * 3.1415 / 180);
         currentX += (tempY * sin(currentYaw * 3.1415 / 180));
         currentY = sensorDistance;
         XAxis_1->setDistance(0);

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "mbed.h"
-#include "encoder.h"
 #include "MWodometry.h"
 #include <vector>
 
