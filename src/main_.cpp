@@ -2,12 +2,12 @@
 #include "MWodometry.h"
 #include "LocationManager.h"
 #include "DriveTrain.h"
-#include "OmniKinematics.h"
-#include "MotorDriverAdapter.h"
 #include "NewHavenDisplay.h"
 #include "QEI.h"
 #include "MPU9250.h"
 
+//#define USING_4WD
+#define USING_3WD
 //#define TEST_COURSE_1
 #define TEST_COURSE_2
 //#define IMUSENSOR_TEST
@@ -39,6 +39,23 @@
 #define ESTIMATE_MIN_PWM 0.04
 #define DRIVETRAIN_UPDATE_CYCLE 0.15
 
+
+#ifdef USING_4WD
+#include "OmniKinematics4WD.h"
+#include "MotorDriverAdapter4WD.h"
+OmniKinematics4WD wheel;
+MotorDriverAdapter4WD driveWheel(PB_10, PB_11, PE_12, PE_14, PD_12, PD_13, PE_8, PE_10);
+float output[4] = {};
+#endif // USING_4WD
+
+#ifdef USING_3WD
+#include "OmniKinematics3WD.h"
+#include "MotorDriverAdapter3WD.h"
+OmniKinematics3WD wheel;
+MotorDriverAdapter3WD driveWheel(PB_10, PB_11, PE_12, PE_14, PD_12, PD_13);
+float output[3] = {};
+#endif // USING_3WD
+
 Timer QEITimer;
 MPU9250 IMU;
 QEI encoder_XAxis_1(PB_5, PC_7, NC, ENCODER_PULSE_PER_ROUND, &QEITimer,QEI::X2_ENCODING);
@@ -48,9 +65,7 @@ MWodometry odometry_YAxis_1(encoder_YAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_AT
 LocationManager<int> robotLocation(0, 0, 0);
 DriveTrain accelAlgorithm(robotLocation, odometry_XAxis_1, odometry_YAxis_1, IMU, PERMIT_ERROR_CIRCLE_RADIUS, DECREASE_PWM_CIRCLE_RADIUS);
 Ticker updateOutput;
-OmniKinematics wheel(4);
-MotorDriverAdapter driveWheel(PB_10, PB_11, PE_12, PE_14, PD_12, PD_13, PE_8, PE_10);
-float output[4] = {};
+
 /***********************************************************/
 
 Serial PC(USBTX, USBRX);
