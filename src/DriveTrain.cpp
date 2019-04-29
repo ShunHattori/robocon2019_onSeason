@@ -2,8 +2,8 @@
 
 void DriveTrain::update()
 {
-    if (1)
-    { //encodermode
+    if (encoderMode)
+    { //encoderMode
 
         tempX = XAxis_1->getDistance();
         XAxis_1->setDistance(0);
@@ -13,8 +13,8 @@ void DriveTrain::update()
 
         //各計測輪の移動量とロボットの傾きから全体の移動量を計算する
         currentX += tempX * cos(currentYaw * 3.1415 / 180);
-        currentY -= tempX * sin(currentYaw * 3.1415 / 180);
-        currentX += tempY * sin(currentYaw * 3.1415 / 180);
+        currentY += tempX * sin(currentYaw * 3.1415 / 180);
+        currentX -= tempY * sin(currentYaw * 3.1415 / 180);
         currentY += tempY * cos(currentYaw * 3.1415 / 180);
 
         //currentX += tempX * cos(currentYaw * 3.1415 / 180);
@@ -66,7 +66,7 @@ void DriveTrain::update()
     }
 
     //statsにより出力の計算を切り替える
-    if (stats)
+    if (stats) //stats
     {
         if (-allocateError < errorX && errorX < allocateError)
         {
@@ -112,7 +112,7 @@ void DriveTrain::update()
         }
         else
         {
-            Vec[2] = mapFloat(errorYaw, -30, 30, -0.2, 0.2);
+            Vec[2] = mapFloat(errorYaw, -30, 30, -0.3, 0.3);
         }
     }
     else //ここに加速制御
@@ -210,7 +210,7 @@ void DriveTrain::update()
         }
         else
         {
-            Vec[2] = mapFloat(errorYaw, -30, 30, -0.2, 0.2);
+            Vec[2] = mapFloat(errorYaw, -30, 30, -0.3, 0.3);
         }
     }
 }

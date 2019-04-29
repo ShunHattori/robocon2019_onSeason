@@ -24,6 +24,8 @@ class DriveTrain
         currentX = 0;
         currentY = 0;
         currentYaw = 0;
+        xReachedMaxPWM = 0.5;
+        yReachedMaxPWM = 0.5;
     }
 
     /*

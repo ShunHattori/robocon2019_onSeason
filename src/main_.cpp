@@ -8,8 +8,10 @@
 
 //#define USING_4WD
 #define USING_3WD
+
 //#define TEST_COURSE_1
 #define TEST_COURSE_2
+//#define TEST_SL
 //#define IMUSENSOR_TEST
 //#define LOCATIONMANAGER_TEST
 //#define NEWHAVENDISPLAY_TEST
@@ -36,9 +38,8 @@
 #define PERMIT_ERROR_CIRCLE_RADIUS 2 //3.5
 #define DECREASE_PWM_CIRCLE_RADIUS 120
 #define ESTIMATE_MAX_PWM 0.6
-#define ESTIMATE_MIN_PWM 0.04
+#define ESTIMATE_MIN_PWM 0.07
 #define DRIVETRAIN_UPDATE_CYCLE 0.15
-
 
 #ifdef USING_4WD
 #include "OmniKinematics4WD.h"
@@ -52,14 +53,14 @@ float output[4] = {};
 #include "OmniKinematics3WD.h"
 #include "MotorDriverAdapter3WD.h"
 OmniKinematics3WD wheel;
-MotorDriverAdapter3WD driveWheel(PB_10, PB_11, PE_12, PE_14, PD_12, PD_13);
+MotorDriverAdapter3WD driveWheel(PB_11, PB_10, PE_12, PE_14, PD_12, PD_13);
 float output[3] = {};
 #endif // USING_3WD
 
 Timer QEITimer;
 MPU9250 IMU;
-QEI encoder_XAxis_1(PB_5, PC_7, NC, ENCODER_PULSE_PER_ROUND, &QEITimer,QEI::X2_ENCODING);
-QEI encoder_YAxis_1(PF_13, PE_9, NC, ENCODER_PULSE_PER_ROUND, &QEITimer,QEI::X2_ENCODING);
+QEI encoder_XAxis_1(PE_9, PF_13, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X2_ENCODING);
+QEI encoder_YAxis_1(PB_5, PC_7, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X2_ENCODING);
 MWodometry odometry_XAxis_1(encoder_XAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA);
 MWodometry odometry_YAxis_1(encoder_YAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA);
 LocationManager<int> robotLocation(0, 0, 0);
@@ -105,8 +106,9 @@ int main()
     wheel.setMaxPWM(ESTIMATE_MAX_PWM);
     IMUReady = 1;
 #ifdef IMUSENSOR_TEST
-    for(;;){ /ジャイロテスト
-        PC.printf("%.2lf\r\n",IMU.gyro_Yaw());
+    for (;;)
+    {
+        PC.printf("%.2lf\r\n", IMU.gyro_Yaw());
     }
 #endif
 #ifdef ENABLE_LCD_DEBUG
@@ -148,6 +150,24 @@ int main()
 
     for (;;)
     {
+#ifdef TEST_SL
+        robotLocation.addPoint(0, 0, 0);
+        robotLocation.sendNext();
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+        while (1)
+        {
+            //PC.printf("%d,%d\r\n", encoder_XAxis_1.getPulses(), encoder_YAxis_1.getPulses());
+            PC.printf("%lf,%lf,%lf\r\n", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+#endif
 #ifdef ZEAL_BTMODULE_TEST
 
         static char buffer[32];
@@ -259,9 +279,7 @@ int main()
         }
 #endif
 #ifdef TEST_COURSE_2
-        robotLocation.addPoint(170, 0, 0);
-        robotLocation.addPoint(170, -140, 0);
-        robotLocation.addPoint(0, -140, 0);
+        robotLocation.addPoint(0, 135, 0);
         robotLocation.addPoint(0, 0, 0);
 
         robotLocation.sendNext();
@@ -271,27 +289,7 @@ int main()
             wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
             driveWheel.apply(output);
         }
-        robotLocation.sendNext();
-        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
-        {
-            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
-            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
-            driveWheel.apply(output);
-        }
-        robotLocation.sendNext();
-        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
-        {
-            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
-            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
-            driveWheel.apply(output);
-        }
-        robotLocation.sendNext();
-        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
-        {
-            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
-            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
-            driveWheel.apply(output);
-        }
+
         while (1)
         {
             accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
