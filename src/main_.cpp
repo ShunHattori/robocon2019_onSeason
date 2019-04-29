@@ -1,18 +1,24 @@
 #include "mbed.h"
-//#include "Encoder.h"
 #include "MWodometry.h"
 #include "LocationManager.h"
 #include "DriveTrain.h"
-#include "OmniKinematics.h"
-#include "MotorDriverAdapter.h"
 #include "NewHavenDisplay.h"
 #include "QEI.h"
+#include "MPU9250.h"
 
+//#define USING_4WD
+#define USING_3WD
+
+//#define TEST_COURSE_1
+#define TEST_COURSE_2
+//#define TEST_SL
+//#define IMUSENSOR_TEST
+//#define LOCATIONMANAGER_TEST
 //#define NEWHAVENDISPLAY_TEST
 //#define ZEAL_BTMODULE_TEST
-#define LOCATIONMANAGER_TEST
 //#define LIDARLITE_TEST
-//#define LCD_DEBUGGER
+//#define ENABLE_LCD_DEBUG
+//#define ENABLE_BOTTLE_FLIP
 
 /***********************************************************/
 /*
@@ -26,70 +32,66 @@
 *   DRIVETRAIN_UPDATE_CYCLE         :   速度計算アルゴリズムの更新周期(s)
 */
 #define ENCODER_PULSE_PER_ROUND 48
-#define ENCODER_ATTACHED_WHEEL_RADIUS 5
+#define ENCODER_ATTACHED_WHEEL_RADIUS_BY_NEXUS_ROBOT 5.0
+#define ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA 5.08
 #define DISTANCE_BETWEEN_ENCODER_WHEELS 72
-#define PERMIT_ERROR_CIRCLE_RADIUS 3.5
+#define PERMIT_ERROR_CIRCLE_RADIUS 2 //3.5
 #define DECREASE_PWM_CIRCLE_RADIUS 120
 #define ESTIMATE_MAX_PWM 0.6
-#define ESTIMATE_MIN_PWM 0.04
+#define ESTIMATE_MIN_PWM 0.07
 #define DRIVETRAIN_UPDATE_CYCLE 0.15
 
-Timer QEITimer;
-QEI encoder_XAxis_1(PB_5, PC_7, NC, ENCODER_PULSE_PER_ROUND, &QEITimer);
-QEI SUBencoder(PC_6, PB_15, NC, ENCODER_PULSE_PER_ROUND, &QEITimer);
-//QEI SUBencoder(NC, NC, NC, ENCODER_PULSE_PER_ROUND, &QEITimer);
-QEI encoder_YAxis_1(PF_13, PE_9, NC, ENCODER_PULSE_PER_ROUND, &QEITimer);
-//QEI encoder_YAxis_1(NC, NC, NC, ENCODER_PULSE_PER_ROUND, &QEITimer);
-MWodometry odometry_XAxis_1(encoder_XAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS);
-MWodometry SUBodometry(SUBencoder, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS);
-MWodometry odometry_YAxis_1(encoder_YAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS);
-LocationManager<int> robotLocation(0, 0, 0);
-DriveTrain accelAlgorithm(robotLocation, odometry_XAxis_1, SUBodometry, odometry_YAxis_1, DISTANCE_BETWEEN_ENCODER_WHEELS, PERMIT_ERROR_CIRCLE_RADIUS, DECREASE_PWM_CIRCLE_RADIUS);
-Ticker updateOutput;
-OmniKinematics wheel(4);
-MotorDriverAdapter driveWheel(PB_10, PB_11, PE_12, PE_14, PD_12, PD_13, PE_8, PE_10);
+#ifdef USING_4WD
+#include "OmniKinematics4WD.h"
+#include "MotorDriverAdapter4WD.h"
+OmniKinematics4WD wheel;
+MotorDriverAdapter4WD driveWheel(PB_10, PB_11, PE_12, PE_14, PD_12, PD_13, PE_8, PE_10);
 float output[4] = {};
+#endif // USING_4WD
+
+#ifdef USING_3WD
+#include "OmniKinematics3WD.h"
+#include "MotorDriverAdapter3WD.h"
+OmniKinematics3WD wheel;
+MotorDriverAdapter3WD driveWheel(PB_11, PB_10, PE_12, PE_14, PD_12, PD_13);
+float output[3] = {};
+#endif // USING_3WD
+
+Timer QEITimer;
+MPU9250 IMU;
+QEI encoder_XAxis_1(PE_9, PF_13, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X2_ENCODING);
+QEI encoder_YAxis_1(PB_5, PC_7, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X2_ENCODING);
+MWodometry odometry_XAxis_1(encoder_XAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA);
+MWodometry odometry_YAxis_1(encoder_YAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA);
+LocationManager<int> robotLocation(0, 0, 0);
+DriveTrain accelAlgorithm(robotLocation, odometry_XAxis_1, odometry_YAxis_1, IMU, PERMIT_ERROR_CIRCLE_RADIUS, DECREASE_PWM_CIRCLE_RADIUS);
+Ticker updateOutput;
+
 /***********************************************************/
 
 Serial PC(USBTX, USBRX);
-Serial LCD(PD_5, PD_6, 9600);
-Serial Zeal(PD_1, PD_0, 9600);
-DigitalOut BUILD_IN_LED_YELLOW(LED1);
-DigitalOut BUILD_IN_LED_BLUE(LED2);
-DigitalOut shoot1(PG_0); //メイン処理フロー動作確認用LED
-DigitalOut shoot2(PD_1); //メイン処理フロー動作確認用LED
-//InterruptIn button(USER_BUTTON);
-//InterruptIn DEBUG_ENCODER_PULSE(PF_12);
+DigitalOut shoot1(PG_0); //フリップ用信号ピン
+DigitalOut shoot2(PD_1); //フリップ用信号ピン
+DigitalOut IMUReady(LED2);
 
-void button_pressed()
-{
-}
-
-void LED_BLUE_FRIPPER()
-{
-    BUILD_IN_LED_BLUE = !BUILD_IN_LED_BLUE;
-}
-
-#ifdef LCD_DEBUGGER
+#ifdef ENABLE_LCD_DEBUG
 NewHavenDisplay LCDmanager(LCD);
 Ticker debugLCD;
-
 void debug_LCD()
 {
     LCDmanager.clear();
     //LCD.printf("CP:%.2lf,%.2lf,%.2lf", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), accelAlgorithm.getCurrentYawPosition());
-    LCD.printf("%d,%d,%d", encoder_XAxis_1.getPulses()/4, SUBencoder.getPulses(), encoder_YAxis_1.getPulses());
+    LCD.printf("%d,%d,%d", encoder_XAxis_1.getPulses() / 4, SUBencoder.getPulses(), encoder_YAxis_1.getPulses());
     LCDmanager.setCursor(2, 0);
     LCD.printf("TP:%d,%d,%d", robotLocation.getXLocationData(), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
     LCDmanager.setCursor(3, 0);
     LCD.printf("CV:%.2lf,%.2lf,%.2lf", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
 }
 #endif
-
 #ifdef LIDARLITE_TEST
 #include "LidarLite.h"
-#define LIDARLite1_SDA PB_9 //SDA pin on 767ZI
-#define LIDARLite1_SCL PB_8 //SCL pin on 767ZI
+#define LIDARLite1_SDA PB_9                        //SDA pin on 767ZI
+#define LIDARLite1_SCL PB_8                        //SCL pin on 767ZI
 LidarLite sensor1(LIDARLite1_SDA, LIDARLite1_SCL); //Define LIDAR Lite sensor 1
 Timer dt;
 #endif
@@ -97,25 +99,21 @@ Timer dt;
 int main()
 {
     PC.baud(9600);
-    Zeal.baud(9600);
-    LCD.baud(9600);
-#ifdef LCD_DEBUGGER
-    debugLCD.attach(debug_LCD, 0.2);
-#endif
-    //button.mode(PullDown);
-    //button.rise(&button_pressed);
-    //DEBUG_ENCODER_PULSE.rise(&LED_BLUE_FRIPPER);
-    BUILD_IN_LED_YELLOW = 1;
-
+    IMU.setup(PB_9, PB_8);
     accelAlgorithm.setMaxOutput(ESTIMATE_MAX_PWM);
     accelAlgorithm.setMinOutput(ESTIMATE_MIN_PWM);
     updateOutput.attach(callback(&accelAlgorithm, &DriveTrain::update), DRIVETRAIN_UPDATE_CYCLE);
     wheel.setMaxPWM(ESTIMATE_MAX_PWM);
+    IMUReady = 1;
+#ifdef IMUSENSOR_TEST
     for (;;)
     {
-        PC.printf("distance is: %lf\n\r", accelAlgorithm.getCurrentXPosition());
+        PC.printf("%.2lf\r\n", IMU.gyro_Yaw());
     }
-/*  NewHavenDisplayテスト  */
+#endif
+#ifdef ENABLE_LCD_DEBUG
+    debugLCD.attach(debug_LCD, 0.2);
+#endif
 #ifdef NEWHAVENDISPLAY_TEST
     LCDmanager.clear();
     LCDmanager.home();
@@ -125,7 +123,6 @@ int main()
     LCDmanager.setCursor(2, 5);
     LCD.printf("cursor moved");
 #endif
-
 #ifdef LIDARLITE_TEST
     dt.start();
     while (1)
@@ -153,6 +150,24 @@ int main()
 
     for (;;)
     {
+#ifdef TEST_SL
+        robotLocation.addPoint(0, 0, 0);
+        robotLocation.sendNext();
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+        while (1)
+        {
+            //PC.printf("%d,%d\r\n", encoder_XAxis_1.getPulses(), encoder_YAxis_1.getPulses());
+            PC.printf("%lf,%lf,%lf\r\n", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+#endif
 #ifdef ZEAL_BTMODULE_TEST
 
         static char buffer[32];
@@ -183,36 +198,24 @@ int main()
             }
         }
 #endif
-
-//PC.printf("encoder pulse:%ld\todometry value:%ld\n\r", encoder_XAxis_1.getPulse(), odometry_XAxis_1.getDistance());
-//wait(0.2);
-//PC.printf("%lf\n\r", odometry_YAxis_1.getDistance());
-///PC.printf("%d,%d,%d\r\n", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
-///wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
-//PC.printf("%d,%d,%d,%d\r\n", output[0], output[1], output[2], output[3]);
-///driveWheel.apply(output);
-
-/*           LocationManagerテスト           */
 #ifdef LOCATIONMANAGER_TEST
         robotLocation.addPoint(130, 0, 0);
         robotLocation.addPoint(130, -90, 0);
-        //robotLocation.addPoint(130, 0, 0);
-        //robotLocation.addPoint(0,-100,0);
-        //robotLocation.addPoint(100,-90,0);
-        //robotLocation.addPoint(90,0,0);
         robotLocation.addPoint(0, 0, 0);
-
-        robotLocation.sendNext(); //ここで一つ目の100,0が参照可能になる
+        robotLocation.sendNext();
         while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
         {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
             wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
             driveWheel.apply(output);
         }
         for (int i = 0; i < 100; i++) //完全停止用
         {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
             wheel.getOutput(0, 0, 0, output);
             driveWheel.apply(output);
-        }                         /*
+        }
+#ifdef ENABLE_BOTTLE_FLIP
         shoot1 = 1;
         shoot2 = 0;
         wait(1.5);
@@ -221,35 +224,75 @@ int main()
         wait(1);
         shoot1 = 0;
         shoot2 = 0;
-        wait(1.5);*/
-        robotLocation.sendNext(); //0,100が参照可能になる
+        wait(1.5);
+#endif
+        robotLocation.sendNext();
         while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
         {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
             wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
             driveWheel.apply(output);
         }
-        robotLocation.sendNext(); //ここで一つ目の100,0が参照可能になる
+        robotLocation.sendNext();
         while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
         {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
             wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
             driveWheel.apply(output);
         }
-        /*
-        robotLocation.sendNext(); //0,100が参照可能になる
-        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        while (1)
         {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
             wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
             driveWheel.apply(output);
         }
-        robotLocation.sendNext(); //0,100が参照可能になる
+#endif
+
+#ifdef TEST_COURSE_1
+        robotLocation.addPoint(100, 0, 45);
+        robotLocation.addPoint(0, 0, 0);
+        robotLocation.sendNext();
         while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
         {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
             wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
             driveWheel.apply(output);
-        }*/
+        }
+        for (int i = 0; i < 100; i++) //完全停止用
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(0, 0, 0, output);
+            driveWheel.apply(output);
+        }
+        robotLocation.sendNext();
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+        while (1)
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+#endif
+#ifdef TEST_COURSE_2
+        robotLocation.addPoint(0, 135, 0);
+        robotLocation.addPoint(0, 0, 0);
+
+        robotLocation.sendNext();
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
 
         while (1)
         {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
             wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
             driveWheel.apply(output);
         }

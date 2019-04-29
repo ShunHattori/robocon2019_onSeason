@@ -2,28 +2,23 @@
 
 void DriveTrain::update()
 {
-    if (1)
-    { //encodermode
-        /* ちゃんとパルス取れてるか見るためにコメントアウト
-        //X軸の２つの計測輪と取り付け位置からロボットの角度を計算する*/
+    if (encoderMode)
+    { //encoderMode
 
         tempX = XAxis_1->getDistance();
         XAxis_1->setDistance(0);
-        tempSub = SubXAxis->getDistance();
-        SubXAxis->setDistance(0);
         tempY = YAxis_1->getDistance();
         YAxis_1->setDistance(0);
-        XEncodedDistanceDiff = (tempX - tempSub);
-        currentYaw = (asin(XEncodedDistanceDiff / encoderAttachDiff)) * 180 / 3.1415;
+        //currentYaw = imu->gyro_Yaw();
 
         //各計測輪の移動量とロボットの傾きから全体の移動量を計算する
-        /*currentX += ((tempX + tempSub) / 2) * cos(currentYaw * 3.1415 / 180);
-        currentY -= ((tempX + tempSub) / 2) * sin(currentYaw * 3.1415 / 180);
-        currentX -= tempY * sin(currentYaw * 3.1415 / 180);
-        currentY += tempY * cos(currentYaw * 3.1415 / 180);*/
-
         currentX += tempX * cos(currentYaw * 3.1415 / 180);
+        currentY += tempX * sin(currentYaw * 3.1415 / 180);
+        currentX -= tempY * sin(currentYaw * 3.1415 / 180);
         currentY += tempY * cos(currentYaw * 3.1415 / 180);
+
+        //currentX += tempX * cos(currentYaw * 3.1415 / 180);
+        //currentY += tempY * cos(currentYaw * 3.1415 / 180);
 
         /*テストには下のコードを使う LCDのＣＰに各エンコーダの移動距離が表示されるはず
         currentX = tempX;
@@ -32,16 +27,13 @@ void DriveTrain::update()
     }
     else
     { //sensor mode
-        //X軸の２つの計測輪と取り付け位置からロボットの角度を計算する
-        XEncodedDistanceDiff = abs(tempX - tempSub);
-        currentYaw += (asin(XEncodedDistanceDiff / encoderAttachDiff)) * 180 / 3.1415;
 
         //X軸は計測輪,Y軸は測距センサで自己位置を計算する　※移動後Y軸現在位置を更新してあげる必要あり
-        currentX += ((tempX + tempSub) / 2) * cos(currentYaw * 3.1415 / 180);
+        //currentYaw = imu->gyro_Yaw();
+        currentX += tempX * cos(currentYaw * 3.1415 / 180);
         currentX += (tempY * sin(currentYaw * 3.1415 / 180));
         currentY = sensorDistance;
         XAxis_1->setDistance(0);
-        SubXAxis->setDistance(0);
         YAxis_1->setDistance(0);
     }
     //常に最新座標を受け取り続ける
@@ -74,7 +66,7 @@ void DriveTrain::update()
     }
 
     //statsにより出力の計算を切り替える
-    if (stats)
+    if (stats) //stats
     {
         if (-allocateError < errorX && errorX < allocateError)
         {
@@ -120,7 +112,7 @@ void DriveTrain::update()
         }
         else
         {
-            Vec[2] = mapFloat(errorYaw, -30, 30, -0.2, 0.2);
+            Vec[2] = mapFloat(errorYaw, -30, 30, -0.3, 0.3);
         }
     }
     else //ここに加速制御
@@ -218,7 +210,7 @@ void DriveTrain::update()
         }
         else
         {
-            Vec[2] = mapFloat(errorYaw, -30, 30, -0.2, 0.2);
+            Vec[2] = mapFloat(errorYaw, -30, 30, -0.3, 0.3);
         }
     }
 }
