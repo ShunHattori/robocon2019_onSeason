@@ -10,13 +10,15 @@
 #define USING_3WD
 
 //#define TEST_COURSE_1
-#define TEST_COURSE_2
+//#define TEST_COURSE_2
+//#define TEST_COURSE_GAME
+//#define TEST_COURSE_STRAIGHT
 //#define TEST_SL
 //#define IMUSENSOR_TEST
 //#define LOCATIONMANAGER_TEST
 //#define NEWHAVENDISPLAY_TEST
 //#define ZEAL_BTMODULE_TEST
-//#define LIDARLITE_TEST
+#define LIDARLITE_TEST
 //#define ENABLE_LCD_DEBUG
 //#define ENABLE_BOTTLE_FLIP
 
@@ -35,10 +37,10 @@
 #define ENCODER_ATTACHED_WHEEL_RADIUS_BY_NEXUS_ROBOT 5.0
 #define ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA 5.08
 #define DISTANCE_BETWEEN_ENCODER_WHEELS 72
-#define PERMIT_ERROR_CIRCLE_RADIUS 2 //3.5
-#define DECREASE_PWM_CIRCLE_RADIUS 120
-#define ESTIMATE_MAX_PWM 0.6
-#define ESTIMATE_MIN_PWM 0.07
+#define PERMIT_ERROR_CIRCLE_RADIUS 3.5 // 3.5
+#define DECREASE_PWM_CIRCLE_RADIUS 150
+#define ESTIMATE_MAX_PWM 0.64 // max:7.0, recommend:0.64
+#define ESTIMATE_MIN_PWM 0.09
 #define DRIVETRAIN_UPDATE_CYCLE 0.15
 
 #ifdef USING_4WD
@@ -90,8 +92,8 @@ void debug_LCD()
 #endif
 #ifdef LIDARLITE_TEST
 #include "LidarLite.h"
-#define LIDARLite1_SDA PB_9                        //SDA pin on 767ZI
-#define LIDARLite1_SCL PB_8                        //SCL pin on 767ZI
+#define LIDARLite1_SDA PF_15                       //SDA pin on 767ZI
+#define LIDARLite1_SCL PF_14                       //SCL pin on 767ZI
 LidarLite sensor1(LIDARLite1_SDA, LIDARLite1_SCL); //Define LIDAR Lite sensor 1
 Timer dt;
 #endif
@@ -125,26 +127,23 @@ int main()
 #endif
 #ifdef LIDARLITE_TEST
     dt.start();
+    //sensor1.refreshRange();
+    //sensor1.refreshVelocity();
+    sensor1.refreshRange();
+    PC.printf("range: %d cm, rate: %.2f Hz\n\r", sensor1.getRange_cm(), 1 / dt.read());
+    dt.reset();
+
+    robotLocation.addPoint(100, 0, 0);
+    robotLocation.sendNext(); //100,0が参照可能になる
+    accelAlgorithm.switchMode();
     while (1)
     {
-        //sensor1.refreshRange();
-        //sensor1.refreshVelocity();
+        accelAlgorithm.setSensorDistance(sensor1.getRange_cm());
+        wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+        driveWheel.apply(output);
+        PC.printf("%lf\r\n", accelAlgorithm.getCurrentYPosition());
         sensor1.refreshRange();
         PC.printf("range: %d cm, rate: %.2f Hz\n\r", sensor1.getRange_cm(), 1 / dt.read());
-        dt.reset();
-
-        robotLocation.addPoint(0, 100, 0);
-        robotLocation.sendNext(); //0,100が参照可能になる
-        accelAlgorithm.switchMode();
-        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
-        {
-            accelAlgorithm.setSensorDistance(sensor1.getRange_cm());
-            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
-            driveWheel.apply(output);
-            PC.printf("%d\r\n", accelAlgorithm.getCurrentYPosition());
-            sensor1.refreshRange();
-            PC.printf("range: %d cm, rate: %.2f Hz\n\r", sensor1.getRange_cm(), 1 / dt.read());
-        }
     }
 #endif
 
@@ -297,6 +296,154 @@ int main()
             driveWheel.apply(output);
         }
 #endif
+#ifdef TEST_COURSE_STRAIGHT
+        DigitalIn startButton(PG_2);
+        startButton.mode(PullUp);
+        while (1)
+        {
+            static bool buttonPressed = 0;
+            int buttonPressCount = 0;
+            for (int i = 0; i < 10000; i++)
+            {
+                buttonPressCount += !startButton.read();
+            }
+            if (buttonPressCount == 10000)
+            {
+                buttonPressed = 1;
+            }
+            if (buttonPressed)
+            {
+                buttonPressed = 0;
+                break;
+            }
+        }
+        robotLocation.addPoint(0, 600, 0); // 一度目のアプローチ
+        robotLocation.addPoint(0, 300, 0);
+        robotLocation.addPoint(0, 0, 0);
+        robotLocation.sendNext();
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+        for (int i = 0; i < 100; i++) //完全停止用
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(0, 0, 0, output);
+            driveWheel.apply(output);
+        }
+        wait(3);
+        robotLocation.sendNext();
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+        robotLocation.sendNext();
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+        for (int i = 0; i < 100; i++) //完全停止用
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(0, 0, 0, output);
+            driveWheel.apply(output);
+        }
+#endif
+#ifdef TEST_COURSE_GAME
+        DigitalIn startButton(PG_2);
+        startButton.mode(PullUp);
+        while (1)
+        {
+            static bool buttonPressed = 0;
+            int buttonPressCount = 0;
+            for (int i = 0; i < 10000; i++)
+            {
+                buttonPressCount += !startButton.read();
+            }
+            if (buttonPressCount == 10000)
+            {
+                buttonPressed = 1;
+            }
+            if (buttonPressed)
+            {
+                buttonPressed = 0;
+                break;
+            }
+        }
+        robotLocation.addPoint(0, 570, 0); // 一度目のアプローチ
+        robotLocation.addPoint(180, 570, 0);
+        robotLocation.addPoint(180, 630, 0);
+        robotLocation.addPoint(330, 630, 0);
+        robotLocation.addPoint(330, 570, 0);
+        robotLocation.addPoint(0, 570, 0); //フェンスに当たる可能性があるからあえて横にずらす
+        robotLocation.addPoint(0, 10, 0);
+        for (int i = 0; i < 7; i++)
+        {
+            robotLocation.sendNext();
+            while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+            {
+                accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+                wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+                driveWheel.apply(output);
+            }
+        }
+        for (int i = 0; i < 100; i++) //完全停止用
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(0, 0, 0, output);
+            driveWheel.apply(output);
+        }
+
+        while (1)
+        {
+            static bool buttonPressed = 0;
+            int buttonPressCount = 0;
+            for (int i = 0; i < 10000; i++)
+            {
+                buttonPressCount += !startButton.read();
+            }
+            if (buttonPressCount == 10000)
+            {
+                buttonPressed = 1;
+            }
+            if (buttonPressed)
+            {
+                buttonPressed = 0;
+                break;
+            }
+        }
+        robotLocation.addPoint(0, 370, 0); //二度目のアプローチ
+        robotLocation.addPoint(180, 370, 0);
+        robotLocation.addPoint(180, 430, 0);
+        robotLocation.addPoint(255, 430, 0);
+        robotLocation.addPoint(330, 430, 0);
+        robotLocation.addPoint(330, 370, 0);
+        robotLocation.addPoint(0, 370, 0); //フェンスに当たる可能性があるからあえて横にずらす
+        robotLocation.addPoint(0, 0, 0);
+        for (int i = 0; i < 8; i++)
+        {
+            robotLocation.sendNext();
+            while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+            {
+                accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+                wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+                driveWheel.apply(output);
+            }
+        }
+        for (int i = 0; i < 100; i++) //完全停止用
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(0, 0, 0, output);
+            driveWheel.apply(output);
+        }
+
+#endif //TEST_COURSE_GAME
     }
     while (1)
     {
