@@ -2,8 +2,8 @@
 
 void DriveTrain::update()
 {
-    xReachedMaxPWM = 0.45;
-    yReachedMaxPWM = 0.45;
+    xReachedMaxPWM = 0.3;
+    yReachedMaxPWM = 0.3;
     if (encoderMode)
     { //encoderMode
 

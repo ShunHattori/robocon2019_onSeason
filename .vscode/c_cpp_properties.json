@@ -1,11 +1,7 @@
 {
     "configurations": [
         {
-            "name": "!!! WARNING !!! AUTO-GENERATED FILE, PLEASE DO NOT MODIFY IT AND USE https://docs.platformio.org/page/projectconf/section_env_build.html#build-flags",
-            "intelliSenseMode": "msvc-x64",
-            "compilerPath": "C:\\Program Files\\LLVM\\bin\\clang.exe",
-            "cStandard": "c11",
-            "cppStandard": "c++17"
+            "name": "!!! WARNING !!! AUTO-GENERATED FILE, PLEASE DO NOT MODIFY IT AND USE https://docs.platformio.org/page/projectconf/section_env_build.html#build-flags"
         },
         {
             "name": "Win32",
@@ -27,13 +23,10 @@
                 "C:/Users/USER/.platformio/packages/framework-mbed/targets/TARGET_STM/TARGET_STM32F7/TARGET_STM32F767xI/device",
                 "C:/Users/USER/.platformio/packages/framework-mbed/targets/TARGET_STM/TARGET_STM32F7/device",
                 "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/dsp",
-                "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/features/unsupported/dsp",
                 "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/dsp/cmsis_dsp",
                 "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/dsp/dsp",
                 "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/rpc",
-                "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/features/unsupported/rpc",
                 "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBDevice",
-                "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/features/unsupported/USBDevice",
                 "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBDevice/USBAudio",
                 "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBDevice/USBDevice",
                 "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBDevice/USBHID",
@@ -42,7 +35,6 @@
                 "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBDevice/USBSerial",
                 "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBDevice/targets/TARGET_STM",
                 "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBHost",
-                "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/features/unsupported/USBHost",
                 "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBHost/USBHost",
                 "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBHost/USBHost3GModule",
                 "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBHost/USBHostHID",
@@ -76,13 +68,10 @@
                     "C:/Users/USER/.platformio/packages/framework-mbed/targets/TARGET_STM/TARGET_STM32F7/TARGET_STM32F767xI/device",
                     "C:/Users/USER/.platformio/packages/framework-mbed/targets/TARGET_STM/TARGET_STM32F7/device",
                     "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/dsp",
-                    "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/features/unsupported/dsp",
                     "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/dsp/cmsis_dsp",
                     "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/dsp/dsp",
                     "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/rpc",
-                    "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/features/unsupported/rpc",
                     "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBDevice",
-                    "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/features/unsupported/USBDevice",
                     "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBDevice/USBAudio",
                     "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBDevice/USBDevice",
                     "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBDevice/USBHID",
@@ -91,7 +80,6 @@
                     "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBDevice/USBSerial",
                     "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBDevice/targets/TARGET_STM",
                     "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBHost",
-                    "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/features/unsupported/USBHost",
                     "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBHost/USBHost",
                     "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBHost/USBHost3GModule",
                     "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBHost/USBHostHID",
@@ -106,7 +94,7 @@
                 ]
             },
             "defines": [
-                "PLATFORMIO=30606",
+                "PLATFORMIO=30607",
                 "STM32F767xx",
                 "ARM_MATH_CM7",
                 "COMPONENT_NSPE=1",
@@ -169,8 +157,7 @@
             ],
             "intelliSenseMode": "clang-x64",
             "cppStandard": "c++98",
-            "compilerPath": "C:/Users/USER/.platformio/packages/toolchain-gccarmnoneeabi/bin/arm-none-eabi-gcc.exe -mcpu=cortex-m7 -mthumb -mfpu=fpv5-d16 -mfloat-abi=softfp",
-            "cStandard": "c11"
+            "compilerPath": "\"C:/Users/USER/.platformio/packages/toolchain-gccarmnoneeabi/bin/arm-none-eabi-gcc.exe\" -mcpu=cortex-m7 -mthumb -mfpu=fpv5-d16 -mfloat-abi=softfp"
         }
     ],
     "version": 4
