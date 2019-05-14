@@ -30,7 +30,7 @@ public:
   double gyro_Yaw();                                                       //ジャイロセンサから算出したYaw軸の回転角を返す
   double compass_Yaw();                                                    //地磁気センサから算出したYaw軸の回転角を返す
   double getYaw() { return yaw; }
-  double setYaw();
+  void setYaw(double targetYaw){ yaw = targetYaw; }
 
 private:
   I2C *i2c_;

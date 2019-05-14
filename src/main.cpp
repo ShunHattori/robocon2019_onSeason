@@ -871,7 +871,7 @@ int main()
         rojarArmCCW.period_us(100);
         while (1)
         { //展開
-            if (rojarArm.getPulses() < 1400) //1370 def
+            if (rojarArm.getPulses() < 1350) //1350 def
             {
                 rojarArmCW.write(0.35);
                 rojarArmCCW.write(0);
