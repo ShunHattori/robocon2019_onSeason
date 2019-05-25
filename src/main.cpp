@@ -11,9 +11,9 @@
 
 //#define TEST_COURSE_1
 //#define TEST_COURSE_2
-#define TEST_COURSE_GAME
+//#define TEST_COURSE_GAME
 //#define TEST_COURSE_STRAIGHT
-//#define TEST_SL
+#define TEST_SL
 //#define TEST_MECA_SHEET
 //#define TEST_ROJAR_ENCODER
 //#define TEST_SHEET_LAUNCH_ENCODER
@@ -33,6 +33,8 @@
 //#define LIDARLITE_TEST
 //#define ENABLE_LCD_DEBUG
 //#define ENABLE_BOTTLE_FLIP
+
+//#define TEST_SWITCHING_ALL_MECA_BY_BUTTON
 
 /***********************************************************/
 /*
@@ -76,7 +78,7 @@ MPU9250 IMU;
 QEI encoder_XAxis_1(PE_9, PF_13, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X2_ENCODING);
 QEI encoder_YAxis_1(PB_5, PC_7, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X2_ENCODING);
 MWodometry odometry_XAxis_1(encoder_XAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA);
-MWodometry odometry_YAxis_1(encoder_YAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA);
+MWodometry odometry_YAxis_1(encoder_YAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA/2);
 LocationManager<int> robotLocation(0, 0, 0);
 DriveTrain accelAlgorithm(robotLocation, odometry_XAxis_1, odometry_YAxis_1, IMU, PERMIT_ERROR_CIRCLE_RADIUS, DECREASE_PWM_CIRCLE_RADIUS);
 Ticker updateOutput;
@@ -84,7 +86,7 @@ Ticker updateOutput;
 /***********************************************************/
 
 Serial PC(USBTX, USBRX);
-DigitalOut IMUReady(LED2);
+DigitalOut IMUReady(LED3);
 
 #ifdef ENABLE_LCD_DEBUG
 NewHavenDisplay LCDmanager(LCD);
@@ -871,7 +873,7 @@ int main()
         rojarArmCCW.period_us(100);
         while (1)
         {                                    //展開
-            if (rojarArm.getPulses() < 2600) //1350 def //2600 max
+            if (rojarArm.getPulses() < 1280) //1310 def //2600 max
             {
                 rojarArmCW.write(0.35);
                 rojarArmCCW.write(0);
@@ -891,7 +893,7 @@ int main()
         while (1)
         {                                                         //シーツかける
             PC.printf("ENCODER:%d\r\n", sheetLaunch.getPulses()); //-447
-            if (sheetLaunch.getPulses() < 1375)
+            if (sheetLaunch.getPulses() < 1510)
             {
                 sheetLaunchCW.write(0.85);
                 sheetLaunchCCW.write(0);
@@ -1041,7 +1043,7 @@ int main()
 #ifdef GAME_SHEET_1
         DigitalIn startButton(PG_2);
         startButton.mode(PullUp);
-        while (1)//シーツつかむの待機
+        while (1) //シーツつかむの待機
         {
             static bool buttonPressed = 0;
             int buttonPressCount = 0;
@@ -1182,7 +1184,7 @@ int main()
         sheetLaunchCW.period_us(100);
         sheetLaunchCCW.period_us(100);
         while (1) //シーツ掛ける
-        {                                                         //シーツかける
+        {         //シーツかける
             if (sheetLaunch.getPulses() < 1460)
             {
                 sheetLaunchCW.write(0.85);
@@ -1225,7 +1227,7 @@ int main()
         solenoidscissorsPull = 1;
         wait(0.4);
         solenoidscissorsPull = 0;
-        robotLocation.addPoint(-330, -645, 0);//シーツ広げる
+        robotLocation.addPoint(-330, -645, 0); //シーツ広げる
         robotLocation.sendNext();
         while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
         {
@@ -1341,6 +1343,277 @@ int main()
         {
         }
 #endif
+#ifdef TEST_SWITCHING_ALL_MECA_BY_BUTTON
+        DigitalIn startButton(PG_2);
+        DigitalIn userButton(USER_BUTTON);
+        startButton.mode(PullUp);
+        userButton.mode(PullDown);
+        DigitalOut figLED1(LED1);
+        DigitalOut figLED2(LED2);
+        uint8_t currentMode = 0;
+        while (1)
+        {
+
+            static bool prevStats = 0, userButtonPressed = 0;
+            int userButtonPressCount = 0;
+            for (int i = 0; i < 10000; i++)
+            {
+                userButtonPressCount += userButton.read();
+            }
+            bool currentStats;
+            if (userButtonPressCount == 10000)
+            {
+                currentStats = 1;
+            }
+            if (userButtonPressCount == 0)
+            {
+                currentStats = 0;
+            }
+
+            if (prevStats != currentStats && currentStats)
+            {
+                currentMode++;
+            }
+            prevStats = currentStats;
+
+            if (currentMode == 0)
+            {
+                figLED1.write(1);
+                figLED2.write(0);
+            }
+            else if (currentMode == 1)
+            {
+                figLED1.write(0);
+                figLED2.write(1);
+            }
+            else if (currentMode == 2)
+            {
+                figLED1.write(1);
+                figLED2.write(1);
+            }
+
+            static bool buttonPressed = 0;
+            int buttonPressCount = 0;
+            for (int i = 0; i < 10000; i++)
+            {
+                buttonPressCount += !startButton.read();
+            }
+            if (buttonPressCount == 10000)
+            {
+                buttonPressed = 1;
+            }
+            if (buttonPressed)
+            {
+                buttonPressed = 0;
+                break;
+            }
+        }
+        PwmOut catchRightCW(PC_8);
+        PwmOut catchRightCCW(PC_9);
+        PwmOut catchLeftCW(PE_5);
+        PwmOut catchLeftCCW(PE_6);
+        catchRightCW.period_us(100);
+        catchRightCCW.period_us(100);
+        catchLeftCW.period_us(100);
+        catchLeftCCW.period_us(100);
+
+        catchRightCW.write(0.35); //閉じる
+        catchRightCCW.write(0);
+        catchLeftCW.write(0.35); //閉じる
+        catchLeftCCW.write(0);
+        wait(0.2);
+        catchRightCW.write(0.15);
+        catchRightCCW.write(0);
+        catchLeftCW.write(0.15);
+        catchLeftCCW.write(0);
+
+        QEI rojarArm(PG_0, PD_1, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X4_ENCODING);
+        PwmOut rojarArmCW(PF_9);
+        PwmOut rojarArmCCW(PF_7);
+        rojarArmCW.period_us(100);
+        rojarArmCCW.period_us(100);
+        while (1)
+        {                                    //展開
+            if (rojarArm.getPulses() < 1280) //1310 def //2600 max
+            {
+                rojarArmCW.write(0.35);
+                rojarArmCCW.write(0);
+            }
+            else
+            {
+                rojarArmCW.write(0);
+                rojarArmCCW.write(0);
+                break;
+            }
+        }
+        QEI sheetLaunch(PE_2, PD_11, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X4_ENCODING);
+        PwmOut sheetLaunchCW(PA_0);
+        PwmOut sheetLaunchCCW(PF_8);
+        sheetLaunchCW.period_us(100);
+        sheetLaunchCCW.period_us(100);
+        while (1)
+        {                                                         //シーツかける
+            PC.printf("ENCODER:%d\r\n", sheetLaunch.getPulses()); //-447
+            if (sheetLaunch.getPulses() < 1510)
+            {
+                sheetLaunchCW.write(0.85);
+                sheetLaunchCCW.write(0);
+            }
+            else
+            {
+                sheetLaunchCW.write(0);
+                sheetLaunchCCW.write(0);
+                break;
+            }
+        }
+        while (1)
+        { //縮小
+            if (sheetLaunch.getPulses() > 0)
+            {
+                sheetLaunchCW.write(0);
+                sheetLaunchCCW.write(0.85);
+            }
+            else
+            {
+                sheetLaunchCW.write(0);
+                sheetLaunchCCW.write(0);
+                break;
+            }
+        }
+
+        /*catchLeftCW.write(0); //進行方向のモータを開放
+        catchLeftCCW.write(0.3);
+        wait(0.5);
+        catchLeftCW.write(0.3); //閉じる
+        catchLeftCCW.write(0);
+        wait(0.5);*/
+        catchRightCW.write(0); //反対側を開放
+        catchRightCCW.write(0.4);
+        catchLeftCW.write(0.175);
+        catchLeftCCW.write(0);
+        wait(0.5);
+        catchRightCW.write(0);
+        catchRightCCW.write(0);
+        wait(0.3);
+        DigitalOut solenoidScissorsPush(PD_15);
+        DigitalOut solenoidscissorsPull(PF_12);
+        solenoidScissorsPush = 1;
+        wait(0.5);
+        solenoidScissorsPush = 0;
+        solenoidscissorsPull = 1;
+        wait(0.4);
+        solenoidscissorsPull = 0;
+        while (1)
+        {
+            static bool buttonPressed = 0;
+            int buttonPressCount = 0;
+            for (int i = 0; i < 10000; i++)
+            {
+                buttonPressCount += !startButton.read();
+            }
+            if (buttonPressCount == 10000)
+            {
+                buttonPressed = 1;
+            }
+            if (buttonPressed)
+            {
+                buttonPressed = 0;
+                break;
+            }
+        }
+        if (currentMode == 0)
+        {
+            robotLocation.addPoint(-37, 0, 0);
+        }
+        else if (currentMode == 1)
+        {
+            robotLocation.addPoint(-97, 0, 0);
+        }
+        else if (currentMode == 2)
+        {
+            robotLocation.addPoint(-230, 0, 0);
+        }
+
+        //robotLocation.addPoint(-230, 0, 0); // short -37 ,long -97, sheets -230
+        robotLocation.sendNext();
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+        for (int i = 0; i < 100; i++) //完全停止用
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(0, 0, 0, output);
+            driveWheel.apply(output);
+        }
+        //タオル離す
+        wait(0.3);
+        catchLeftCW.write(0); //開放
+        catchLeftCCW.write(0.7);
+        wait(0.2);
+        catchLeftCW.write(0);
+        catchLeftCCW.write(0);
+        wait(1);
+        while (1)
+        { //展開縮小
+            if (rojarArm.getPulses() > 80)
+            {
+                rojarArmCW.write(0);
+                rojarArmCCW.write(0.175);
+            }
+            else
+            {
+                rojarArmCW.write(0);
+                rojarArmCCW.write(0);
+                break;
+            }
+        }
+        while (1)
+        {
+            static bool buttonPressed = 0;
+            int buttonPressCount = 0;
+            for (int i = 0; i < 10000; i++)
+            {
+                buttonPressCount += !startButton.read();
+            }
+            if (buttonPressCount == 10000)
+            {
+                buttonPressed = 1;
+            }
+            if (buttonPressed)
+            {
+                buttonPressed = 0;
+                break;
+            }
+        }
+        robotLocation.addPoint(0, 0, 0);
+        //robotLocation.addPoint(-20, 10, 0);
+        robotLocation.sendNext();
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }                             /*
+        robotLocation.sendNext();
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }*/
+        for (int i = 0; i < 100; i++) //完全停止用
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(0, 0, 0, output);
+            driveWheel.apply(output);
+        }
+        while (1)
+        {
+        }
+#endif //TEST_SWITCHING_ALL_MECA_BY_BUTTON
     }
     while (1)
     {
