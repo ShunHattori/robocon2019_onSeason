@@ -6,14 +6,55 @@
 #include "QEI.h"
 #include "MPU9250.h"
 
+/*
+    使用中の足回りドライブの選択
+        USING_4WD➡4輪メカナム・オムニ用逆運動学計算プログラム
+        USING_3WD➡3輪オムニ用逆運動学計算プログラム
+    使用するドライブのコメントアウトを消去、未使用側をコメントアウトする。
+ */
 //#define USING_4WD
 #define USING_3WD
 
+/*
+    足回りパラメータ調整用テストコース
+        1.ロボットX軸方向に100cm移動（完全停止）
+        2.ロボットを原点位置に移動
+        3.ロボットを自己位置に固定
+ */
 //#define TEST_COURSE_1
+
+/*
+    足回りパラメータ調整用テストコース
+        1.ロボットY軸方向に100cm移動（完全停止）
+        2.ロボットを原点位置に移動
+        3.ロボットを自己位置に固定
+ */
 //#define TEST_COURSE_2
+
+/*
+    足回りパラメータ調整用テストコース（本番仕様）
+        1.ユーザーボタン入力待機(シーツ)
+        2.押下後目的地に移動
+        3.ユーザーボタン入力待機(バスタオル)
+        4.押下後目的地に移動
+ */
 //#define TEST_COURSE_GAME
+
+/*
+    足回りパラメータ調整用テストコース（長直線）
+        1.ユーザーボタン入力待機
+        2.y軸方向に600cm移動
+        3.一定時間後(3s)300cmに移動
+        4.原点に移動
+ */
 //#define TEST_COURSE_STRAIGHT
-#define TEST_SL
+
+/*
+    ロボットを位置を点(0,0,0)に固定する。
+    各軸計測輪・IMUセンサのテストに使用する。
+ */
+#define TEST_SELF_LOCALIZATION
+
 //#define TEST_MECA_SHEET
 //#define TEST_ROJAR_ENCODER
 //#define TEST_SHEET_LAUNCH_ENCODER
@@ -26,26 +67,66 @@
 //#define GAME_SHEET_1
 //#define TEST_FEET_LOOP
 //#define TEST_CATCH_MOTOR_STOLE
+
+/*
+    IMUセンサの値をシリアルモニタに出力する
+ */
 //#define IMUSENSOR_TEST
+
+/*
+    ロボットの自己位置・目標位置管理クラスのテスト
+        1.addPointメソッドによって座標地点の登録
+        2.sendNextメソッドによる目標座標の更新
+ */
 //#define LOCATIONMANAGER_TEST
+
+/*
+    LCDが通信可能かのテストコード
+        簡単な文字列とコマンドが送信・表示される
+ */
 //#define NEWHAVENDISPLAY_TEST
+
+/*
+    Zeal-S01無線モジュールの通信テスト
+    受信した内容は取り付けられたLCDによって表示される
+        required: inited LCD instance
+ */
 //#define ZEAL_BTMODULE_TEST
+
+/*
+    LIDAR-LITE V3HPの測定テスト
+    測距によって取得した値により距離が100cmになるように制御する
+ */
 //#define LIDARLITE_TEST
+
+/*
+    LCDによるデバッグを有効にする
+ */
 //#define ENABLE_LCD_DEBUG
+
+/*
+    LOCATIONMANAGER_TESTにおけるボトルフリップ機構の動作を有効にする
+ */
 //#define ENABLE_BOTTLE_FLIP
 
+/*
+　  マイコン(F767ZI)に取り付けられている青いスイッチによって動作シーケンスを切り替える。
+        0度押し➡バスタオル縦掛け
+        1度押し➡バスタオル横掛け
+        2度押し➡シーツ掛け
+    別に取りつけられているスイッチで動作開始。
+ */
 //#define TEST_SWITCHING_ALL_MECA_BY_BUTTON
 
-/***********************************************************/
 /*
-*   ENCODER_PULSE_PER_ROUND         :   取り付けエンコーダの分解能
-*   ENCODER_ATTACHED_WHEEL_RADIUS   :   計測輪の半径
-*   DISTANCE_BETWEEN_ENCODER_WHEELS :   同軸の計測輪取り付け距離
-*   PERMIT_ERROR_CIRCLE_RADIUS      :   停止地点の許容誤差判定円の半径
-*   DECREASE_PWM_CIRCLE_RADIUS      :   減速開始判定円の半径
-*   ESTIMATE_MAX_PWM                :   MDに出力される想定最大PWM
-*   ESTIMATE_MIN_PWM                :   MDに出力される想定最小PWM
-*   DRIVETRAIN_UPDATE_CYCLE         :   速度計算アルゴリズムの更新周期(s)
+    ENCODER_PULSE_PER_ROUND         :   取り付けエンコーダの分解能
+    ENCODER_ATTACHED_WHEEL_RADIUS   :   計測輪の半径
+    DISTANCE_BETWEEN_ENCODER_WHEELS :   同軸の計測輪取り付け距離
+    PERMIT_ERROR_CIRCLE_RADIUS      :   停止地点の許容誤差判定円の半径
+    DECREASE_PWM_CIRCLE_RADIUS      :   減速開始判定円の半径
+    ESTIMATE_MAX_PWM                :   MDに出力される想定最大PWM
+    ESTIMATE_MIN_PWM                :   MDに出力される想定最小PWM
+    DRIVETRAIN_UPDATE_CYCLE         :   速度計算アルゴリズムの更新周期(s)
 */
 #define ENCODER_PULSE_PER_ROUND 48
 #define ENCODER_ATTACHED_WHEEL_RADIUS_BY_NEXUS_ROBOT 5.0
@@ -78,16 +159,17 @@ MPU9250 IMU;
 QEI encoder_XAxis_1(PE_9, PF_13, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X2_ENCODING);
 QEI encoder_YAxis_1(PB_5, PC_7, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X2_ENCODING);
 MWodometry odometry_XAxis_1(encoder_XAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA);
-MWodometry odometry_YAxis_1(encoder_YAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA/2);
+MWodometry odometry_YAxis_1(encoder_YAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA / 2);
 LocationManager<int> robotLocation(0, 0, 0);
 DriveTrain accelAlgorithm(robotLocation, odometry_XAxis_1, odometry_YAxis_1, IMU, PERMIT_ERROR_CIRCLE_RADIUS, DECREASE_PWM_CIRCLE_RADIUS);
 Ticker updateOutput;
 
-/***********************************************************/
-
 Serial PC(USBTX, USBRX);
 DigitalOut IMUReady(LED3);
 
+/*
+    LCDによるデバッグを有効にする
+ */
 #ifdef ENABLE_LCD_DEBUG
 NewHavenDisplay LCDmanager(LCD);
 Ticker debugLCD;
@@ -102,6 +184,11 @@ void debug_LCD()
     LCD.printf("CV:%.2lf,%.2lf,%.2lf", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
 }
 #endif
+
+/*
+    LIDAR-LITE V3HPの測定テスト(初期化処理)
+    測距によって取得した値により距離が100cmになるように制御する
+ */
 #ifdef LIDARLITE_TEST
 #include "LidarLite.h"
 #define LIDARLite1_SDA PF_15                       //SDA pin on 767ZI
@@ -119,15 +206,27 @@ int main()
     updateOutput.attach(callback(&accelAlgorithm, &DriveTrain::update), DRIVETRAIN_UPDATE_CYCLE);
     wheel.setMaxPWM(ESTIMATE_MAX_PWM);
     IMUReady = 1;
+/*
+    IMUセンサの値をシリアルモニタに出力する
+ */
 #ifdef IMUSENSOR_TEST
     for (;;)
     {
         PC.printf("%.2lf\r\n", IMU.gyro_Yaw());
     }
 #endif
+
+/*
+    LCDによるデバッグを有効にする
+ */
 #ifdef ENABLE_LCD_DEBUG
     debugLCD.attach(debug_LCD, 0.2);
 #endif
+
+/*
+    LCDが通信可能かのテストコード
+        簡単な文字列とコマンドが送信・表示される
+ */
 #ifdef NEWHAVENDISPLAY_TEST
     LCDmanager.clear();
     LCDmanager.home();
@@ -137,6 +236,11 @@ int main()
     LCDmanager.setCursor(2, 5);
     LCD.printf("cursor moved");
 #endif
+
+/*
+    LIDAR-LITE V3HPの測定テスト
+    測距によって取得した値により距離が100cmになるように制御する
+ */
 #ifdef LIDARLITE_TEST
     dt.start();
     //sensor1.refreshRange();
@@ -165,7 +269,11 @@ int main()
 
     for (;;)
     {
-#ifdef TEST_SL
+/*
+    ロボットを位置を点(0,0,0)に固定する。
+    各軸計測輪・IMUセンサのテストに使用する。
+ */
+#ifdef TEST_SELF_LOCALIZATION
         robotLocation.addPoint(0, 0, 0);
         robotLocation.sendNext();
         while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
@@ -183,6 +291,12 @@ int main()
             driveWheel.apply(output);
         }
 #endif
+
+/*
+    Zeal-S01無線モジュールの通信テスト
+    受信した内容は取り付けられたLCDによって表示される
+        required: inited LCD instance
+ */
 #ifdef ZEAL_BTMODULE_TEST
 
         static char buffer[32];
@@ -213,6 +327,12 @@ int main()
             }
         }
 #endif
+
+/*
+    ロボットの自己位置・目標位置管理クラスのテスト
+        1.addPointメソッドによって座標地点の登録
+        2.sendNextメソッドによる目標座標の更新
+ */
 #ifdef LOCATIONMANAGER_TEST
         robotLocation.addPoint(130, 0, 0);
         robotLocation.addPoint(130, -90, 0);
@@ -263,8 +383,14 @@ int main()
         }
 #endif
 
+/*
+    足回りパラメータ調整用テストコース
+        1.ロボットX軸方向に100cm移動（完全停止）
+        2.ロボットを原点位置に移動
+        3.ロボットを自己位置に固定
+ */
 #ifdef TEST_COURSE_1
-        robotLocation.addPoint(100, 0, 45);
+        robotLocation.addPoint(100, 0, 0);
         robotLocation.addPoint(0, 0, 0);
         robotLocation.sendNext();
         while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
@@ -293,10 +419,16 @@ int main()
             driveWheel.apply(output);
         }
 #endif
-#ifdef TEST_COURSE_2
-        robotLocation.addPoint(0, 135, 0);
-        robotLocation.addPoint(0, 0, 0);
 
+/*
+    足回りパラメータ調整用テストコース
+        1.ロボットY軸方向に100cm移動（完全停止）
+        2.ロボットを原点位置に移動
+        3.ロボットを自己位置に固定
+ */
+#ifdef TEST_COURSE_2
+        robotLocation.addPoint(0, 100, 0);
+        robotLocation.addPoint(0, 0, 0);
         robotLocation.sendNext();
         while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
         {
@@ -304,7 +436,19 @@ int main()
             wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
             driveWheel.apply(output);
         }
-
+        for (int i = 0; i < 100; i++) //完全停止用
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(0, 0, 0, output);
+            driveWheel.apply(output);
+        }
+        robotLocation.sendNext();
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
         while (1)
         {
             accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
@@ -312,6 +456,14 @@ int main()
             driveWheel.apply(output);
         }
 #endif
+
+/*
+    足回りパラメータ調整用テストコース（長直線）
+        1.ユーザーボタン入力待機
+        2.y軸方向に600cm移動
+        3.一定時間後(3s)300cmに移動
+        4.原点に移動
+ */
 #ifdef TEST_COURSE_STRAIGHT
         DigitalIn startButton(PG_2);
         startButton.mode(PullUp);
@@ -371,6 +523,14 @@ int main()
             driveWheel.apply(output);
         }
 #endif
+
+/*
+    足回りパラメータ調整用テストコース（本番仕様）
+        1.ユーザーボタン入力待機(シーツ)
+        2.押下後目的地に移動
+        3.ユーザーボタン入力待機(バスタオル)
+        4.押下後目的地に移動
+ */
 #ifdef TEST_COURSE_GAME
         DigitalIn startButton(PG_2);
         startButton.mode(PullUp);
@@ -439,7 +599,7 @@ int main()
         robotLocation.addPoint(255, 430, 0);
         robotLocation.addPoint(330, 430, 0);
         robotLocation.addPoint(330, 370, 0);
-        robotLocation.addPoint(0, 370, 0); //フェンスに当たる可能性があるからあえて横にずらす
+        robotLocation.addPoint(0, 370, 0);
         robotLocation.addPoint(0, 0, 0);
         for (int i = 0; i < 8; i++)
         {
@@ -1343,6 +1503,13 @@ int main()
         {
         }
 #endif
+/*
+　  マイコン(F767ZI)に取り付けられている青いスイッチによって動作シーケンスを切り替える。
+        0度押し➡バスタオル縦掛け
+        1度押し➡バスタオル横掛け
+        2度押し➡シーツ掛け
+    別に取りつけられているスイッチで動作開始。
+ */
 #ifdef TEST_SWITCHING_ALL_MECA_BY_BUTTON
         DigitalIn startButton(PG_2);
         DigitalIn userButton(USER_BUTTON);
