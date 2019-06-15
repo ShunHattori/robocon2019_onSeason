@@ -3,3 +3,5 @@
 .piolibdeps
 .clang_complete
 .gcc-flags.json
+.vscode/.BROWSE.C_CPP.2.DB
+*.DB

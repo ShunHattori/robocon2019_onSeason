@@ -2,6 +2,8 @@
 
 void DriveTrain::update()
 {
+    xReachedMaxPWM = 0.3;
+    yReachedMaxPWM = 0.3;
     if (encoderMode)
     { //encoderMode
 
@@ -30,11 +32,13 @@ void DriveTrain::update()
 
         //X軸は計測輪,Y軸は測距センサで自己位置を計算する　※移動後Y軸現在位置を更新してあげる必要あり
         //currentYaw = imu->gyro_Yaw();
-        currentX += tempX * cos(currentYaw * 3.1415 / 180);
-        currentX += (tempY * sin(currentYaw * 3.1415 / 180));
-        currentY = sensorDistance;
+        tempX = XAxis_1->getDistance();
         XAxis_1->setDistance(0);
+        tempY = YAxis_1->getDistance();
         YAxis_1->setDistance(0);
+        currentY += tempY * cos(currentYaw * 3.1415 / 180);
+        currentY += tempX * sin(currentYaw * 3.1415 / 180);
+        currentX = sensorDistance;
     }
     //常に最新座標を受け取り続ける
     targetX = LCM->getXLocationData();
@@ -122,12 +126,12 @@ void DriveTrain::update()
         {
             if (0 < errorX) //increase P control
             {
-                Vec[0] += 0.05;
+                Vec[0] += 0.055;
                 xReachedMaxPWM = Vec[0];
             }
             else
             {
-                Vec[0] -= 0.05;
+                Vec[0] -= 0.055;
                 xReachedMaxPWM = -Vec[0];
             }
             if (Vec[0] > Max) //constrain
@@ -165,12 +169,12 @@ void DriveTrain::update()
         {
             if (0 < errorY) //increase P control
             {
-                Vec[1] += 0.05;
+                Vec[1] += 0.055;
                 xReachedMaxPWM = Vec[1];
             }
             else
             {
-                Vec[1] -= 0.05;
+                Vec[1] -= 0.055;
                 xReachedMaxPWM = -Vec[1];
             }
             if (Vec[1] > Max) //constrain
