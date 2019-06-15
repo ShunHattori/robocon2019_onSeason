@@ -8,7 +8,7 @@
 
 class DriveTrain
 {
-  public:
+public:
     DriveTrain(LocationManager<int> &lcmObj, MWodometry &X1, MWodometry &Y1, MPU9250 &IMUobj, int AllocateError, int DecreaseRadius)
     {
         LCM = &lcmObj;
@@ -43,6 +43,26 @@ class DriveTrain
     bool getStats()
     {
         return stats;
+    }
+
+    /*
+     * desc:　  到達判定円の半径閾値変更
+     * param:   半径(int)
+     * return:  none
+     */
+    void setAllocateErrorCircleRadius(int radius)
+    {
+        allocateError = radius;
+    }
+
+    /*
+     * desc:　  減速開始判定円の半径閾値変更
+     * param:   半径(int)
+     * return:  none
+     */
+    void setDecreaseCircleRadius(int radius)
+    {
+        decreaseRadius = radius;
     }
 
     /*
@@ -129,7 +149,7 @@ class DriveTrain
         Min = min;
     }
 
-  private:
+private:
     LocationManager<int> *LCM;
     MWodometry *XAxis_1, *YAxis_1;
     Timer ConfirmStats;
@@ -144,7 +164,7 @@ class DriveTrain
      *   allocateError       :   停止地点の許容誤差
      *   decreaseRadius      :   減速開始判定円の半径
      */
-    double currentX, currentY, tempX, tempY,tempYaw;
+    double currentX, currentY, tempX, tempY, tempYaw;
     double targetX, targetY;
     double errorX, errorY, errorYaw;
     bool stats;

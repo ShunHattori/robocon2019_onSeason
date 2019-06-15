@@ -5,6 +5,7 @@
 #include "NewHavenDisplay.h"
 #include "QEI.h"
 #include "MPU9250.h"
+#include "Servo.h"
 
 /*
     使用中の足回りドライブの選択
@@ -53,7 +54,7 @@
     ロボットを位置を点(0,0,0)に固定する。
     各軸計測輪・IMUセンサのテストに使用する。
  */
-#define TEST_SELF_LOCALIZATION
+//#define TEST_SELF_LOCALIZATION
 
 //#define TEST_MECA_SHEET
 //#define TEST_ROJAR_ENCODER
@@ -64,7 +65,7 @@
 //#define TEST_SOLENOID_SEQ
 //#define TEST_SOL_SHEET
 //#define TEST_MOTOR_SHEET
-//#define GAME_SHEET_1
+#define GAME_SHEET_1
 //#define TEST_FEET_LOOP
 //#define TEST_CATCH_MOTOR_STOLE
 
@@ -134,7 +135,7 @@
 #define DISTANCE_BETWEEN_ENCODER_WHEELS 72
 #define PERMIT_ERROR_CIRCLE_RADIUS 3.5 // 3.5
 #define DECREASE_PWM_CIRCLE_RADIUS 150
-#define ESTIMATE_MAX_PWM 0.64 // max:0.7, recommend:0.64
+#define ESTIMATE_MAX_PWM 0.5 // max:0.7, recommend:0.64
 #define ESTIMATE_MIN_PWM 0.09
 #define DRIVETRAIN_UPDATE_CYCLE 0.15
 
@@ -159,7 +160,7 @@ MPU9250 IMU;
 QEI encoder_XAxis_1(PE_9, PF_13, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X2_ENCODING);
 QEI encoder_YAxis_1(PB_5, PC_7, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X2_ENCODING);
 MWodometry odometry_XAxis_1(encoder_XAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA);
-MWodometry odometry_YAxis_1(encoder_YAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA / 2);
+MWodometry odometry_YAxis_1(encoder_YAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA);
 LocationManager<int> robotLocation(0, 0, 0);
 DriveTrain accelAlgorithm(robotLocation, odometry_XAxis_1, odometry_YAxis_1, IMU, PERMIT_ERROR_CIRCLE_RADIUS, DECREASE_PWM_CIRCLE_RADIUS);
 Ticker updateOutput;
@@ -552,17 +553,17 @@ int main()
                 break;
             }
         }
-        robotLocation.addPoint(0, -570, 0); // 一度目のアプローチ
-        robotLocation.addPoint(-130, -570, 0);
-        robotLocation.addPoint(-130, -645, 0);
-        robotLocation.addPoint(-330, -645, 0);
-        robotLocation.addPoint(0, -550, 0);
+        robotLocation.addPoint(0, -500, 0); // 一度目のアプローチ
+        robotLocation.addPoint(100, -580, 0);
+        robotLocation.addPoint(330, -580, 0);
+        robotLocation.addPoint(0, -500, 0);
         robotLocation.addPoint(0, 0, 0);
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 5; i++)
         {
             robotLocation.sendNext();
             while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
             {
+                PC.printf("%lf,%lf,%lf\r\n", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), accelAlgorithm.getCurrentYawPosition());
                 accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
                 wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
                 driveWheel.apply(output);
@@ -1033,7 +1034,7 @@ int main()
         rojarArmCCW.period_us(100);
         while (1)
         {                                    //展開
-            if (rojarArm.getPulses() < 1280) //1310 def //2600 max
+            if (rojarArm.getPulses() < 1280) //1310 def //2850 max
             {
                 rojarArmCW.write(0.35);
                 rojarArmCCW.write(0);
@@ -1221,6 +1222,28 @@ int main()
                 break;
             }
         }
+        Servo catchLeftServo(PB_4);
+        Servo catchRightServo(PE_5);
+        catchRightServo.position(90);
+        catchLeftServo.position(-90);
+        wait(2);
+        /*
+        while (1)
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                catchRightServo = i / 100.0;
+                catchLeftServo = i / 100.0;
+                wait(0.01);
+            }
+            for (int i = 100; i > 0; i--)
+            {
+                catchRightServo = i / 100.0;
+                catchLeftServo = i / 100.0;
+                wait(0.01);
+            }
+        }*/
+        /*
         PwmOut catchRightCW(PC_8);
         PwmOut catchRightCCW(PC_9);
         PwmOut catchLeftCW(PE_5);
@@ -1239,7 +1262,7 @@ int main()
         catchLeftCW.write(0.10);
         catchLeftCCW.write(0);
         wait(1.0);
-
+        */
         while (1) //開始待機
         {
             static bool buttonPressed = 0;
@@ -1258,21 +1281,25 @@ int main()
                 break;
             }
         }
-        robotLocation.addPoint(0, -570, 0); // 一度目のアプローチ
+        robotLocation.addPoint(0, -500, 0); // 一度目のアプローチ
+        accelAlgorithm.setAllocateErrorCircleRadius(50);
         robotLocation.sendNext();
         while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
         {
+            PC.printf("%lf,%lf,%lf\r\n", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), accelAlgorithm.getCurrentYawPosition());
             accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
             wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
             driveWheel.apply(output);
         }
+        accelAlgorithm.setAllocateErrorCircleRadius(3.5);
+        accelAlgorithm.setDecreaseCircleRadius(100);
         //ロジャー展開開始
         QEI rojarArm(PG_0, PD_1, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X4_ENCODING);
         PwmOut rojarArmCW(PF_9);
         PwmOut rojarArmCCW(PF_7);
         rojarArmCW.period_us(50);
         rojarArmCCW.period_us(50);
-        if (rojarArm.getPulses() < 1350) //1350 def //2600 max
+        if (rojarArm.getPulses() < 2850) //1630 def //2850 max
         {
             rojarArmCW.write(0.35);
             rojarArmCCW.write(0);
@@ -1282,32 +1309,14 @@ int main()
             rojarArmCW.write(0);
             rojarArmCCW.write(0);
         }
-        robotLocation.addPoint(-130, -570, 0);
+        robotLocation.addPoint(125, -575, 0);
         robotLocation.sendNext();
         while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
         {
             accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
             wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
             driveWheel.apply(output);
-            if (rojarArm.getPulses() < 1350) //1350 def //2600 max
-            {
-                rojarArmCW.write(0.35);
-                rojarArmCCW.write(0);
-            }
-            else
-            {
-                rojarArmCW.write(0);
-                rojarArmCCW.write(0);
-            }
-        }
-        robotLocation.addPoint(-130, -645, 0);
-        robotLocation.sendNext();
-        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
-        {
-            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
-            wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
-            driveWheel.apply(output);
-            if (rojarArm.getPulses() < 1350) //1350 def //2600 max
+            if (rojarArm.getPulses() < 1630) //1630 def //2850 max
             {
                 rojarArmCW.write(0.35);
                 rojarArmCCW.write(0);
@@ -1326,9 +1335,10 @@ int main()
         }
         while (1) //ロジャー展開待ち
         {
-            if (rojarArm.getPulses() < 1350) //1350 def //2600 max
+            PC.printf("ENCODER:%d\r\n", rojarArm.getPulses());
+            if (rojarArm.getPulses() < 2850) //1630 def //2850 max
             {
-                rojarArmCW.write(0.35);
+                rojarArmCW.write(0.6);
                 rojarArmCCW.write(0);
             }
             else
@@ -1339,13 +1349,13 @@ int main()
             }
         }
         QEI sheetLaunch(PE_2, PD_11, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X4_ENCODING);
-        PwmOut sheetLaunchCW(PA_0);
-        PwmOut sheetLaunchCCW(PF_8);
+        PwmOut sheetLaunchCW(PF_8);
+        PwmOut sheetLaunchCCW(PA_0);
         sheetLaunchCW.period_us(100);
         sheetLaunchCCW.period_us(100);
         while (1) //シーツ掛ける
         {         //シーツかける
-            if (sheetLaunch.getPulses() < 1460)
+            if (sheetLaunch.getPulses() < 1500)
             {
                 sheetLaunchCW.write(0.85);
                 sheetLaunchCCW.write(0);
@@ -1362,7 +1372,7 @@ int main()
             if (sheetLaunch.getPulses() > 0)
             {
                 sheetLaunchCW.write(0);
-                sheetLaunchCCW.write(0.85);
+                sheetLaunchCCW.write(0.60);
             }
             else
             {
@@ -1371,7 +1381,24 @@ int main()
                 break;
             }
         }
-        catchRightCW.write(0); //反対側を開放
+        catchRightServo.position(20);
+        wait(1);
+        catchRightServo.position(-90);
+        wait(1);
+
+        PwmOut motorScissorsCW(PC_9);
+        PwmOut motorScissorsCCW(PC_8);
+        motorScissorsCW.period_ms(10);
+        motorScissorsCCW.period_ms(10);
+        motorScissorsCW.write(0.7);
+        motorScissorsCCW.write(0);
+        wait(0.6);
+        motorScissorsCW.write(0);
+        motorScissorsCCW.write(0.7);
+        wait(0.63);
+        motorScissorsCW.write(0);
+        motorScissorsCCW.write(0);
+        /*catchRightCW.write(0); //反対側を開放
         catchRightCCW.write(0.2);
         catchLeftCW.write(0.175);
         catchLeftCCW.write(0);
@@ -1386,8 +1413,8 @@ int main()
         solenoidScissorsPush = 0;
         solenoidscissorsPull = 1;
         wait(0.4);
-        solenoidscissorsPull = 0;
-        robotLocation.addPoint(-330, -645, 0); //シーツ広げる
+        solenoidscissorsPull = 0;*/
+        robotLocation.addPoint(330, -575, 0); //シーツ広げる
         robotLocation.sendNext();
         while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
         {
@@ -1395,6 +1422,9 @@ int main()
             wheel.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
             driveWheel.apply(output);
         }
+        catchLeftServo.position(-20);
+        wait(0.5);//足回り有効時は0.5
+        /*
         wait(0.3);
         catchLeftCW.write(0); //開放
         catchLeftCCW.write(0.7);
@@ -1402,7 +1432,9 @@ int main()
         catchLeftCW.write(0);
         catchLeftCCW.write(0);
         wait(0.5);
-        robotLocation.addPoint(0, -550, 0); //フェンスに当たる可能性があるからあえて横にずらす
+        */
+        accelAlgorithm.setAllocateErrorCircleRadius(20);
+        robotLocation.addPoint(0, -500, 0);
         robotLocation.sendNext();
         if (rojarArm.getPulses() > 0)
         {
@@ -1430,8 +1462,9 @@ int main()
                 rojarArmCCW.write(0);
             }
         }
-        //robotLocation.addPoint(330, 570, 0);
-        robotLocation.addPoint(0, -10, 0);
+        catchLeftServo.position(90);
+        accelAlgorithm.setAllocateErrorCircleRadius(3.5);
+        robotLocation.addPoint(0, 0, 0);
         robotLocation.sendNext();
         while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
         {
@@ -1455,6 +1488,20 @@ int main()
             wheel.getOutput(0, 0, 0, output);
             driveWheel.apply(output);
         }
+        /*　足回り動かさないときよう
+        while (1)
+        {
+            if (rojarArm.getPulses() > 0)
+            {
+                rojarArmCW.write(0);
+                rojarArmCCW.write(0.5);
+            }
+            else
+            {
+                rojarArmCW.write(0);
+                rojarArmCCW.write(0);
+            }
+        }*/
 #endif //GAME_SHEET_1
 #ifdef TEST_FEET_LOOP
         for (;;)
@@ -1601,7 +1648,7 @@ int main()
         rojarArmCCW.period_us(100);
         while (1)
         {                                    //展開
-            if (rojarArm.getPulses() < 1280) //1310 def //2600 max
+            if (rojarArm.getPulses() < 1280) //1310 def //2850 max
             {
                 rojarArmCW.write(0.35);
                 rojarArmCCW.write(0);
