@@ -8,7 +8,7 @@ public:
     /*
         PWM割り当てがされているピンx2, モータのpwm, 1回あたりの機構動作時間(s)
     */
-    Peg(PinName motorCW, PinName motorCCW, float pwm = 0.5, float movingTime = 2.5);
+    Peg(PinName motorCW, PinName motorCCW, float pwm, float movingTime);
 
     /*
         機構タスク追加, コンストラクタで指定した秒数分モータを回転させる
@@ -22,5 +22,7 @@ public:
 
 private:
     PwmOut *MotorCW, *MotorCCW;
+    Timer *timer;
     float maxPwm, timePerOnce;
+    bool taskFlag = false, extendFlag = false, reduceFlag = false;
 };

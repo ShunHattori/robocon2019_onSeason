@@ -9,7 +9,7 @@ public:
     /*
         サーボ用のPWM割り当てがされているピンx2
     */
-    ClothHold(PinName servoRight, PinName servoLeft);
+    ClothHold(PinName servoRightPin, PinName servoLeftPin);
 
     /*
         機構タスク追加, 洗濯物を離す(サーボを０度に動かす)
@@ -33,6 +33,7 @@ public:
 
 private:
     Servo *servoRight, *servoLeft;
+    bool runningModeRight, runningModeLeft; //1 = grasp, 0 = release
     const int8_t targetPosition[3] = {
         -90,
         0,

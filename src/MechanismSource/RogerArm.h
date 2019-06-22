@@ -1,25 +1,29 @@
 #pragma once
 
 #include "mbed.h"
-#include "SensorSource\QEI.h"
 
 class RogerArm
 {
 public:
     /*
-        PWM割り当てがされているピンx2, エンコーダ用の外部割込みピンx2
+        PWM割り当てがされているピンx2
      */
-    RogerArm(PinName motorCW, PinName motorCCW, PinName encA, PinName encB);
+    RogerArm(PinName motorCW, PinName motorCCW);
 
     /*
         現在の移動状況を取得する　(展開完了== 1, 展開中or展開不可 == 0)
      */
-    int stats(void);
+    bool stats(void);
 
     /*
         ロジャーアームの展開高さを設定する
      */
     void setHeight(int);
+
+    /*
+        エンコーダの値を入力するセッター
+     */
+    void setEncoderPulse(int);
 
     /*
         モータに印加するPWMを指定する
@@ -37,9 +41,8 @@ public:
     void update(void);
 
 private:
-    QEI *RogerEnc;
     PwmOut *MotorCW, *MotorCCW;
 
-    uint16_t heightTarget,heightCurrent;
+    int16_t heightTarget, heightCurrent;
     float pwm;
 };

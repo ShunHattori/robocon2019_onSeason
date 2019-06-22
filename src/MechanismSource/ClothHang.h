@@ -6,19 +6,24 @@ class ClothHang
 {
 public:
     /*
-        PWM割り当てがされているピンx2, エンコーダ用の外部割込みピンx2
+        PWM割り当てがされているピンx2
     */
-    ClothHang(PinName motorCW, PinName motorCCW, PinName encA, PinName encB);
+    ClothHang(PinName motorCW, PinName motorCCW);
 
     /*
         現在の移動状況を取得する　(移動完了== 1, 移動中 == 0)
      */
-    int stats(void);
+    bool stats(void);
 
     /*
         ハンガーの展開長さを指定する
      */
     void setLength(int);
+
+    /*
+        エンコーダの値を入力するセッター
+     */
+    void setEncoderPulse(int);
 
     /*
         モータに印加するPWMを指定する
@@ -32,6 +37,6 @@ public:
 
 private:
     PwmOut *MotorCW, *MotorCCW;
-    uint16_t lenghtTarget, lenghtCurrent;
+    int16_t lenghtTarget, lenghtCurrent;
     float pwm;
 };

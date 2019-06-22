@@ -12,7 +12,7 @@
     - OmniKinematics3WD
     - OmniKinematics4WD
   - MechanismSource
-    - ClothHang
+    - ClothHang -done
     - ClothHold
     - Peg
     - RogerArm
