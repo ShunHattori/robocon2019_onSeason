@@ -2,8 +2,8 @@
 
 void DriveTrain::update()
 {
-    xReachedMaxPWM = 0.3;
-    yReachedMaxPWM = 0.3;
+    xReachedMaxPWM = 0.25;
+    yReachedMaxPWM = 0.25;
     if (encoderMode)
     { //encoderMode
 
@@ -110,13 +110,13 @@ void DriveTrain::update()
                 Vec[1] = mapFloat(errorY, 0, decreaseRadius, Min, Max);
         }
 
-        if (-0.3 < errorYaw && errorYaw < 0.3)
+        if (-0.15 < errorYaw && errorYaw < 0.15)
         {
             Vec[2] = 0;
         }
         else
         {
-            Vec[2] = mapFloat(errorYaw, -30, 30, -0.3, 0.3);
+            Vec[2] = mapFloat(errorYaw, -30, 30, -0.15, 0.15);
         }
     }
     else //ここに加速制御
@@ -208,13 +208,13 @@ void DriveTrain::update()
             }
         }
 
-        if (-0.3 < errorYaw && errorYaw < 0.3) //for Yaw control
+        if (-0.15 < errorYaw && errorYaw < 0.15) //for Yaw control
         {
             Vec[2] = 0;
         }
         else
         {
-            Vec[2] = mapFloat(errorYaw, -30, 30, -0.3, 0.3);
+            Vec[2] = mapFloat(errorYaw, -30, 30, -0.15, 0.15);
         }
     }
 }
