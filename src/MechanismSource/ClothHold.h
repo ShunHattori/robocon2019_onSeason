@@ -26,17 +26,12 @@ public:
      */
     bool stats(char);
 
-    /*
-        追加された機構タスクを処理する
-     */
-    void update(void);
 
 private:
     Servo *servoRight, *servoLeft;
     bool runningModeRight, runningModeLeft; //1 = grasp, 0 = release
-    const int8_t targetPosition[3] = {
-        -90,
-        0,
-        90,
+    const float workingPattern[2] = {
+        1.0,
+        0.0,
     };
 };

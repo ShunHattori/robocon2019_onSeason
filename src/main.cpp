@@ -89,7 +89,12 @@
 /*
     位置情報をLCDに表示する
  */
-#define DEBUG_LCD
+//#define DEBUG_LCD
+
+/*
+    新型足回り制御テスト用コード
+ */
+#define TEST_DRIVE_NEWTYPE
 
 /*
 　  マイコン(F767ZI)に取り付けられている青いスイッチによって動作シーケンスを切り替える。
@@ -151,6 +156,73 @@ DigitalOut IMUisReadyLED(LED3);      //IMUセンサキャリブレーション�
 
 int main(void)
 {
+
+#ifdef TEST_DRIVE_NEWTYPE
+    Serial serialLCD(PC_6, NC, 9600);
+    NewHavenDisplay LCDDriver(serialLCD);
+    ClothHold holder(PE_5, PE_6); //right,leftServo
+    holder.release('r');
+    holder.release('l');
+    int numberOfWayPoint = 0;
+    STLinkTerminal.baud(9600);
+    IMU.setup(PB_9, PB_8);
+    IMUisReadyLED.write(1);
+    accelAlgorithm.setMaxOutput(ESTIMATE_MAX_PWM);
+    accelAlgorithm.setMinOutput(ESTIMATE_MIN_PWM);
+    OmniKinematics.setMaxPWM(ESTIMATE_MAX_PWM);
+    robotLocation.addPoint(0, -100, 0);
+    robotLocation.addPoint(100, -100, 0);
+    robotLocation.addPoint(0, 0, 0);
+    robotLocation.sendNext();
+    while (1)
+    {
+        if (robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            numberOfWayPoint++;
+            switch (numberOfWayPoint)
+            {
+            case 1:
+                holder.release('r');
+                holder.release('l');
+                break;
+
+            case 2:
+                holder.grasp('r');
+                holder.grasp('l');
+                break;
+
+            case 3:
+                holder.release('r');
+                holder.release('l');
+                LCDDriver.clear();
+                while (1)
+                {
+                    serialLCD.printf("sequence done");
+                }
+                break;
+            default:
+                LCDDriver.clear();
+                while (1)
+                {
+                    serialLCD.printf("WayPoint ERROR");
+                }
+                break;
+            }
+            robotLocation.sendNext();
+        }
+        accelAlgorithm.update();
+        accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+        OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+        driveWheel.apply(output);
+        LCDDriver.clear();
+        LCDDriver.home();
+        serialLCD.printf("%d,%d,%d", robotLocation.getXLocationData(), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
+        LCDDriver.setCursor(2, 0);
+        serialLCD.printf("%.1lf,%.1lf,%.1lf", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), accelAlgorithm.getCurrentYawPosition());
+    }
+#endif //TEST_DRIVE_NEWTYPE
+
+#ifndef TEST_DRIVE_NEWTYPE
     STLinkTerminal.baud(9600);
     IMU.setup(PB_9, PB_8);
     IMUisReadyLED.write(1);
@@ -158,6 +230,7 @@ int main(void)
     accelAlgorithm.setMinOutput(ESTIMATE_MIN_PWM);
     updateOutput.attach(callback(&accelAlgorithm, &DriveTrain::update), DRIVETRAIN_UPDATE_CYCLE);
     OmniKinematics.setMaxPWM(ESTIMATE_MAX_PWM);
+#endif //TEST_DRIVE_NEWTYPE
 
 #ifdef MECA_CLASS_DEBUG
 
