@@ -160,6 +160,12 @@ int main(void)
 #ifdef TEST_DRIVE_NEWTYPE
     Serial serialLCD(PC_6, NC, 9600);
     NewHavenDisplay LCDDriver(serialLCD);
+    Timer LCDtimer;
+    LCDtimer.start();
+    serialLCD.printf("WAITING...");
+    DigitalIn startButton(PG_2);
+    startButton.mode(PullUp);
+    int initialButtonPressToken = 1, startButtonPressedFlag = 0;
     ClothHold holder(PE_5, PE_6); //right,leftServo
     holder.release('r');
     holder.release('l');
@@ -173,10 +179,47 @@ int main(void)
     robotLocation.addPoint(0, -100, 0);
     robotLocation.addPoint(100, -100, 0);
     robotLocation.addPoint(0, 0, 0);
-    robotLocation.sendNext();
     while (1)
     {
-        if (robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        if (initialButtonPressToken)
+        {
+            static bool buttonPressed = 0;
+            int buttonPressCount = 0;
+            for (int i = 0; i < 50; i++)
+            {
+                buttonPressCount += !startButton.read();
+            }
+            if (buttonPressCount == 50)
+            {
+                buttonPressed = 1;
+            }
+            if (buttonPressed)
+            {
+                buttonPressed = 0;
+                startButtonPressedFlag = 1;
+            }
+            if (startButtonPressedFlag && initialButtonPressToken)
+            {
+                initialButtonPressToken = 0;
+                robotLocation.sendNext();
+            }
+        }
+        accelAlgorithm.update();
+        accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+        OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+        driveWheel.apply(output);
+        static unsigned long int prevDisplayed = 0;
+        if (((LCDtimer.read_ms() - prevDisplayed) > 40) && !initialButtonPressToken) //about 24Hz flash rate
+        {
+            LCDDriver.clear();
+            LCDDriver.home();
+            serialLCD.printf("%d %d %d", robotLocation.getXLocationData(), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
+            LCDDriver.setCursor(2, 0);
+            serialLCD.printf("%.1lf %.1lf %.1lf", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
+            prevDisplayed = LCDtimer.read_ms();
+        }
+
+        if (robotLocation.checkMovingStats(accelAlgorithm.getStats()) && !initialButtonPressToken)
         {
             numberOfWayPoint++;
             switch (numberOfWayPoint)
@@ -195,30 +238,25 @@ int main(void)
                 holder.release('r');
                 holder.release('l');
                 LCDDriver.clear();
+                serialLCD.printf("sequence done");
                 while (1)
                 {
-                    serialLCD.printf("sequence done");
+                    LCDDriver.setCursor(2, 0);
+                    accelAlgorithm.update();
+                    accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+                    serialLCD.printf("%.1lf %.1lf %.1lf", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
                 }
                 break;
             default:
                 LCDDriver.clear();
+                serialLCD.printf("WayPoint ERROR");
                 while (1)
                 {
-                    serialLCD.printf("WayPoint ERROR");
                 }
                 break;
             }
             robotLocation.sendNext();
         }
-        accelAlgorithm.update();
-        accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
-        OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
-        driveWheel.apply(output);
-        LCDDriver.clear();
-        LCDDriver.home();
-        serialLCD.printf("%d,%d,%d", robotLocation.getXLocationData(), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
-        LCDDriver.setCursor(2, 0);
-        serialLCD.printf("%.1lf,%.1lf,%.1lf", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), accelAlgorithm.getCurrentYawPosition());
     }
 #endif //TEST_DRIVE_NEWTYPE
 
@@ -339,7 +377,7 @@ int main(void)
         LCDDriver.home();
         serialLCD.printf("%d,%d,%d", robotLocation.getXLocationData(), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
         LCDDriver.setCursor(2, 0);
-        serialLCD.printf("%.1lf,%.1lf,%.1lf", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), accelAlgorithm.getCurrentYawPosition());
+        serialLCD.printf("%.1lf,%.1lf,%.1lf", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
         wait_ms(20);
     }
 #endif
