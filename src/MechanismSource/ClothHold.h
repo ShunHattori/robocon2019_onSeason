@@ -22,16 +22,21 @@ public:
     void grasp(char);
 
     /*
+    サーボをフリー状態にする
+    */
+    void free(char);
+
+    /*
         掴むハンドの移動状況を取得する(移動完了==1, 移動中==0)
      */
     bool stats(char);
 
-
 private:
     Servo *servoRight, *servoLeft;
+    PinName RightPin, LeftPin;
     bool runningModeRight, runningModeLeft; //1 = grasp, 0 = release
     const float workingPattern[2] = {
-        1.0,
         0.0,
+        1.0,
     };
 };

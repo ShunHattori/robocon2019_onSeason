@@ -53,6 +53,11 @@ void Servo::write(float percent)
     _p = clamp(percent, 0.0, 1.0);
 }
 
+void Servo::free()
+{
+    _pwm.write(0);
+}
+
 void Servo::position(float degrees)
 {
     float offset = _range * (degrees / _degrees);

@@ -18,6 +18,16 @@ public:
     *   return: none
     */
   void apply(float pwm[3]);
+  
+  /*
+    *   desc:   MDにかかる最大PWMを設定
+    *   param:  maxPWM(float)
+    *   return: none
+    */
+  void setMaxPWM(float maxPwm)
+  {
+    maxAllocateOutput = maxPwm;
+  }
 
 private:
   PinName FCWPin, FCCWPin, BRCWPin, BRCCWPin, BLCWPin, BLCCWPin;
@@ -25,6 +35,7 @@ private:
   float duty[3];
 
   static const float RCconstant = 0.7;
+  float maxAllocateOutput;
   float prevPWM[3];
 
   float absFloat(float);

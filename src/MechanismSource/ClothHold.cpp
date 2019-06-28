@@ -2,6 +2,7 @@
 
 ClothHold::ClothHold(PinName servoRightPin, PinName servoLeftPin)
 {
+
     servoRight = new Servo(servoRightPin);
     servoLeft = new Servo(servoLeftPin);
     servoRight->calibrate(0.0006F, 90.0F);
@@ -39,6 +40,23 @@ void ClothHold::grasp(char whichServo)
         runningModeLeft = 1;
         servoLeft->write(workingPattern[0]); //数字は適当
         break;
+    default:
+        break;
+    }
+}
+
+void ClothHold::free(char whichServo)
+{
+    switch (whichServo)
+    {
+    case 'r':
+        servoRight->free();
+        break;
+
+    case 'l':
+        servoLeft->free();
+        break;
+
     default:
         break;
     }

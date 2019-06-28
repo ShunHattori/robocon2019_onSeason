@@ -65,6 +65,11 @@ public:
      */
     void write(float percent);
 
+    /**
+     * set Servo to free
+     */
+    void free();
+
     /**  Read the servo motors current position
      *
      * @param returns A normalised number 0.0-1.0  representing the full range.

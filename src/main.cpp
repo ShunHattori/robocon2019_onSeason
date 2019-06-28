@@ -94,7 +94,12 @@
 /*
     新型足回り制御テスト用コード
  */
-#define TEST_DRIVE_NEWTYPE
+//#define TEST_DRIVE_NEWTYPE
+
+/*
+    ゲーム用新型足回り制御
+ */
+#define GAME_DRIVE_NEWTYPE
 
 /*
 　  マイコン(F767ZI)に取り付けられている青いスイッチによって動作シーケンスを切り替える。
@@ -119,9 +124,9 @@
 #define ENCODER_ATTACHED_WHEEL_RADIUS_BY_NEXUS_ROBOT 5.0
 #define ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA 5.08
 #define DISTANCE_BETWEEN_ENCODER_WHEELS 72
-#define PERMIT_ERROR_CIRCLE_RADIUS 4.0 // 3.5
+#define PERMIT_ERROR_CIRCLE_RADIUS 3.2 // 3.5
 #define DECREASE_PWM_CIRCLE_RADIUS 150
-#define ESTIMATE_MAX_PWM 0.4 // max:0.7, recommend:0.64
+#define ESTIMATE_MAX_PWM 0.3 // max:0.7, recommend:0.64
 #define ESTIMATE_MIN_PWM 0.1
 #define DRIVETRAIN_UPDATE_CYCLE 0.13
 
@@ -156,6 +161,232 @@ DigitalOut IMUisReadyLED(LED3);      //IMUセンサキャリブレーション�
 
 int main(void)
 {
+#ifdef GAME_DRIVE_NEWTYPE
+    Serial serialLCD(PC_6, NC, 9600);
+    NewHavenDisplay LCDDriver(serialLCD);
+    Timer LCDtimer;
+    Timer clothHangertimer;
+    LCDtimer.start();
+    serialLCD.printf("WAITING...");
+    DigitalIn startButton(PG_2);
+    startButton.mode(PullUp);
+    int initialButtonPressToken = 1, startButtonPressedFlag = 0;
+    ClothHold holder(PE_5, PE_6); //right,leftServo
+    holder.free('r');
+    holder.free('l');
+    Peg pegAttacher(PC_9, PC_8, 0.8, 0.42); //pin ,pin pwm, time
+    ClothHang hanger(PF_8, PA_0);
+    hanger.setMaxPWM(0.85); //0.85
+    QEI clothHangEncoder(PE_2, PD_11, NC, 48, &QEITimer, QEI::X4_ENCODING);
+    RogerArm myArm(PF_7, PF_9);
+    myArm.setMaxPWM(0.92); //0.92
+    QEI rogerArmEncoder(PG_0, PD_1, NC, 48, &QEITimer, QEI::X4_ENCODING);
+    int numberOfWayPoint = 1;
+    STLinkTerminal.baud(9600);
+    IMU.setup(PB_9, PB_8);
+    IMUisReadyLED.write(1);
+    accelAlgorithm.setMaxOutput(ESTIMATE_MAX_PWM);
+    accelAlgorithm.setMinOutput(ESTIMATE_MIN_PWM);
+    OmniKinematics.setMaxPWM(ESTIMATE_MAX_PWM);
+    driveWheel.setMaxPWM(ESTIMATE_MAX_PWM);
+    robotLocation.addPoint(0, -500, 0);
+    robotLocation.addPoint(120, -570, 0);
+    robotLocation.addPoint(350, -570, 0);
+    robotLocation.addPoint(0, -500, 0);
+    robotLocation.addPoint(0, 0, 0);
+    while (1)
+    {
+        if (initialButtonPressToken)
+        {
+            static bool buttonPressed = 0;
+            int buttonPressCount = 0;
+            for (int i = 0; i < 50; i++)
+            {
+                buttonPressCount += !startButton.read();
+            }
+            if (buttonPressCount == 50)
+            {
+                buttonPressed = 1;
+            }
+            if (buttonPressed)
+            {
+                buttonPressed = 0;
+                startButtonPressedFlag = 1;
+            }
+            if (startButtonPressedFlag && initialButtonPressToken)
+            {
+                initialButtonPressToken = 0;
+                robotLocation.sendNext(); //機構テスト時はコメントアウト
+                holder.grasp('r');
+                holder.grasp('l');
+            }
+        }
+        myArm.setEncoderPulse(rogerArmEncoder.getPulses());
+        myArm.update();
+        pegAttacher.update();
+        hanger.setEncoderPulse(clothHangEncoder.getPulses());
+        hanger.update();
+        accelAlgorithm.update();
+        accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+        OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+        driveWheel.apply(output);
+        static unsigned long int prevDisplayed = 0;
+        if (((LCDtimer.read_ms() - prevDisplayed) > 40) && !initialButtonPressToken) //about 24Hz flash rate
+        {
+            LCDDriver.clear();
+            LCDDriver.home();
+            serialLCD.printf("%d %d %d", robotLocation.getXLocationData(), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
+            LCDDriver.setCursor(2, 0);
+            serialLCD.printf("%.1lf %.1lf %.1lf   ", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
+            prevDisplayed = LCDtimer.read_ms();
+        }
+        /*if (!initialButtonPressToken) //機構テスト
+        {
+            static int hangerHasDoneFlag = 0, initialHangerFlag = 1;
+            if (initialHangerFlag) //ロジャー展開後初めての処理
+            {
+                hanger.setLength(1000); //洗濯物掛ける
+                hanger.update();        //あとのstats判定のために一度状態を更新する
+                initialHangerFlag = 0;
+            }
+            if (hanger.stats() && !initialHangerFlag && !hangerHasDoneFlag)
+            {
+                hangerHasDoneFlag = 1;
+                hanger.setLength(0);
+                hanger.update();
+            }
+            if (hanger.stats() && hangerHasDoneFlag) //洗濯物が竿にかかっているだけの状態
+            {
+                static unsigned int seq = 1, timerStartFlag = 1;
+                if (timerStartFlag)
+                {
+                    clothHangertimer.start();
+                    timerStartFlag = 0;
+                }
+                if (0 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 1500 && seq == 1)
+                {
+                    holder.release('r');
+                    seq = 2;
+                }
+                if (1500 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 3000 && seq == 2)
+                {
+                    holder.grasp('r');
+                    seq = 3;
+                }
+                if (3000 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 4000 && seq == 3)
+                {
+                    pegAttacher.launch();
+                    seq = 4;
+                }
+                if (4000 < clothHangertimer.read_ms() && seq == 4)
+                {
+                    //robotLocation.sendNext(); //次の座標を送信
+                    //numberOfWayPoint++;
+                }
+            }
+        }*/
+
+        if (robotLocation.checkMovingStats(accelAlgorithm.getStats()) && !initialButtonPressToken)
+        {
+            switch (numberOfWayPoint)
+            {
+            case 1:
+                robotLocation.sendNext(); //三本目のポール少し手前の位置
+                myArm.setHeight(2850);
+                numberOfWayPoint++;
+                break;
+
+            case 2:
+                if (myArm.stats()) //ロジャーアーム展開完了
+                {
+                    static int hangerHasDoneFlag = 0, initialHangerFlag = 1;
+                    if (initialHangerFlag) //ロジャー展開後初めての処理
+                    {
+                        hanger.setLength(1000); //洗濯物掛ける
+                        hanger.update();        //あとのstats判定のために一度状態を更新する
+                        initialHangerFlag = 0;
+                    }
+                    if (hanger.stats() && !initialHangerFlag && !hangerHasDoneFlag)
+                    {
+                        hangerHasDoneFlag = 1;
+                        hanger.setLength(0);
+                        hanger.update();
+                    }
+                    if (hanger.stats() && hangerHasDoneFlag) //洗濯物が竿にかかっているだけの状態
+                    {
+                        static unsigned int seq = 1, timerStartFlag = 1;
+                        if (timerStartFlag)
+                        {
+                            clothHangertimer.start();
+                            timerStartFlag = 0;
+                        }
+                        if (0 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 1500 && seq == 1)
+                        {
+                            holder.release('r');
+                            seq = 2;
+                        }
+                        if (1500 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 3000 && seq == 2)
+                        {
+                            holder.grasp('r');
+                            seq = 3;
+                        }
+                        if (3000 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 4000 && seq == 3)
+                        {
+                            pegAttacher.launch();
+                            seq = 4;
+                        }
+                        if (4000 < clothHangertimer.read_ms() && seq == 4)
+                        {
+                            robotLocation.sendNext(); //次の座標を送信
+                            numberOfWayPoint++;
+                        }
+                    }
+                }
+                break;
+
+            case 3:
+                holder.release('l');
+                myArm.setHeight(0); //ロジャーアーム縮小
+                robotLocation.sendNext();
+                numberOfWayPoint++;
+                break;
+
+            case 4:
+                holder.grasp('r');
+                holder.grasp('l');
+                robotLocation.sendNext(); //三本目のポールの手前まで移動
+                numberOfWayPoint++;
+                break;
+
+            case 5:
+                if (myArm.stats())
+                {
+                    robotLocation.sendNext(); //最初の位置に戻る
+                    numberOfWayPoint++;
+                }
+                break;
+            case 6:
+                LCDDriver.clear();
+                serialLCD.printf("seq has done");
+                while (1)
+                {
+                    LCDDriver.setCursor(2, 0);
+                    accelAlgorithm.update();
+                    accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+                    serialLCD.printf("%.1lf %.1lf %.1lf", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
+                }
+                break;
+            default:
+                LCDDriver.clear();
+                serialLCD.printf("WayPoint ERROR");
+                while (1)
+                {
+                }
+                break;
+            }
+        }
+    }
+#endif //GAME_DRIVE_NEWTYPE
 
 #ifdef TEST_DRIVE_NEWTYPE
     Serial serialLCD(PC_6, NC, 9600);
@@ -261,6 +492,7 @@ int main(void)
 #endif //TEST_DRIVE_NEWTYPE
 
 #ifndef TEST_DRIVE_NEWTYPE
+#ifndef GAME_DRIVE_NEWTYPE
     STLinkTerminal.baud(9600);
     IMU.setup(PB_9, PB_8);
     IMUisReadyLED.write(1);
@@ -268,6 +500,7 @@ int main(void)
     accelAlgorithm.setMinOutput(ESTIMATE_MIN_PWM);
     updateOutput.attach(callback(&accelAlgorithm, &DriveTrain::update), DRIVETRAIN_UPDATE_CYCLE);
     OmniKinematics.setMaxPWM(ESTIMATE_MAX_PWM);
+#endif
 #endif //TEST_DRIVE_NEWTYPE
 
 #ifdef MECA_CLASS_DEBUG

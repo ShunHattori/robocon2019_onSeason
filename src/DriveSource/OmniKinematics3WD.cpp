@@ -13,7 +13,7 @@ void OmniKinematics3WD::getOutput(float x, float y, float yaw, float pwm[3])
 
     //計算上の最大出力を求める
     float max = 0;
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 2; i++)
     {
         if (max < abs(pwm[i]))
             max = abs(pwm[i]);
@@ -24,7 +24,7 @@ void OmniKinematics3WD::getOutput(float x, float y, float yaw, float pwm[3])
     if (maxAllocateOutput < max)
     {
         rate = max / maxAllocateOutput;
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 2; i++)
         {
             pwm[i] = pwm[i] / rate;
         }
