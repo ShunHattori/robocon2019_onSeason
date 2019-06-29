@@ -4,6 +4,7 @@
 #include "DriveSource\DriveTrain.h"
 #include "SensorSource\QEI.h"
 #include "SensorSource\MPU9250.h"
+#include "SensorSource\DebounceSwitch.h"
 #include "MechanismSource\ClothHang.h"
 #include "MechanismSource\ClothHold.h"
 #include "MechanismSource\Peg.h"
@@ -99,7 +100,7 @@
 /*
     ゲーム用新型足回り制御
  */
-#define GAME_DRIVE_NEWTYPE
+//#define GAME_DRIVE_NEWTYPE
 
 /*
 　  マイコン(F767ZI)に取り付けられている青いスイッチによって動作シーケンスを切り替える。
@@ -168,8 +169,7 @@ int main(void)
     Timer clothHangertimer;
     LCDtimer.start();
     serialLCD.printf("WAITING...");
-    DigitalIn startButton(PG_2);
-    startButton.mode(PullUp);
+    DebounceSwitch startButton(PG_2, 'U'); //create object using pin "PG_2" with PullUpped
     int initialButtonPressToken = 1, startButtonPressedFlag = 0;
     ClothHold holder(PE_5, PE_6); //right,leftServo
     holder.free('r');
@@ -198,22 +198,8 @@ int main(void)
     {
         if (initialButtonPressToken)
         {
-            static bool buttonPressed = 0;
-            int buttonPressCount = 0;
-            for (int i = 0; i < 50; i++)
-            {
-                buttonPressCount += !startButton.read();
-            }
-            if (buttonPressCount == 50)
-            {
-                buttonPressed = 1;
-            }
-            if (buttonPressed)
-            {
-                buttonPressed = 0;
-                startButtonPressedFlag = 1;
-            }
-            if (startButtonPressedFlag && initialButtonPressToken)
+            startButton.update();
+            if (startButton.stats() && initialButtonPressToken)
             {
                 initialButtonPressToken = 0;
                 robotLocation.sendNext(); //機構テスト時はコメントアウト
@@ -229,6 +215,9 @@ int main(void)
         accelAlgorithm.update();
         accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
         OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+        //display current robot vectors (3-Axis) and calculated PWMs
+        STLinkTerminal.printf("CurrentVector:%.1lf %.1lf %.1lf  \t", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
+        STLinkTerminal.printf("CalculatedPWM:%.2f %.2f %.2f \r\n", output[0], output[1], output[2]);
         driveWheel.apply(output);
         static unsigned long int prevDisplayed = 0;
         if (((LCDtimer.read_ms() - prevDisplayed) > 40) && !initialButtonPressToken) //about 24Hz flash rate
@@ -303,7 +292,7 @@ int main(void)
                     if (initialHangerFlag) //ロジャー展開後初めての処理
                     {
                         hanger.setLength(1000); //洗濯物掛ける
-                        hanger.update();        //あとのstats判定のために一度状態を更新する
+                        hanger.update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
                         initialHangerFlag = 0;
                     }
                     if (hanger.stats() && !initialHangerFlag && !hangerHasDoneFlag)
