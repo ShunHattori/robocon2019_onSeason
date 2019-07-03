@@ -4,8 +4,8 @@ Peg::Peg(PinName motorCW, PinName motorCCW, float pwm = 0.5, float movingTime = 
 {
     MotorCW = new PwmOut(motorCW);
     MotorCCW = new PwmOut(motorCCW);
-    MotorCW->period_us(10);
-    MotorCCW->period_us(10);
+    MotorCW->period_us(50);
+    MotorCCW->period_us(50);
 
     timer = new Timer();
     timer->start();
@@ -37,7 +37,7 @@ void Peg::update(void)
             extendFlag = 0;
             reduceFlag = 1;
         }
-        else if (reduceFlag && timer->read() > (timePerOnce * 2) + 50){
+        else if (reduceFlag && timer->read() > (timePerOnce * 2) + 0.05){
             extendFlag = 0;
             reduceFlag = 0;
             taskFlag = 0;

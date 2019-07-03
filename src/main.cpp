@@ -100,7 +100,7 @@
 /*
     ゲーム用新型足回り制御
  */
-//#define GAME_DRIVE_NEWTYPE
+#define GAME_DRIVE_NEWTYPE
 
 /*
 　  マイコン(F767ZI)に取り付けられている青いスイッチによって動作シーケンスを切り替える。
@@ -126,8 +126,8 @@
 #define ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA 5.08
 #define DISTANCE_BETWEEN_ENCODER_WHEELS 72
 #define PERMIT_ERROR_CIRCLE_RADIUS 3.2 // 3.5
-#define DECREASE_PWM_CIRCLE_RADIUS 150
-#define ESTIMATE_MAX_PWM 0.3 // max:0.7, recommend:0.64
+#define DECREASE_PWM_CIRCLE_RADIUS 50  //150
+#define ESTIMATE_MAX_PWM 0.4           // max:0.7, recommend:0.64
 #define ESTIMATE_MIN_PWM 0.1
 #define DRIVETRAIN_UPDATE_CYCLE 0.13
 
@@ -171,15 +171,15 @@ int main(void)
     serialLCD.printf("WAITING...");
     DebounceSwitch startButton(PG_2, 'U'); //create object using pin "PG_2" with PullUpped
     int initialButtonPressToken = 1, startButtonPressedFlag = 0;
-    ClothHold holder(PE_5, PE_6); //right,leftServo
+    ClothHold holder(PE_5, PE_6); //right,leftServo //PE_5, PE_6
     holder.free('r');
     holder.free('l');
-    Peg pegAttacher(PC_9, PC_8, 0.8, 0.42); //pin ,pin pwm, time
-    ClothHang hanger(PF_8, PA_0);
-    hanger.setMaxPWM(0.85); //0.85
+    Peg pegAttacher(PC_9, PC_8, 0.5, 0.75); //pin ,pin pwm, time
+    ClothHang hanger(PF_8, PA_0);           //PF_8, PA_0
+    hanger.setMaxPWM(0.85);                 //0.85
     QEI clothHangEncoder(PE_2, PD_11, NC, 48, &QEITimer, QEI::X4_ENCODING);
-    RogerArm myArm(PF_7, PF_9);
-    myArm.setMaxPWM(0.92); //0.92
+    RogerArm myArm(PF_7, PF_9); //PF_7, PF_9->pe10
+    myArm.setMaxPWM(0.92);       //0.92
     QEI rogerArmEncoder(PG_0, PD_1, NC, 48, &QEITimer, QEI::X4_ENCODING);
     int numberOfWayPoint = 1;
     STLinkTerminal.baud(9600);
@@ -190,8 +190,9 @@ int main(void)
     OmniKinematics.setMaxPWM(ESTIMATE_MAX_PWM);
     driveWheel.setMaxPWM(ESTIMATE_MAX_PWM);
     robotLocation.addPoint(0, -500, 0);
-    robotLocation.addPoint(120, -570, 0);
-    robotLocation.addPoint(350, -570, 0);
+    robotLocation.addPoint(120, -550, 0);
+    robotLocation.addPoint(120, -575, 0);
+    robotLocation.addPoint(350, -575, 0);
     robotLocation.addPoint(0, -500, 0);
     robotLocation.addPoint(0, 0, 0);
     while (1)
@@ -216,8 +217,8 @@ int main(void)
         accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
         OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
         //display current robot vectors (3-Axis) and calculated PWMs
-        STLinkTerminal.printf("CurrentVector:%.1lf %.1lf %.1lf  \t", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
-        STLinkTerminal.printf("CalculatedPWM:%.2f %.2f %.2f \r\n", output[0], output[1], output[2]);
+        //STLinkTerminal.printf("CurrentVector:%.1lf %.1lf %.1lf  \t", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
+        //STLinkTerminal.printf("CalculatedPWM:%.2f %.2f %.2f \r\n", output[0], output[1], output[2]);
         driveWheel.apply(output);
         static unsigned long int prevDisplayed = 0;
         if (((LCDtimer.read_ms() - prevDisplayed) > 40) && !initialButtonPressToken) //about 24Hz flash rate
@@ -284,14 +285,19 @@ int main(void)
                 myArm.setHeight(2850);
                 numberOfWayPoint++;
                 break;
-
+            
             case 2:
+                robotLocation.sendNext(); //三本目のポール少し手前の位置
+                numberOfWayPoint++;
+                break;
+
+            case 3:
                 if (myArm.stats()) //ロジャーアーム展開完了
                 {
                     static int hangerHasDoneFlag = 0, initialHangerFlag = 1;
                     if (initialHangerFlag) //ロジャー展開後初めての処理
                     {
-                        hanger.setLength(1000); //洗濯物掛ける
+                        hanger.setLength(1520); //洗濯物掛ける //1000 for test , 1600 for max lenght
                         hanger.update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
                         initialHangerFlag = 0;
                     }
@@ -316,7 +322,7 @@ int main(void)
                         }
                         if (1500 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 3000 && seq == 2)
                         {
-                            holder.grasp('r');
+                            holder.center('r');
                             seq = 3;
                         }
                         if (3000 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 4000 && seq == 3)
@@ -333,28 +339,28 @@ int main(void)
                 }
                 break;
 
-            case 3:
+            case 4:
                 holder.release('l');
                 myArm.setHeight(0); //ロジャーアーム縮小
                 robotLocation.sendNext();
                 numberOfWayPoint++;
                 break;
 
-            case 4:
+            case 5:
                 holder.grasp('r');
                 holder.grasp('l');
                 robotLocation.sendNext(); //三本目のポールの手前まで移動
                 numberOfWayPoint++;
                 break;
 
-            case 5:
+            case 6:
                 if (myArm.stats())
                 {
                     robotLocation.sendNext(); //最初の位置に戻る
                     numberOfWayPoint++;
                 }
                 break;
-            case 6:
+            case 7:
                 LCDDriver.clear();
                 serialLCD.printf("seq has done");
                 while (1)

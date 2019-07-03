@@ -45,6 +45,21 @@ void ClothHold::grasp(char whichServo)
     }
 }
 
+void ClothHold::center(char whichServo)
+{
+    switch (whichServo)
+    {
+    case 'r':
+        servoRight->write(workingPattern[2]); //数字は適当
+        break;
+    case 'l':
+        servoLeft->write(workingPattern[3]); //数字は適当
+        break;
+    default:
+        break;
+    }
+}
+
 void ClothHold::free(char whichServo)
 {
     switch (whichServo)

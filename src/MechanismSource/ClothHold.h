@@ -22,6 +22,11 @@ public:
     void grasp(char);
 
     /*
+    
+     */
+    void center(char);
+
+    /*
     サーボをフリー状態にする
     */
     void free(char);
@@ -35,8 +40,10 @@ private:
     Servo *servoRight, *servoLeft;
     PinName RightPin, LeftPin;
     bool runningModeRight, runningModeLeft; //1 = grasp, 0 = release
-    const float workingPattern[2] = {
+    const float workingPattern[4] = {
         0.0,
         1.0,
+        0.75,
+        0.25,
     };
 };

@@ -16,12 +16,12 @@ MotorDriverAdapter3WD::MotorDriverAdapter3WD(PinName Fcw, PinName Fccw, PinName 
     BLR = new PwmOut(BLCWPin);
     BLN = new PwmOut(BLCCWPin);
 
-    FCR->period_us(40);
-    FCN->period_us(40);
-    BRR->period_us(40);
-    BRN->period_us(40);
-    BLR->period_us(40);
-    BLN->period_us(40);
+    FCR->period_us(50);
+    FCN->period_us(50);
+    BRR->period_us(50);
+    BRN->period_us(50);
+    BLR->period_us(50);
+    BLN->period_us(50);
 
     for (int i = 0; i < 3; i++)
     {
