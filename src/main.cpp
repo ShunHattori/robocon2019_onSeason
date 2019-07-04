@@ -152,7 +152,7 @@ MPU9250 IMU;
 QEI encoder_XAxis_1(PE_9, PF_13, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X2_ENCODING);
 QEI encoder_YAxis_1(PB_5, PC_7, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X2_ENCODING);
 MWodometry odometry_XAxis_1(encoder_XAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA);
-MWodometry odometry_YAxis_1(encoder_YAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA);
+MWodometry odometry_YAxis_1(encoder_YAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA/2);
 LocationManager<int> robotLocation(0, 0, 0);
 DriveTrain accelAlgorithm(robotLocation, odometry_XAxis_1, odometry_YAxis_1, IMU, PERMIT_ERROR_CIRCLE_RADIUS, DECREASE_PWM_CIRCLE_RADIUS);
 Ticker updateOutput;
@@ -176,10 +176,10 @@ int main(void)
     holder.free('l');
     Peg pegAttacher(PC_9, PC_8, 0.5, 0.75); //pin ,pin pwm, time
     ClothHang hanger(PF_8, PA_0);           //PF_8, PA_0
-    hanger.setMaxPWM(0.85);                 //0.85
+    hanger.setMaxPWM(0.3);                  //0.85
     QEI clothHangEncoder(PE_2, PD_11, NC, 48, &QEITimer, QEI::X4_ENCODING);
     RogerArm myArm(PF_7, PF_9); //PF_7, PF_9->pe10
-    myArm.setMaxPWM(0.92);       //0.92
+    myArm.setMaxPWM(0.96);      //0.92
     QEI rogerArmEncoder(PG_0, PD_1, NC, 48, &QEITimer, QEI::X4_ENCODING);
     int numberOfWayPoint = 1;
     STLinkTerminal.baud(9600);
@@ -282,22 +282,23 @@ int main(void)
             {
             case 1:
                 robotLocation.sendNext(); //三本目のポール少し手前の位置
-                myArm.setHeight(2850);
+                myArm.setHeight(2100);    //2100-洗濯物干し最適高さ , 2850-洗濯バサミ最適高さ
                 numberOfWayPoint++;
                 break;
-            
+
             case 2:
                 robotLocation.sendNext(); //三本目のポール少し手前の位置
                 numberOfWayPoint++;
                 break;
 
             case 3:
-                if (myArm.stats()) //ロジャーアーム展開完了
+                static int armPhase = 1, hangerHasDoneFlag = 0; //phase1=洗濯物掛ける, phase2=洗濯ばさみつける
+                if (myArm.stats() && armPhase == 1)             //ロジャーアーム展開完了
                 {
-                    static int hangerHasDoneFlag = 0, initialHangerFlag = 1;
+                    static int initialHangerFlag = 1;
                     if (initialHangerFlag) //ロジャー展開後初めての処理
                     {
-                        hanger.setLength(1520); //洗濯物掛ける //1000 for test , 1600 for max lenght
+                        hanger.setLength(1530); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
                         hanger.update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
                         initialHangerFlag = 0;
                     }
@@ -307,6 +308,17 @@ int main(void)
                         hanger.setLength(0);
                         hanger.update();
                     }
+                }
+                static int initialChangeHeightFlag = 1;
+                if (hanger.stats() && hangerHasDoneFlag && initialChangeHeightFlag)
+                {
+                    armPhase = 2;
+                    myArm.setHeight(2850);
+                    myArm.update();
+                    initialChangeHeightFlag = 0;
+                }
+                if (myArm.stats() && armPhase == 2)
+                {
                     if (hanger.stats() && hangerHasDoneFlag) //洗濯物が竿にかかっているだけの状態
                     {
                         static unsigned int seq = 1, timerStartFlag = 1;
