@@ -152,7 +152,7 @@ MPU9250 IMU;
 QEI encoder_XAxis_1(PE_9, PF_13, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X2_ENCODING);
 QEI encoder_YAxis_1(PB_5, PC_7, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X2_ENCODING);
 MWodometry odometry_XAxis_1(encoder_XAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA);
-MWodometry odometry_YAxis_1(encoder_YAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA/2);
+MWodometry odometry_YAxis_1(encoder_YAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA / 2);
 LocationManager<int> robotLocation(0, 0, 0);
 DriveTrain accelAlgorithm(robotLocation, odometry_XAxis_1, odometry_YAxis_1, IMU, PERMIT_ERROR_CIRCLE_RADIUS, DECREASE_PWM_CIRCLE_RADIUS);
 Ticker updateOutput;
@@ -176,7 +176,7 @@ int main(void)
     holder.free('l');
     Peg pegAttacher(PC_9, PC_8, 0.5, 0.75); //pin ,pin pwm, time
     ClothHang hanger(PF_8, PA_0);           //PF_8, PA_0
-    hanger.setMaxPWM(0.3);                  //0.85
+    hanger.setMaxPWM(0.6);                  //0.85
     QEI clothHangEncoder(PE_2, PD_11, NC, 48, &QEITimer, QEI::X4_ENCODING);
     RogerArm myArm(PF_7, PF_9); //PF_7, PF_9->pe10
     myArm.setMaxPWM(0.96);      //0.92
@@ -298,7 +298,7 @@ int main(void)
                     static int initialHangerFlag = 1;
                     if (initialHangerFlag) //ロジャー展開後初めての処理
                     {
-                        hanger.setLength(1530); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
+                        hanger.setLength(1330); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
                         hanger.update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
                         initialHangerFlag = 0;
                     }
@@ -312,10 +312,31 @@ int main(void)
                 static int initialChangeHeightFlag = 1;
                 if (hanger.stats() && hangerHasDoneFlag && initialChangeHeightFlag)
                 {
-                    armPhase = 2;
-                    myArm.setHeight(2850);
-                    myArm.update();
-                    initialChangeHeightFlag = 0;
+                    static unsigned int seq = 1, timerStartFlag = 1;
+                    if (timerStartFlag)
+                    {
+                        clothHangertimer.start();
+                        timerStartFlag = 0;
+                    }
+                    if (0 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 1500 && seq == 1)
+                    {
+                        holder.release('r');
+                        seq = 2;
+                    }
+                    if (1500 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 3000 && seq == 2)
+                    {
+                        holder.center('r');
+                        seq = 3;
+                    }
+                    if (seq == 3)
+                    {
+                        armPhase = 2;
+                        myArm.setHeight(2850);
+                        myArm.update();
+                        clothHangertimer.stop();
+                        clothHangertimer.reset();
+                        initialChangeHeightFlag = 0;
+                    }
                 }
                 if (myArm.stats() && armPhase == 2)
                 {
@@ -327,22 +348,12 @@ int main(void)
                             clothHangertimer.start();
                             timerStartFlag = 0;
                         }
-                        if (0 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 1500 && seq == 1)
-                        {
-                            holder.release('r');
-                            seq = 2;
-                        }
-                        if (1500 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 3000 && seq == 2)
-                        {
-                            holder.center('r');
-                            seq = 3;
-                        }
-                        if (3000 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 4000 && seq == 3)
+                        if (0 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 1700 && seq == 1)
                         {
                             pegAttacher.launch();
-                            seq = 4;
+                            seq = 2;
                         }
-                        if (4000 < clothHangertimer.read_ms() && seq == 4)
+                        if (1700 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 3000 && seq == 2)
                         {
                             robotLocation.sendNext(); //次の座標を送信
                             numberOfWayPoint++;
