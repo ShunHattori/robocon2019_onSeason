@@ -4,6 +4,7 @@
 #include "DriveSource\DriveTrain.h"
 #include "SensorSource\QEI.h"
 #include "SensorSource\MPU9250.h"
+#include "SensorSource\DebounceSwitch.h"
 #include "MechanismSource\ClothHang.h"
 #include "MechanismSource\ClothHold.h"
 #include "MechanismSource\Peg.h"
@@ -69,7 +70,7 @@
 //#define TEST_SHEET_LAUNCH_MOTOR
 //#define TEST_SHHET_LAUNCH
 //#define TEST_MOTOR_SHEET
-#define GAME_SHEET_1
+//#define GAME_SHEET_1
 //#define TEST_FEET_LOOP
 
 /*
@@ -85,6 +86,21 @@
     IMUセンサの値をシリアルモニタに出力する
  */
 //#define IMUSENSOR_TEST
+
+/*
+    位置情報をLCDに表示する
+ */
+//#define DEBUG_LCD
+
+/*
+    新型足回り制御テスト用コード
+ */
+//#define TEST_DRIVE_NEWTYPE
+
+/*
+    ゲーム用新型足回り制御
+ */
+#define GAME_DRIVE_NEWTYPE
 
 /*
 　  マイコン(F767ZI)に取り付けられている青いスイッチによって動作シーケンスを切り替える。
@@ -109,11 +125,11 @@
 #define ENCODER_ATTACHED_WHEEL_RADIUS_BY_NEXUS_ROBOT 5.0
 #define ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA 5.08
 #define DISTANCE_BETWEEN_ENCODER_WHEELS 72
-#define PERMIT_ERROR_CIRCLE_RADIUS 3.5 // 3.5
-#define DECREASE_PWM_CIRCLE_RADIUS 150
-#define ESTIMATE_MAX_PWM 0.3 // max:0.7, recommend:0.64
-#define ESTIMATE_MIN_PWM 0.09
-#define DRIVETRAIN_UPDATE_CYCLE 0.15
+#define PERMIT_ERROR_CIRCLE_RADIUS 3.2 // 3.5
+#define DECREASE_PWM_CIRCLE_RADIUS 50  //150
+#define ESTIMATE_MAX_PWM 0.4           // max:0.7, recommend:0.64
+#define ESTIMATE_MIN_PWM 0.1
+#define DRIVETRAIN_UPDATE_CYCLE 0.13
 
 #ifdef USING_4WD
 #include "DriveSource\OmniKinematics4WD.h"
@@ -136,7 +152,7 @@ MPU9250 IMU;
 QEI encoder_XAxis_1(PE_9, PF_13, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X2_ENCODING);
 QEI encoder_YAxis_1(PB_5, PC_7, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X2_ENCODING);
 MWodometry odometry_XAxis_1(encoder_XAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA);
-MWodometry odometry_YAxis_1(encoder_YAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA);
+MWodometry odometry_YAxis_1(encoder_YAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA / 2);
 LocationManager<int> robotLocation(0, 0, 0);
 DriveTrain accelAlgorithm(robotLocation, odometry_XAxis_1, odometry_YAxis_1, IMU, PERMIT_ERROR_CIRCLE_RADIUS, DECREASE_PWM_CIRCLE_RADIUS);
 Ticker updateOutput;
@@ -146,13 +162,364 @@ DigitalOut IMUisReadyLED(LED3);      //IMUセンサキャリブレーション�
 
 int main(void)
 {
+#ifdef GAME_DRIVE_NEWTYPE
+    Serial serialLCD(PC_6, NC, 9600);
+    NewHavenDisplay LCDDriver(serialLCD);
+    Timer LCDtimer;
+    Timer clothHangertimer;
+    LCDtimer.start();
+    serialLCD.printf("WAITING...");
+    DebounceSwitch startButton(PG_2, 'U'); //create object using pin "PG_2" with PullUpped
+    int initialButtonPressToken = 1, startButtonPressedFlag = 0;
+    ClothHold holder(PE_5, PE_6); //right,leftServo //PE_5, PE_6
+    holder.free('r');
+    holder.free('l');
+    Peg pegAttacher(PC_9, PC_8, 0.5, 0.75); //pin ,pin pwm, time
+    ClothHang hanger(PF_8, PA_0);           //PF_8, PA_0
+    hanger.setMaxPWM(0.6);                  //0.85
+    QEI clothHangEncoder(PE_2, PD_11, NC, 48, &QEITimer, QEI::X4_ENCODING);
+    RogerArm myArm(PF_7, PF_9); //PF_7, PF_9->pe10
+    myArm.setMaxPWM(0.96);      //0.92
+    QEI rogerArmEncoder(PG_0, PD_1, NC, 48, &QEITimer, QEI::X4_ENCODING);
+    int numberOfWayPoint = 1;
     STLinkTerminal.baud(9600);
-    /*IMU.setup(PB_9, PB_8);
+    IMU.setup(PB_9, PB_8);
+    IMUisReadyLED.write(1);
+    accelAlgorithm.setMaxOutput(ESTIMATE_MAX_PWM);
+    accelAlgorithm.setMinOutput(ESTIMATE_MIN_PWM);
+    OmniKinematics.setMaxPWM(ESTIMATE_MAX_PWM);
+    driveWheel.setMaxPWM(ESTIMATE_MAX_PWM);
+    robotLocation.addPoint(0, -500, 0);
+    robotLocation.addPoint(120, -550, 0);
+    robotLocation.addPoint(120, -575, 0);
+    robotLocation.addPoint(350, -575, 0);
+    robotLocation.addPoint(0, -500, 0);
+    robotLocation.addPoint(0, 0, 0);
+    while (1)
+    {
+        if (initialButtonPressToken)
+        {
+            startButton.update();
+            if (startButton.stats() && initialButtonPressToken)
+            {
+                initialButtonPressToken = 0;
+                robotLocation.sendNext(); //機構テスト時はコメントアウト
+                holder.grasp('r');
+                holder.grasp('l');
+            }
+        }
+        myArm.setEncoderPulse(rogerArmEncoder.getPulses());
+        myArm.update();
+        pegAttacher.update();
+        hanger.setEncoderPulse(clothHangEncoder.getPulses());
+        hanger.update();
+        accelAlgorithm.update();
+        accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+        OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+        //display current robot vectors (3-Axis) and calculated PWMs
+        //STLinkTerminal.printf("CurrentVector:%.1lf %.1lf %.1lf  \t", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
+        //STLinkTerminal.printf("CalculatedPWM:%.2f %.2f %.2f \r\n", output[0], output[1], output[2]);
+        driveWheel.apply(output);
+        static unsigned long int prevDisplayed = 0;
+        if (((LCDtimer.read_ms() - prevDisplayed) > 40) && !initialButtonPressToken) //about 24Hz flash rate
+        {
+            LCDDriver.clear();
+            LCDDriver.home();
+            serialLCD.printf("%d %d %d", robotLocation.getXLocationData(), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
+            LCDDriver.setCursor(2, 0);
+            serialLCD.printf("%.1lf %.1lf %.1lf   ", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
+            prevDisplayed = LCDtimer.read_ms();
+        }
+        /*if (!initialButtonPressToken) //機構テスト
+        {
+            static int hangerHasDoneFlag = 0, initialHangerFlag = 1;
+            if (initialHangerFlag) //ロジャー展開後初めての処理
+            {
+                hanger.setLength(1000); //洗濯物掛ける
+                hanger.update();        //あとのstats判定のために一度状態を更新する
+                initialHangerFlag = 0;
+            }
+            if (hanger.stats() && !initialHangerFlag && !hangerHasDoneFlag)
+            {
+                hangerHasDoneFlag = 1;
+                hanger.setLength(0);
+                hanger.update();
+            }
+            if (hanger.stats() && hangerHasDoneFlag) //洗濯物が竿にかかっているだけの状態
+            {
+                static unsigned int seq = 1, timerStartFlag = 1;
+                if (timerStartFlag)
+                {
+                    clothHangertimer.start();
+                    timerStartFlag = 0;
+                }
+                if (0 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 1500 && seq == 1)
+                {
+                    holder.release('r');
+                    seq = 2;
+                }
+                if (1500 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 3000 && seq == 2)
+                {
+                    holder.grasp('r');
+                    seq = 3;
+                }
+                if (3000 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 4000 && seq == 3)
+                {
+                    pegAttacher.launch();
+                    seq = 4;
+                }
+                if (4000 < clothHangertimer.read_ms() && seq == 4)
+                {
+                    //robotLocation.sendNext(); //次の座標を送信
+                    //numberOfWayPoint++;
+                }
+            }
+        }*/
+
+        if (robotLocation.checkMovingStats(accelAlgorithm.getStats()) && !initialButtonPressToken)
+        {
+            switch (numberOfWayPoint)
+            {
+            case 1:
+                robotLocation.sendNext(); //三本目のポール少し手前の位置
+                myArm.setHeight(2100);    //2100-洗濯物干し最適高さ , 2850-洗濯バサミ最適高さ
+                numberOfWayPoint++;
+                break;
+
+            case 2:
+                robotLocation.sendNext(); //三本目のポール少し手前の位置
+                numberOfWayPoint++;
+                break;
+
+            case 3:
+                static int armPhase = 1, hangerHasDoneFlag = 0; //phase1=洗濯物掛ける, phase2=洗濯ばさみつける
+                if (myArm.stats() && armPhase == 1)             //ロジャーアーム展開完了
+                {
+                    static int initialHangerFlag = 1;
+                    if (initialHangerFlag) //ロジャー展開後初めての処理
+                    {
+                        hanger.setLength(1330); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
+                        hanger.update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
+                        initialHangerFlag = 0;
+                    }
+                    if (hanger.stats() && !initialHangerFlag && !hangerHasDoneFlag)
+                    {
+                        hangerHasDoneFlag = 1;
+                        hanger.setLength(0);
+                        hanger.update();
+                    }
+                }
+                static int initialChangeHeightFlag = 1;
+                if (hanger.stats() && hangerHasDoneFlag && initialChangeHeightFlag)
+                {
+                    static unsigned int seq = 1, timerStartFlag = 1;
+                    if (timerStartFlag)
+                    {
+                        clothHangertimer.start();
+                        timerStartFlag = 0;
+                    }
+                    if (0 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 1500 && seq == 1)
+                    {
+                        holder.release('r');
+                        seq = 2;
+                    }
+                    if (1500 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 3000 && seq == 2)
+                    {
+                        holder.center('r');
+                        seq = 3;
+                    }
+                    if (seq == 3)
+                    {
+                        armPhase = 2;
+                        myArm.setHeight(2850);
+                        myArm.update();
+                        clothHangertimer.stop();
+                        clothHangertimer.reset();
+                        initialChangeHeightFlag = 0;
+                    }
+                }
+                if (myArm.stats() && armPhase == 2)
+                {
+                    if (hanger.stats() && hangerHasDoneFlag) //洗濯物が竿にかかっているだけの状態
+                    {
+                        static unsigned int seq = 1, timerStartFlag = 1;
+                        if (timerStartFlag)
+                        {
+                            clothHangertimer.start();
+                            timerStartFlag = 0;
+                        }
+                        if (0 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 1700 && seq == 1)
+                        {
+                            pegAttacher.launch();
+                            seq = 2;
+                        }
+                        if (1700 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 3000 && seq == 2)
+                        {
+                            robotLocation.sendNext(); //次の座標を送信
+                            numberOfWayPoint++;
+                        }
+                    }
+                }
+                break;
+
+            case 4:
+                holder.release('l');
+                myArm.setHeight(0); //ロジャーアーム縮小
+                robotLocation.sendNext();
+                numberOfWayPoint++;
+                break;
+
+            case 5:
+                holder.grasp('r');
+                holder.grasp('l');
+                robotLocation.sendNext(); //三本目のポールの手前まで移動
+                numberOfWayPoint++;
+                break;
+
+            case 6:
+                if (myArm.stats())
+                {
+                    robotLocation.sendNext(); //最初の位置に戻る
+                    numberOfWayPoint++;
+                }
+                break;
+            case 7:
+                LCDDriver.clear();
+                serialLCD.printf("seq has done");
+                while (1)
+                {
+                    LCDDriver.setCursor(2, 0);
+                    accelAlgorithm.update();
+                    accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+                    serialLCD.printf("%.1lf %.1lf %.1lf", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
+                }
+                break;
+            default:
+                LCDDriver.clear();
+                serialLCD.printf("WayPoint ERROR");
+                while (1)
+                {
+                }
+                break;
+            }
+        }
+    }
+#endif //GAME_DRIVE_NEWTYPE
+
+#ifdef TEST_DRIVE_NEWTYPE
+    Serial serialLCD(PC_6, NC, 9600);
+    NewHavenDisplay LCDDriver(serialLCD);
+    Timer LCDtimer;
+    LCDtimer.start();
+    serialLCD.printf("WAITING...");
+    DigitalIn startButton(PG_2);
+    startButton.mode(PullUp);
+    int initialButtonPressToken = 1, startButtonPressedFlag = 0;
+    ClothHold holder(PE_5, PE_6); //right,leftServo
+    holder.release('r');
+    holder.release('l');
+    int numberOfWayPoint = 0;
+    STLinkTerminal.baud(9600);
+    IMU.setup(PB_9, PB_8);
+    IMUisReadyLED.write(1);
+    accelAlgorithm.setMaxOutput(ESTIMATE_MAX_PWM);
+    accelAlgorithm.setMinOutput(ESTIMATE_MIN_PWM);
+    OmniKinematics.setMaxPWM(ESTIMATE_MAX_PWM);
+    robotLocation.addPoint(0, -100, 0);
+    robotLocation.addPoint(100, -100, 0);
+    robotLocation.addPoint(0, 0, 0);
+    while (1)
+    {
+        if (initialButtonPressToken)
+        {
+            static bool buttonPressed = 0;
+            int buttonPressCount = 0;
+            for (int i = 0; i < 50; i++)
+            {
+                buttonPressCount += !startButton.read();
+            }
+            if (buttonPressCount == 50)
+            {
+                buttonPressed = 1;
+            }
+            if (buttonPressed)
+            {
+                buttonPressed = 0;
+                startButtonPressedFlag = 1;
+            }
+            if (startButtonPressedFlag && initialButtonPressToken)
+            {
+                initialButtonPressToken = 0;
+                robotLocation.sendNext();
+            }
+        }
+        accelAlgorithm.update();
+        accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+        OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+        driveWheel.apply(output);
+        static unsigned long int prevDisplayed = 0;
+        if (((LCDtimer.read_ms() - prevDisplayed) > 40) && !initialButtonPressToken) //about 24Hz flash rate
+        {
+            LCDDriver.clear();
+            LCDDriver.home();
+            serialLCD.printf("%d %d %d", robotLocation.getXLocationData(), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
+            LCDDriver.setCursor(2, 0);
+            serialLCD.printf("%.1lf %.1lf %.1lf", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
+            prevDisplayed = LCDtimer.read_ms();
+        }
+
+        if (robotLocation.checkMovingStats(accelAlgorithm.getStats()) && !initialButtonPressToken)
+        {
+            numberOfWayPoint++;
+            switch (numberOfWayPoint)
+            {
+            case 1:
+                holder.release('r');
+                holder.release('l');
+                break;
+
+            case 2:
+                holder.grasp('r');
+                holder.grasp('l');
+                break;
+
+            case 3:
+                holder.release('r');
+                holder.release('l');
+                LCDDriver.clear();
+                serialLCD.printf("sequence done");
+                while (1)
+                {
+                    LCDDriver.setCursor(2, 0);
+                    accelAlgorithm.update();
+                    accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+                    serialLCD.printf("%.1lf %.1lf %.1lf", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
+                }
+                break;
+            default:
+                LCDDriver.clear();
+                serialLCD.printf("WayPoint ERROR");
+                while (1)
+                {
+                }
+                break;
+            }
+            robotLocation.sendNext();
+        }
+    }
+#endif //TEST_DRIVE_NEWTYPE
+
+#ifndef TEST_DRIVE_NEWTYPE
+#ifndef GAME_DRIVE_NEWTYPE
+    STLinkTerminal.baud(9600);
+    IMU.setup(PB_9, PB_8);
     IMUisReadyLED.write(1);
     accelAlgorithm.setMaxOutput(ESTIMATE_MAX_PWM);
     accelAlgorithm.setMinOutput(ESTIMATE_MIN_PWM);
     updateOutput.attach(callback(&accelAlgorithm, &DriveTrain::update), DRIVETRAIN_UPDATE_CYCLE);
-    OmniKinematics.setMaxPWM(ESTIMATE_MAX_PWM);*/
+    OmniKinematics.setMaxPWM(ESTIMATE_MAX_PWM);
+#endif
+#endif //TEST_DRIVE_NEWTYPE
 
 #ifdef MECA_CLASS_DEBUG
 
@@ -250,6 +617,19 @@ int main(void)
     while (1)
     {
         STLinkTerminal.printf("%.2lf\r\n", IMU.gyro_Yaw());
+    }
+#endif
+#ifdef DEBUG_LCD
+    Serial serialLCD(PC_6, NC, 9600);
+    NewHavenDisplay LCDDriver(serialLCD);
+    while (1)
+    {
+        LCDDriver.clear();
+        LCDDriver.home();
+        serialLCD.printf("%d,%d,%d", robotLocation.getXLocationData(), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
+        LCDDriver.setCursor(2, 0);
+        serialLCD.printf("%.1lf,%.1lf,%.1lf", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
+        wait_ms(20);
     }
 #endif
 
@@ -1093,7 +1473,8 @@ int main(void)
 #endif //TEST_MOTOR_SHEET
 
 #ifdef GAME_SHEET_1
-        //#define ENABLE_DRIVE
+//#define ENABLE_DRIVE
+#define ENABLE_SHEET_ONLY
         DigitalIn startButton(PG_2);
         startButton.mode(PullUp);
         const float rightGraspServo = 0.0F;
@@ -1102,6 +1483,7 @@ int main(void)
         const float leftReleaseServo = 0.0F;
         while (1) //シーツつかむの待機
         {
+            IMU.gyro_Yaw();
             static bool buttonPressed = 0;
             int buttonPressCount = 0;
             for (int i = 0; i < 10000; i++)
@@ -1118,8 +1500,8 @@ int main(void)
                 break;
             }
         }
-        Servo catchLeftServo(PE_5);
-        Servo catchRightServo(PB_13);
+        Servo catchLeftServo(PE_5);  //PE_5
+        Servo catchRightServo(PE_6); //PB_13 //暴走
         catchLeftServo.calibrate(0.0006F, 90.0F);
         catchRightServo.calibrate(0.0006F, 90.0F);
         /*while (1)
@@ -1142,6 +1524,7 @@ int main(void)
         wait(1.0);
         while (1) //開始待機
         {
+            IMU.gyro_Yaw();
             static bool buttonPressed = 0;
             int buttonPressCount = 0;
             for (int i = 0; i < 10000; i++)
@@ -1160,7 +1543,7 @@ int main(void)
         }
 #ifdef ENABLE_DRIVE
         robotLocation.addPoint(0, -500, 0); // 一度目のアプローチ
-        accelAlgorithm.setAllocateErrorCircleRadius(20);
+        //accelAlgorithm.setAllocateErrorCircleRadius(20);
         robotLocation.sendNext();
         while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
         {
@@ -1169,16 +1552,16 @@ int main(void)
             OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
             driveWheel.apply(output);
         }
-        accelAlgorithm.setAllocateErrorCircleRadius(3.5);
-        accelAlgorithm.setDecreaseCircleRadius(100);
+        //accelAlgorithm.setAllocateErrorCircleRadius(3.5);
+        //accelAlgorithm.setDecreaseCircleRadius(100);
 #endif
         //ロジャー展開開始
         QEI rojarArm(PG_0, PD_1, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X4_ENCODING);
         PwmOut rojarArmCW(PF_9);
         PwmOut rojarArmCCW(PF_7);
-        rojarArmCW.period_us(6);
-        rojarArmCCW.period_us(6);
-        const int tenkaisaizu = 2850;              //def 2850
+        rojarArmCW.period_us(40);
+        rojarArmCCW.period_us(40);
+        const int tenkaisaizu = 2850;           //def 2850
         if (rojarArm.getPulses() < tenkaisaizu) //1630 def //2850 max
         {
             rojarArmCW.write(0.9);
@@ -1215,8 +1598,36 @@ int main(void)
             driveWheel.apply(output);
         }
 #endif
+#ifdef ENABLE_SHEET_ONLY
+        robotLocation.addPoint(95, -55, 0);
+        robotLocation.sendNext();
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            STLinkTerminal.printf("%lf,%lf,%lf\r\n", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), accelAlgorithm.getCurrentYawPosition());
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+            if (rojarArm.getPulses() < 1630) //1630 def //2850 max
+            {
+                rojarArmCW.write(0.9);
+                rojarArmCCW.write(0);
+            }
+            else
+            {
+                rojarArmCW.write(0);
+                rojarArmCCW.write(0);
+            }
+        }
+        for (int i = 0; i < 100; i++) //完全停止用
+        {
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            OmniKinematics.getOutput(0, 0, 0, output);
+            driveWheel.apply(output);
+        }
+#endif            //ENABLE_SHEET_ONLY
         while (1) //ロジャー展開待ち
         {
+            IMU.gyro_Yaw();
             STLinkTerminal.printf("ENCODER:%d\r\n", rojarArm.getPulses());
             if (rojarArm.getPulses() < tenkaisaizu) //1630 def //2850 max
             {
@@ -1233,11 +1644,12 @@ int main(void)
         QEI sheetLaunch(PE_2, PD_11, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X4_ENCODING);
         PwmOut sheetLaunchCW(PF_8);
         PwmOut sheetLaunchCCW(PA_0);
-        sheetLaunchCW.period_us(6);
-        sheetLaunchCCW.period_us(6);
+        sheetLaunchCW.period_us(40);
+        sheetLaunchCCW.period_us(40);
         const int kakutyousaizu = 1500; //def 1500
-        while (1)                    //シーツ掛ける
+        while (1)                       //シーツ掛ける
         {
+            IMU.gyro_Yaw();
             if (sheetLaunch.getPulses() < kakutyousaizu)
             {
                 sheetLaunchCW.write(0.95);
@@ -1252,6 +1664,7 @@ int main(void)
         }
         while (1)
         { //縮小
+            IMU.gyro_Yaw();
             if (sheetLaunch.getPulses() > 0)
             {
                 sheetLaunchCW.write(0);
@@ -1264,21 +1677,21 @@ int main(void)
                 break;
             }
         }
-        catchRightServo.write(rightReleaseServo);
-        wait(1.0);
-        catchRightServo.write(rightGraspServo);
-        wait(1.0);
+        catchLeftServo.write(leftReleaseServo);
+        wait(1.5);
+        catchLeftServo.write(leftGraspServo);
+        wait(1.5);
 
         PwmOut motorScissorsCW(PC_9);
         PwmOut motorScissorsCCW(PC_8);
-        motorScissorsCW.period_us(6);
-        motorScissorsCCW.period_us(6);
-        motorScissorsCW.write(0.7);
+        motorScissorsCW.period_us(40);
+        motorScissorsCCW.period_us(40);
+        motorScissorsCW.write(0.95); //0.7
         motorScissorsCCW.write(0);
-        wait(0.47);
+        wait(0.47); //0.47
         motorScissorsCW.write(0);
-        motorScissorsCCW.write(0.7);
-        wait(0.52);
+        motorScissorsCCW.write(0.95);
+        wait(0.52); //0.52
         motorScissorsCW.write(0);
         motorScissorsCCW.write(0);
 #ifdef ENABLE_DRIVE
@@ -1291,16 +1704,35 @@ int main(void)
             driveWheel.apply(output);
         }
 #endif
-        catchLeftServo.write(leftReleaseServo);
-        wait(1); //足回り有効時は0.5
+#ifdef ENABLE_SHEET_ONLY
+        robotLocation.addPoint(300, -55, 0); //シーツ広げる
+        robotLocation.sendNext();
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            IMU.gyro_Yaw();
+            STLinkTerminal.printf("%lf,%lf,%lf\r\n", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), accelAlgorithm.getCurrentYawPosition());
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+        for (int i = 0; i < 100; i++) //完全停止用
+        {
+            IMU.gyro_Yaw();
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            OmniKinematics.getOutput(0, 0, 0, output);
+            driveWheel.apply(output);
+        }
+#endif //ENABLE_SHEET_ONLY
+        catchRightServo.write(rightReleaseServo);
+        wait(2); //足回り有効時は0.5
 #ifdef ENABLE_DRIVE
-        accelAlgorithm.setAllocateErrorCircleRadius(20);
+        //accelAlgorithm.setAllocateErrorCircleRadius(20);
         robotLocation.addPoint(10, -500, 0);
         robotLocation.sendNext();
         if (rojarArm.getPulses() > 0)
         {
             rojarArmCW.write(0);
-            rojarArmCCW.write(0.3);
+            rojarArmCCW.write(0.9);
         }
         else
         {
@@ -1315,7 +1747,7 @@ int main(void)
             if (rojarArm.getPulses() > 0)
             {
                 rojarArmCW.write(0);
-                rojarArmCCW.write(0.3);
+                rojarArmCCW.write(0.9);
             }
             else
             {
@@ -1324,10 +1756,47 @@ int main(void)
             }
         }
 #endif
-        catchRightServo.write(rightGraspServo); // not working
+        robotLocation.addPoint(0, 0, 0); //シーツ広げる
+        robotLocation.sendNext();
+        while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+        {
+            IMU.gyro_Yaw();
+            if (rojarArm.getPulses() > 0)
+            {
+                rojarArmCW.write(0);
+                rojarArmCCW.write(0.9);
+            }
+            else
+            {
+                rojarArmCW.write(0);
+                rojarArmCCW.write(0);
+            }
+            STLinkTerminal.printf("%lf,%lf,%lf\r\n", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), accelAlgorithm.getCurrentYawPosition());
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+            driveWheel.apply(output);
+        }
+        for (int i = 0; i < 100; i++) //完全停止用
+        {
+            IMU.gyro_Yaw();
+            if (rojarArm.getPulses() > 0)
+            {
+                rojarArmCW.write(0);
+                rojarArmCCW.write(0.9);
+            }
+            else
+            {
+                rojarArmCW.write(0);
+                rojarArmCCW.write(0);
+            }
+            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            OmniKinematics.getOutput(0, 0, 0, output);
+            driveWheel.apply(output);
+        }
+        catchRightServo.write(rightGraspServo);
         catchLeftServo.write(leftGraspServo);
 #ifdef ENABLE_DRIVE
-        accelAlgorithm.setAllocateErrorCircleRadius(3.5);
+        //accelAlgorithm.setAllocateErrorCircleRadius(3.5);
         robotLocation.addPoint(10, 0, 0);
         robotLocation.sendNext();
         while (!robotLocation.checkMovingStats(accelAlgorithm.getStats()))
@@ -1338,7 +1807,7 @@ int main(void)
             if (rojarArm.getPulses() > 0)
             {
                 rojarArmCW.write(0);
-                rojarArmCCW.write(0.3);
+                rojarArmCCW.write(0.9);
             }
             else
             {
@@ -1356,6 +1825,7 @@ int main(void)
 #ifndef ENABLE_DRIVE
         while (1)
         {
+            IMU.gyro_Yaw();
             if (rojarArm.getPulses() > 0)
             {
                 rojarArmCW.write(0);

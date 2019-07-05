@@ -4,8 +4,10 @@ RogerArm::RogerArm(PinName motorCW, PinName motorCCW)
 {
     MotorCW = new PwmOut(motorCW);
     MotorCCW = new PwmOut(motorCCW);
-    MotorCW->period_us(10);
-    MotorCCW->period_us(10);
+    MotorCW->period_us(40);
+    MotorCCW->period_us(40);
+    heightCurrent = 0;
+    heightTarget = 0;
 }
 
 bool RogerArm::stats(void)
@@ -42,7 +44,7 @@ int RogerArm::getHeight(void)
 
 void RogerArm::update(void)
 {
-    if ((heightCurrent - 24) < heightTarget && heightTarget < (heightCurrent + 24))
+    if ((heightTarget - 24) < heightCurrent && heightCurrent < (heightTarget + 24))
     {
         MotorCW->write(0);
         MotorCCW->write(0);

@@ -4,8 +4,10 @@ ClothHang::ClothHang(PinName motorCW, PinName motorCCW)
 {
     MotorCW = new PwmOut(motorCW);
     MotorCCW = new PwmOut(motorCCW);
-    MotorCW->period_us(10);
-    MotorCCW->period_us(10);
+    MotorCW->period_us(50);
+    MotorCCW->period_us(50);
+    lenghtCurrent = 0;
+    lenghtTarget = 0;
 }
 
 bool ClothHang::stats(void)

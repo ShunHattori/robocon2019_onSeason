@@ -16,14 +16,14 @@ MotorDriverAdapter3WD::MotorDriverAdapter3WD(PinName Fcw, PinName Fccw, PinName 
     BLR = new PwmOut(BLCWPin);
     BLN = new PwmOut(BLCCWPin);
 
-    FCR->period_us(100);
-    FCN->period_us(100);
-    BRR->period_us(100);
-    BRN->period_us(100);
-    BLR->period_us(100);
-    BLN->period_us(100);
+    FCR->period_us(50);
+    FCN->period_us(50);
+    BRR->period_us(50);
+    BRN->period_us(50);
+    BLR->period_us(50);
+    BLN->period_us(50);
 
-    for (int i = 0; i < 2; i++)
+    for (int i = 0; i < 3; i++)
     {
         prevPWM[i] = 0;
     }
@@ -43,7 +43,7 @@ float MotorDriverAdapter3WD::absFloat(float ver)
 
 void MotorDriverAdapter3WD::apply(float pwm[3])
 {
-    for (int i = 0; i < 2; i++)
+    for (int i = 0; i < 3; i++)
     {
         pwm[i] = RCconstant * prevPWM[i] + (1 - RCconstant) * pwm[i];
         prevPWM[i] = pwm[i];

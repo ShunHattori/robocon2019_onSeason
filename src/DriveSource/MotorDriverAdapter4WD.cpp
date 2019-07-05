@@ -19,14 +19,14 @@ MotorDriverAdapter4WD::MotorDriverAdapter4WD(PinName FRcw, PinName FRccw, PinNam
     BRN = new PwmOut(BRCCWPin);
     BLR = new PwmOut(BLCWPin);
     BLN = new PwmOut(BLCCWPin);
-    FRR->period_us(100);
-    FRN->period_us(100);
-    FLR->period_us(100);
-    FLN->period_us(100);
-    BRR->period_us(100);
-    BRN->period_us(100);
-    BLR->period_us(100);
-    BLN->period_us(100);
+    FRR->period_us(50);
+    FRN->period_us(50);
+    FLR->period_us(50);
+    FLN->period_us(50);
+    BRR->period_us(50);
+    BRN->period_us(50);
+    BLR->period_us(50);
+    BLN->period_us(50);
     for (int i = 0; i < 4; i++)
     {
         prevPWM[i] = 0;
