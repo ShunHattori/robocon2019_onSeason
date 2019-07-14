@@ -93,7 +93,7 @@ class LocationManager
         return (YawPointArray.at(currentPointNumber));
     }
     /*
-    *   desc:   自己位置を更新
+    *   desc:   目標位置を更新
     *   param:  更新後X座標,Y座標
     *   return: none
     */

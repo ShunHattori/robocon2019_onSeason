@@ -100,9 +100,9 @@
 /*
     ゲーム用新型足回り制御
  */
-//#define GAME_DRIVE_NEWTYPE
+#define GAME_DRIVE_NEWTYPE
 
-#define rojarArm_test
+//#define rojarArm_test
 
 /*
 　  マイコン(F767ZI)に取り付けられている青いスイッチによって動作シーケンスを切り替える。
@@ -198,6 +198,7 @@ int main(void)
     LCDtimer.start();
     serialLCD.printf("WAITING...");
     DebounceSwitch startButton(PG_2, 'U'); //create object using pin "PG_2" with PullUpped
+    DebounceSwitch limitSwitchBarFront(NC, 'U');
     int initialButtonPressToken = 1, startButtonPressedFlag = 0;
     ClothHold holder(PE_5, PE_6); //right,leftServo //PE_5, PE_6
     holder.free('r');
@@ -219,7 +220,7 @@ int main(void)
     driveWheel.setMaxPWM(ESTIMATE_MAX_PWM);
     robotLocation.addPoint(0, -500, 0);
     robotLocation.addPoint(112, -550, 0);
-    robotLocation.addPoint(112, -583, 0);
+    //robotLocation.addPoint(112, -583, 0); 少し進むところをリミットスイッチを利用した位置合わせに変更
     robotLocation.addPoint(350, -580, 0);
     robotLocation.addPoint(0, -520, 0);
     robotLocation.addPoint(0, 0, 0);
@@ -315,7 +316,16 @@ int main(void)
                 break;
 
             case 2:
-                robotLocation.sendNext(); //三本目のポール少し手前の位置
+                //static int savedXLocation = accelAlgorithm.getCurrentXPosition();
+                limitSwitchBarFront.update();
+                if (!limitSwitchBarFront.stats())
+                {
+                    robotLocation.setCurrentPoint(robotLocation.getXLocationData(), robotLocation.getYLocationData() + 1, robotLocation.getYawStatsData());
+                    break;
+                }
+                accelAlgorithm.setCurrentYPosition(-580);
+                //accelAlgorithm.setCurrentXPosition(savedXLocation);
+                //accelAlgorithm.setCurrentXPosition(0);    //X, YAW軸値は下手に触らない方がいい
                 numberOfWayPoint++;
                 break;
 
@@ -428,7 +438,6 @@ int main(void)
                 while (1)
                 {
                 }
-                break;
             }
         }
     }

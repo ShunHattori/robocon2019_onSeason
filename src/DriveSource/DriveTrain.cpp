@@ -5,27 +5,16 @@ void DriveTrain::update()
     xReachedMaxPWM = 0.175;
     yReachedMaxPWM = 0.175;
     if (encoderMode)
-    { //encoderMode
-
+    {
         tempX = XAxis_1->getDistance()/2;
         XAxis_1->setDistance(0);
         tempY = YAxis_1->getDistance()/2;
         YAxis_1->setDistance(0);
-        //currentYaw = imu->gyro_Yaw();
-
         //各計測輪の移動量とロボットの傾きから全体の移動量を計算する
         currentX += tempX * cos(currentYaw * 3.1415 / 180);
         currentY += tempX * sin(currentYaw * 3.1415 / 180);
         currentX -= tempY * sin(currentYaw * 3.1415 / 180);
         currentY += tempY * cos(currentYaw * 3.1415 / 180);
-
-        //currentX += tempX * cos(currentYaw * 3.1415 / 180);
-        //currentY += tempY * cos(currentYaw * 3.1415 / 180);
-
-        /*テストには下のコードを使う LCDのＣＰに各エンコーダの移動距離が表示されるはず
-        currentX = tempX;
-        currentY = tempSub;
-        currentYaw = tempY;*/
     }
     else
     { //sensor mode
@@ -40,7 +29,7 @@ void DriveTrain::update()
         currentY += tempX * sin(currentYaw * 3.1415 / 180);
         currentX = sensorDistance;
     }
-    //常に最新座標を受け取り続ける
+    //常に最新目標座標を受け取り続ける
     targetX = LCM->getXLocationData();
     targetY = LCM->getYLocationData();
     targetYaw = LCM->getYawStatsData();
