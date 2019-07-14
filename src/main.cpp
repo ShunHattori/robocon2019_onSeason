@@ -100,7 +100,9 @@
 /*
     ゲーム用新型足回り制御
  */
-#define GAME_DRIVE_NEWTYPE
+//#define GAME_DRIVE_NEWTYPE
+
+#define rojarArm_test
 
 /*
 　  マイコン(F767ZI)に取り付けられている青いスイッチによって動作シーケンスを切り替える。
@@ -125,9 +127,9 @@
 #define ENCODER_ATTACHED_WHEEL_RADIUS_BY_NEXUS_ROBOT 5.0
 #define ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA 5.08
 #define DISTANCE_BETWEEN_ENCODER_WHEELS 72
-#define PERMIT_ERROR_CIRCLE_RADIUS 3.2 // 3.5
-#define DECREASE_PWM_CIRCLE_RADIUS 50  //150
-#define ESTIMATE_MAX_PWM 0.4           // max:0.7, recommend:0.64
+#define PERMIT_ERROR_CIRCLE_RADIUS 3   // 3.5
+#define DECREASE_PWM_CIRCLE_RADIUS 100 //150
+#define ESTIMATE_MAX_PWM 0.3           // max:0.7, recommend:0.64
 #define ESTIMATE_MIN_PWM 0.1
 #define DRIVETRAIN_UPDATE_CYCLE 0.13
 
@@ -149,9 +151,9 @@ float output[3] = {};
 
 Timer QEITimer;
 MPU9250 IMU;
-QEI encoder_XAxis_1(PE_9, PF_13, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X2_ENCODING);
-QEI encoder_YAxis_1(PB_5, PC_7, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X2_ENCODING);
-MWodometry odometry_XAxis_1(encoder_XAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA);
+QEI encoder_XAxis_1(PE_9, PF_13, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X4_ENCODING);
+QEI encoder_YAxis_1(PB_5, PC_7, NC, ENCODER_PULSE_PER_ROUND, &QEITimer, QEI::X4_ENCODING);
+MWodometry odometry_XAxis_1(encoder_XAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA / 2);
 MWodometry odometry_YAxis_1(encoder_YAxis_1, ENCODER_PULSE_PER_ROUND, ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA / 2);
 LocationManager<int> robotLocation(0, 0, 0);
 DriveTrain accelAlgorithm(robotLocation, odometry_XAxis_1, odometry_YAxis_1, IMU, PERMIT_ERROR_CIRCLE_RADIUS, DECREASE_PWM_CIRCLE_RADIUS);
@@ -162,6 +164,32 @@ DigitalOut IMUisReadyLED(LED3);      //IMUセンサキャリブレーション�
 
 int main(void)
 {
+#ifdef rojarArm_test
+    RogerArm myArm(PF_7, PF_9); //PF_7, PF_9->pe10
+    myArm.setMaxPWM(0.96);      //0.92
+    QEI rogerArmEncoder(PG_0, PD_1, NC, 48, &QEITimer, QEI::X4_ENCODING);
+    while (1)
+    {
+        myArm.setEncoderPulse(rogerArmEncoder.getPulses());
+        myArm.update();
+        static int armPhase = 0;
+        if (myArm.stats() && armPhase == 0)
+        {
+            wait(2);
+            armPhase++;
+            myArm.setHeight(3200);
+            myArm.update();
+        }
+        else if (myArm.stats() && armPhase == 1)
+        {
+            wait(2);
+            armPhase = 0;
+            myArm.setHeight(0);
+            myArm.update();
+        }
+    }
+#endif //rojarArm_test
+
 #ifdef GAME_DRIVE_NEWTYPE
     Serial serialLCD(PC_6, NC, 9600);
     NewHavenDisplay LCDDriver(serialLCD);
@@ -190,10 +218,10 @@ int main(void)
     OmniKinematics.setMaxPWM(ESTIMATE_MAX_PWM);
     driveWheel.setMaxPWM(ESTIMATE_MAX_PWM);
     robotLocation.addPoint(0, -500, 0);
-    robotLocation.addPoint(120, -550, 0);
-    robotLocation.addPoint(120, -575, 0);
-    robotLocation.addPoint(350, -575, 0);
-    robotLocation.addPoint(0, -500, 0);
+    robotLocation.addPoint(112, -550, 0);
+    robotLocation.addPoint(112, -583, 0);
+    robotLocation.addPoint(350, -580, 0);
+    robotLocation.addPoint(0, -520, 0);
     robotLocation.addPoint(0, 0, 0);
     while (1)
     {
@@ -281,8 +309,8 @@ int main(void)
             switch (numberOfWayPoint)
             {
             case 1:
-                robotLocation.sendNext(); //三本目のポール少し手前の位置
-                myArm.setHeight(2100);    //2100-洗濯物干し最適高さ , 2850-洗濯バサミ最適高さ
+                robotLocation.sendNext();    //三本目のポール少し手前の位置
+                myArm.setHeight(2100 * 0.8); //2100-洗濯物干し最適高さ , 2850-洗濯バサミ最適高さ
                 numberOfWayPoint++;
                 break;
 
@@ -298,7 +326,7 @@ int main(void)
                     static int initialHangerFlag = 1;
                     if (initialHangerFlag) //ロジャー展開後初めての処理
                     {
-                        hanger.setLength(1330); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
+                        hanger.setLength(1200); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
                         hanger.update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
                         initialHangerFlag = 0;
                     }
@@ -331,7 +359,7 @@ int main(void)
                     if (seq == 3)
                     {
                         armPhase = 2;
-                        myArm.setHeight(2850);
+                        myArm.setHeight(2850 * 0.8);
                         myArm.update();
                         clothHangertimer.stop();
                         clothHangertimer.reset();
@@ -404,6 +432,11 @@ int main(void)
             }
         }
     }
+    while (1)
+    {
+        /* code */
+    }
+
 #endif //GAME_DRIVE_NEWTYPE
 
 #ifdef TEST_DRIVE_NEWTYPE

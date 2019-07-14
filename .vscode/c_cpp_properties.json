@@ -6,10 +6,11 @@
         {
             "name": "Win32",
             "includePath": [
+                "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/include",
+                "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/src",
                 "C:/Users/USER/.platformio/packages/framework-mbed/cmsis/TARGET_CORTEX_M",
                 "C:/Users/USER/.platformio/packages/framework-mbed",
-                "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/.pioenvs/nucleo_f767zi",
-                "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/src",
+                "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/.pio/build/nucleo_f767zi",
                 "C:/Users/USER/.platformio/packages/framework-mbed/drivers",
                 "C:/Users/USER/.platformio/packages/framework-mbed/events",
                 "C:/Users/USER/.platformio/packages/framework-mbed/events/equeue",
@@ -44,17 +45,17 @@
                 "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBHost/USBHostSerial",
                 "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBHost/targets/TARGET_STM",
                 "C:/Users/USER/.platformio/packages/tool-unity",
-                "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/include",
                 ""
             ],
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": "${workspaceRoot}/.vscode/.browse.c_cpp.db",
                 "path": [
+                    "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/include",
+                    "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/src",
                     "C:/Users/USER/.platformio/packages/framework-mbed/cmsis/TARGET_CORTEX_M",
                     "C:/Users/USER/.platformio/packages/framework-mbed",
-                    "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/.pioenvs/nucleo_f767zi",
-                    "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/src",
+                    "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/.pio/build/nucleo_f767zi",
                     "C:/Users/USER/.platformio/packages/framework-mbed/drivers",
                     "C:/Users/USER/.platformio/packages/framework-mbed/events",
                     "C:/Users/USER/.platformio/packages/framework-mbed/events/equeue",
@@ -89,12 +90,11 @@
                     "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBHost/USBHostSerial",
                     "C:/Users/USER/.platformio/packages/framework-mbed/features/unsupported/USBHost/targets/TARGET_STM",
                     "C:/Users/USER/.platformio/packages/tool-unity",
-                    "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/include",
                     ""
                 ]
             },
             "defines": [
-                "PLATFORMIO=30607",
+                "PLATFORMIO=40000",
                 "STM32F767xx",
                 "ARM_MATH_CM7",
                 "COMPONENT_NSPE=1",

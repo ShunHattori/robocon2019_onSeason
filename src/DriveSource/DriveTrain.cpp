@@ -2,14 +2,14 @@
 
 void DriveTrain::update()
 {
-    xReachedMaxPWM = 0.1;
-    yReachedMaxPWM = 0.1;
+    xReachedMaxPWM = 0.175;
+    yReachedMaxPWM = 0.175;
     if (encoderMode)
     { //encoderMode
 
-        tempX = XAxis_1->getDistance();
+        tempX = XAxis_1->getDistance()/2;
         XAxis_1->setDistance(0);
-        tempY = YAxis_1->getDistance();
+        tempY = YAxis_1->getDistance()/2;
         YAxis_1->setDistance(0);
         //currentYaw = imu->gyro_Yaw();
 
@@ -32,9 +32,9 @@ void DriveTrain::update()
 
         //X軸は計測輪,Y軸は測距センサで自己位置を計算する　※移動後Y軸現在位置を更新してあげる必要あり
         //currentYaw = imu->gyro_Yaw();
-        tempX = XAxis_1->getDistance();
+        tempX = XAxis_1->getDistance()/2;
         XAxis_1->setDistance(0);
-        tempY = YAxis_1->getDistance();
+        tempY = YAxis_1->getDistance()/2;
         YAxis_1->setDistance(0);
         currentY += tempY * cos(currentYaw * 3.1415 / 180);
         currentY += tempX * sin(currentYaw * 3.1415 / 180);
@@ -110,13 +110,13 @@ void DriveTrain::update()
                 Vec[1] = mapFloat(errorY, 0, decreaseRadius, Min, Max);
         }
 
-        if (-0.15 < errorYaw && errorYaw < 0.15)
+        if (-0.1 < errorYaw && errorYaw < 0.1)
         {
             Vec[2] = 0;
         }
         else
         {
-            Vec[2] = mapFloat(errorYaw, -30, 30, -0.15, 0.15);
+            Vec[2] = mapFloat(errorYaw, -20, 20, -0.15, 0.15);
         }
     }
     else //ここに加速制御
@@ -126,12 +126,12 @@ void DriveTrain::update()
         {
             if (0 < errorX) //increase P control
             {
-                Vec[0] += 0.0001;
+                Vec[0] += 0.00025;
                 xReachedMaxPWM = Vec[0];
             }
             else
             {
-                Vec[0] -= 0.0001;
+                Vec[0] -= 0.00025;
                 xReachedMaxPWM = -Vec[0];
             }
             if (Vec[0] > Max) //constrain
@@ -169,12 +169,12 @@ void DriveTrain::update()
         {
             if (0 < errorY) //increase P control
             {
-                Vec[1] += 0.0001;
+                Vec[1] += 0.00025;
                 xReachedMaxPWM = Vec[1];
             }
             else
             {
-                Vec[1] -= 0.0001;
+                Vec[1] -= 0.00025;
                 xReachedMaxPWM = -Vec[1];
             }
             if (Vec[1] > Max) //constrain
@@ -208,13 +208,13 @@ void DriveTrain::update()
             }
         }
 
-        if (-0.15 < errorYaw && errorYaw < 0.15) //for Yaw control
+        if (-0.1 < errorYaw && errorYaw < 0.1) //for Yaw control
         {
             Vec[2] = 0;
         }
         else
         {
-            Vec[2] = mapFloat(errorYaw, -30, 30, -0.15, 0.15);
+            Vec[2] = mapFloat(errorYaw, -20, 20, -0.15, 0.15);
         }
     }
 }
