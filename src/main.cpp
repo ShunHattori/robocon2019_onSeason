@@ -320,12 +320,11 @@ int main(void)
                 limitSwitchBarFront.update();
                 if (!limitSwitchBarFront.stats())
                 {
-                    robotLocation.setCurrentPoint(robotLocation.getXLocationData(), robotLocation.getYLocationData() + 1, robotLocation.getYawStatsData());
+                    robotLocation.setCurrentPoint(robotLocation.getXLocationData(), robotLocation.getYLocationData() - 5, robotLocation.getYawStatsData());
                     break;
                 }
                 accelAlgorithm.setCurrentYPosition(-580);
-                //accelAlgorithm.setCurrentXPosition(savedXLocation);
-                //accelAlgorithm.setCurrentXPosition(0);    //X, YAW軸値は下手に触らない方がいい
+                robotLocation.setCurrentPoint(robotLocation.getXLocationData(), -580, robotLocation.getYawStatsData());
                 numberOfWayPoint++;
                 break;
 
