@@ -47,20 +47,20 @@ public:
 
     /*
      * desc:　  到達判定円の半径閾値変更
-     * param:   半径(int)
+     * param:   半径(float)
      * return:  none
      */
-    void setAllocateErrorCircleRadius(int radius)
+    void setAllocateErrorCircleRadius(float radius)
     {
         allocateError = radius;
     }
 
     /*
      * desc:　  減速開始判定円の半径閾値変更
-     * param:   半径(int)
+     * param:   半径(float)
      * return:  none
      */
-    void setDecreaseCircleRadius(int radius)
+    void setDecreaseCircleRadius(float radius)
     {
         decreaseRadius = radius;
     }

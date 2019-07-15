@@ -8,7 +8,7 @@ template <typename TYPE>
 class LocationManager
 {
 
-  public:
+public:
     /*
     *   desc: コンストラクタ
     */
@@ -99,12 +99,12 @@ class LocationManager
     */
     void setCurrentPoint(TYPE x, TYPE y, TYPE yaw)
     {
-        XPointArray.insert(XPointArray.begin() + currentPointNumber, x);
-        YPointArray.insert(YPointArray.begin() + currentPointNumber, y);
-        YawPointArray.insert(YawPointArray.begin() + currentPointNumber, yaw);
+        XPointArray.at(currentPointNumber) = x;
+        YPointArray.at(currentPointNumber) = y;
+        YawPointArray.at(currentPointNumber) = yaw;
     }
 
-  private:
+private:
     std::vector<int> XPointArray, YPointArray, YawPointArray;
 
     uint8_t currentPointNumber, pointArraySize;

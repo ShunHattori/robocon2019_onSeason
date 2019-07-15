@@ -129,8 +129,8 @@
 #define DISTANCE_BETWEEN_ENCODER_WHEELS 72
 #define PERMIT_ERROR_CIRCLE_RADIUS 3   // 3.5
 #define DECREASE_PWM_CIRCLE_RADIUS 100 //150
-#define ESTIMATE_MAX_PWM 0.3           // max:0.7, recommend:0.64
-#define ESTIMATE_MIN_PWM 0.1
+#define ESTIMATE_MAX_PWM 0.6          // max:0.7, recommend:0.64
+#define ESTIMATE_MIN_PWM 0.15
 #define DRIVETRAIN_UPDATE_CYCLE 0.13
 
 #ifdef USING_4WD
@@ -198,7 +198,7 @@ int main(void)
     LCDtimer.start();
     serialLCD.printf("WAITING...");
     DebounceSwitch startButton(PG_2, 'U'); //create object using pin "PG_2" with PullUpped
-    DebounceSwitch limitSwitchBarFront(NC, 'U');
+    DebounceSwitch limitSwitchBarFront(PF_14, 'U');
     int initialButtonPressToken = 1, startButtonPressedFlag = 0;
     ClothHold holder(PE_5, PE_6); //right,leftServo //PE_5, PE_6
     holder.free('r');
@@ -216,12 +216,13 @@ int main(void)
     IMUisReadyLED.write(1);
     accelAlgorithm.setMaxOutput(ESTIMATE_MAX_PWM);
     accelAlgorithm.setMinOutput(ESTIMATE_MIN_PWM);
+    accelAlgorithm.setAllocateErrorCircleRadius(60);
     OmniKinematics.setMaxPWM(ESTIMATE_MAX_PWM);
     driveWheel.setMaxPWM(ESTIMATE_MAX_PWM);
     robotLocation.addPoint(0, -500, 0);
     robotLocation.addPoint(112, -550, 0);
     //robotLocation.addPoint(112, -583, 0); 少し進むところをリミットスイッチを利用した位置合わせに変更
-    robotLocation.addPoint(350, -580, 0);
+    robotLocation.addPoint(350, -575, 0);
     robotLocation.addPoint(0, -520, 0);
     robotLocation.addPoint(0, 0, 0);
     while (1)
@@ -304,14 +305,22 @@ int main(void)
                 }
             }
         }*/
+        limitSwitchBarFront.update();
+        if (limitSwitchBarFront.stats() && numberOfWayPoint == 2)
+        {
+            accelAlgorithm.setCurrentYPosition(-580);
+            robotLocation.setCurrentPoint(robotLocation.getXLocationData(), -580, robotLocation.getYawStatsData());
+            numberOfWayPoint++;
+        }
 
         if (robotLocation.checkMovingStats(accelAlgorithm.getStats()) && !initialButtonPressToken)
         {
             switch (numberOfWayPoint)
             {
             case 1:
-                robotLocation.sendNext();    //三本目のポール少し手前の位置
-                myArm.setHeight(2100 * 0.8); //2100-洗濯物干し最適高さ , 2850-洗濯バサミ最適高さ
+                accelAlgorithm.setAllocateErrorCircleRadius(3.5);
+                robotLocation.sendNext(); //三本目のポール少し手前の位置
+                myArm.setHeight(2600);    //2100-洗濯物干し最適高さ , 2850-洗濯バサミ最適高さ
                 numberOfWayPoint++;
                 break;
 
@@ -323,9 +332,6 @@ int main(void)
                     robotLocation.setCurrentPoint(robotLocation.getXLocationData(), robotLocation.getYLocationData() - 5, robotLocation.getYawStatsData());
                     break;
                 }
-                accelAlgorithm.setCurrentYPosition(-580);
-                robotLocation.setCurrentPoint(robotLocation.getXLocationData(), -580, robotLocation.getYawStatsData());
-                numberOfWayPoint++;
                 break;
 
             case 3:
@@ -368,7 +374,7 @@ int main(void)
                     if (seq == 3)
                     {
                         armPhase = 2;
-                        myArm.setHeight(2850 * 0.8);
+                        myArm.setHeight(3200);
                         myArm.update();
                         clothHangertimer.stop();
                         clothHangertimer.reset();
@@ -402,11 +408,13 @@ int main(void)
             case 4:
                 holder.release('l');
                 myArm.setHeight(0); //ロジャーアーム縮小
+                accelAlgorithm.setAllocateErrorCircleRadius(30);
                 robotLocation.sendNext();
                 numberOfWayPoint++;
                 break;
 
             case 5:
+                accelAlgorithm.setAllocateErrorCircleRadius(3.5);
                 holder.grasp('r');
                 holder.grasp('l');
                 robotLocation.sendNext(); //三本目のポールの手前まで移動
