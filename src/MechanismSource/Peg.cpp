@@ -16,16 +16,24 @@ Peg::Peg(PinName motorCW, PinName motorCCW, float pwm = 0.5, float movingTime = 
 
 void Peg::launch(void)
 {
-    if (taskFlag == 0)
+    if (launchFlag == 0)
     {
-        taskFlag = 1;
+        launchFlag = 1;
         timer->reset();
     }
 }
 
+void Peg::reload(void)
+{
+    if (reloadFlag == 0)
+    {
+        reloadFlag = 1;
+        timer->reset();
+    }
+}
 void Peg::update(void)
 {
-    if (taskFlag)
+    if (launchFlag)
     {
         if (timer->read() < timePerOnce)
         {
@@ -35,12 +43,20 @@ void Peg::update(void)
         else if (extendFlag && timer->read() > timePerOnce)
         {
             extendFlag = 0;
-            reduceFlag = 1;
+            launchFlag = 0;
         }
-        else if (reduceFlag && timer->read() > (timePerOnce * 2) + 0.05){
+    }
+    if (reloadFlag)
+    {
+        if (timer->read() < timePerOnce)
+        {
+            reduceFlag = 1;
             extendFlag = 0;
+        }
+        else if (reduceFlag && timer->read() > timePerOnce / 3)
+        {
             reduceFlag = 0;
-            taskFlag = 0;
+            reloadFlag = 0;
         }
     }
     if (extendFlag)
@@ -51,7 +67,7 @@ void Peg::update(void)
     else if (reduceFlag)
     {
         MotorCW->write(0);
-        MotorCCW->write(maxPwm);
+        MotorCCW->write(maxPwm / 2);
     }
     else
     {

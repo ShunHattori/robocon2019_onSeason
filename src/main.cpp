@@ -128,9 +128,9 @@
 #define ENCODER_ATTACHED_WHEEL_RADIUS_BY_HANGFA 5.08
 #define DISTANCE_BETWEEN_ENCODER_WHEELS 72
 #define PERMIT_ERROR_CIRCLE_RADIUS 3   // 3.5
-#define DECREASE_PWM_CIRCLE_RADIUS 100 //150
-#define ESTIMATE_MAX_PWM 0.6          // max:0.7, recommend:0.64
-#define ESTIMATE_MIN_PWM 0.15
+#define DECREASE_PWM_CIRCLE_RADIUS 120 //150
+#define ESTIMATE_MAX_PWM 0.8           // max:0.7, recommend:0.64
+#define ESTIMATE_MIN_PWM 0.19
 #define DRIVETRAIN_UPDATE_CYCLE 0.13
 
 #ifdef USING_4WD
@@ -203,7 +203,7 @@ int main(void)
     ClothHold holder(PE_5, PE_6); //right,leftServo //PE_5, PE_6
     holder.free('r');
     holder.free('l');
-    Peg pegAttacher(PC_9, PC_8, 0.5, 0.75); //pin ,pin pwm, time
+    Peg pegAttacher(PC_9, PC_8, 0.45, 0.6); //pin ,pin pwm, time
     ClothHang hanger(PF_8, PA_0);           //PF_8, PA_0
     hanger.setMaxPWM(0.6);                  //0.85
     QEI clothHangEncoder(PE_2, PD_11, NC, 48, &QEITimer, QEI::X4_ENCODING);
@@ -220,9 +220,9 @@ int main(void)
     OmniKinematics.setMaxPWM(ESTIMATE_MAX_PWM);
     driveWheel.setMaxPWM(ESTIMATE_MAX_PWM);
     robotLocation.addPoint(0, -500, 0);
-    robotLocation.addPoint(112, -550, 0);
+    robotLocation.addPoint(112, -565, 0);
     //robotLocation.addPoint(112, -583, 0); 少し進むところをリミットスイッチを利用した位置合わせに変更
-    robotLocation.addPoint(350, -575, 0);
+    robotLocation.addPoint(350, -575, 0);//5cm手前
     robotLocation.addPoint(0, -520, 0);
     robotLocation.addPoint(0, 0, 0);
     while (1)
@@ -251,7 +251,7 @@ int main(void)
         //STLinkTerminal.printf("CalculatedPWM:%.2f %.2f %.2f \r\n", output[0], output[1], output[2]);
         driveWheel.apply(output);
         static unsigned long int prevDisplayed = 0;
-        if (((LCDtimer.read_ms() - prevDisplayed) > 40) && !initialButtonPressToken) //about 24Hz flash rate
+        if (((LCDtimer.read_ms() - prevDisplayed) > 20) && !initialButtonPressToken) //about 48Hz flash rate
         {
             LCDDriver.clear();
             LCDDriver.home();
@@ -361,21 +361,21 @@ int main(void)
                         clothHangertimer.start();
                         timerStartFlag = 0;
                     }
-                    if (0 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 1500 && seq == 1)
+                    if (0 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 1000 && seq == 1)
                     {
                         holder.release('r');
                         seq = 2;
                     }
-                    if (1500 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 3000 && seq == 2)
+                    if (1000 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 1500 && seq == 2)
                     {
                         holder.center('r');
+                        myArm.setHeight(3200);
+                        myArm.update();
                         seq = 3;
                     }
                     if (seq == 3)
                     {
                         armPhase = 2;
-                        myArm.setHeight(3200);
-                        myArm.update();
                         clothHangertimer.stop();
                         clothHangertimer.reset();
                         initialChangeHeightFlag = 0;
@@ -391,12 +391,12 @@ int main(void)
                             clothHangertimer.start();
                             timerStartFlag = 0;
                         }
-                        if (0 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 1700 && seq == 1)
+                        if (0 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 350 && seq == 1) //`hutatume 1700ms
                         {
                             pegAttacher.launch();
                             seq = 2;
                         }
-                        if (1700 < clothHangertimer.read_ms() && clothHangertimer.read_ms() < 3000 && seq == 2)
+                        if (350 < clothHangertimer.read_ms() && seq == 2)
                         {
                             robotLocation.sendNext(); //次の座標を送信
                             numberOfWayPoint++;
@@ -408,6 +408,7 @@ int main(void)
             case 4:
                 holder.release('l');
                 myArm.setHeight(0); //ロジャーアーム縮小
+                //pegAttacher.reload();
                 accelAlgorithm.setAllocateErrorCircleRadius(30);
                 robotLocation.sendNext();
                 numberOfWayPoint++;
@@ -424,13 +425,14 @@ int main(void)
             case 6:
                 if (myArm.stats())
                 {
-                    robotLocation.sendNext(); //最初の位置に戻る
                     numberOfWayPoint++;
                 }
                 break;
             case 7:
                 LCDDriver.clear();
-                serialLCD.printf("seq has done");
+                serialLCD.printf("TASKS CLOSED");
+                holder.free('r');
+                holder.free('l');
                 while (1)
                 {
                     LCDDriver.setCursor(2, 0);
