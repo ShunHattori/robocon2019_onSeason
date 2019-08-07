@@ -5,8 +5,8 @@ ClothHold::ClothHold(PinName servoRightPin, PinName servoLeftPin)
 
     servoRight = new Servo(servoRightPin);
     servoLeft = new Servo(servoLeftPin);
-    servoRight->calibrate(0.0006F, 90.0F);
-    servoLeft->calibrate(0.0006F, 90.0F);
+    servoRight->calibrate(0.00095F, 180.0F);
+    servoLeft->calibrate(0.00095F, 180.0F);
     runningModeRight = 0;
     runningModeLeft = 0;
 }

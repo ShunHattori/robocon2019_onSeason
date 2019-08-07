@@ -15,6 +15,8 @@ public:
      */
     void launch(void);
 
+    void reload(void);
+
     /*
         設定された秒数に応じてピンを制御する
      */
@@ -24,5 +26,6 @@ private:
     PwmOut *MotorCW, *MotorCCW;
     Timer *timer;
     float maxPwm, timePerOnce;
-    bool taskFlag = false, extendFlag = false, reduceFlag = false;
+    bool launchFlag = false, reloadFlag = false,
+         extendFlag = false, reduceFlag = false;
 };
