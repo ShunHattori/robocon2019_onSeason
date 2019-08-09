@@ -12,9 +12,9 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug",
-            "executable": "c:/Users/kirar/Documents/PlatformIO/Projects/STM_test/.pioenvs/nucleo_f767zi/firmware.elf",
-            "toolchainBinDir": "C:/Users/kirar/.platformio/packages/toolchain-gccarmnoneeabi/bin",
-            "svdPath": "C:/Users/kirar/.platformio/platforms/ststm32/misc/svd/STM32F7x7.svd",
+            "executable": "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/.pio/build/nucleo_f767zi/firmware.elf",
+            "toolchainBinDir": "C:/Users/USER/.platformio/packages/toolchain-gccarmnoneeabi/bin",
+            "svdPath": "C:/Users/USER/.platformio/platforms/ststm32/misc/svd/STM32F7x7.svd",
             "preLaunchTask": {
                 "type": "PlatformIO",
                 "task": "Pre-Debug"
@@ -25,9 +25,9 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug (skip Pre-Debug)",
-            "executable": "c:/Users/kirar/Documents/PlatformIO/Projects/STM_test/.pioenvs/nucleo_f767zi/firmware.elf",
-            "toolchainBinDir": "C:/Users/kirar/.platformio/packages/toolchain-gccarmnoneeabi/bin",
-            "svdPath": "C:/Users/kirar/.platformio/platforms/ststm32/misc/svd/STM32F7x7.svd",
+            "executable": "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/.pio/build/nucleo_f767zi/firmware.elf",
+            "toolchainBinDir": "C:/Users/USER/.platformio/packages/toolchain-gccarmnoneeabi/bin",
+            "svdPath": "C:/Users/USER/.platformio/platforms/ststm32/misc/svd/STM32F7x7.svd",
             "internalConsoleOptions": "openOnSessionStart"
         }
     ]
