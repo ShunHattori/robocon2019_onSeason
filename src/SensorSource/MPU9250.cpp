@@ -1,6 +1,6 @@
-#include "mbed.h"
 #include "MPU9250.h"
 #include <math.h>
+#include "mbed.h"
 
 void MPU9250::init()
 {
