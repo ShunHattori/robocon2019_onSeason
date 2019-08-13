@@ -313,6 +313,7 @@ int main(void)
           if (initialFlag)
           {
             robotLocation.sendNext();
+            rogerArmRight.setMaxPWM(0.5);
             rogerArmRight.setHeight(2420);
             rogerArmRight.update();
             initialFlag = 0;
