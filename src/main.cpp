@@ -54,7 +54,7 @@
 #define DISTANCE_BETWEEN_ENCODER_WHEELS 72
 #define PERMIT_ERROR_CIRCLE_RADIUS 3   // 3.5
 #define DECREASE_PWM_CIRCLE_RADIUS 110 //150
-#define ESTIMATE_MAX_PWM 0.5           // max:0.7, recommend:0.64
+#define ESTIMATE_MAX_PWM 0.6           // max:0.7, recommend:0.64 //DEFAULT 0.5
 #define ESTIMATE_MIN_PWM 0.19
 
 #ifdef USING_4WD
@@ -103,9 +103,9 @@ int main(void)
   ClothHold holder(PE_5, PE_6); //right,leftServo //PE_5, PE_6
   holder.free('r');
   holder.free('l');
-  Peg pegAttacher(PC_9, PC_8, 0.45, 0.6); //pin ,pin pwm, time
-  ClothHang hanger(PF_8, PA_0);           //PF_8, PA_0
-  hanger.setMaxPWM(0.6);                  //0.85
+  Peg pegAttacher(PC_9, PC_8, 0.6, 0.2); //pin ,pin pwm, time
+  ClothHang hanger(PF_8, PA_0);          //PF_8, PA_0
+  hanger.setMaxPWM(0.6);                 //0.85
   QEI clothHangEncoder(PE_2, PD_11, NC, 48, &TimerForQEI, QEI::X4_ENCODING);
   RogerArm rogerArmRight(PF_7, PF_9); //PF_7, PF_9->pe10
   rogerArmRight.setMaxPWM(0.96);      //0.92
@@ -123,7 +123,7 @@ int main(void)
   robotLocation.addPoint(112, -565, 0);
   //robotLocation.addPoint(112, -583, 0); 少し進むところをリミットスイッチを利用した位置合わせに変更
   robotLocation.addPoint(340, -585, 0); //5cm手前
-  robotLocation.addPoint(340, -565, 0);
+  robotLocation.addPoint(340, -575, 0);
   robotLocation.addPoint(0, -520, 0);
   robotLocation.addPoint(-10, 5, 0);
   while (1)
@@ -295,12 +295,12 @@ int main(void)
                 clothHangerTimer.start();
                 timerStartFlag = 0;
               }
-              if (0 < clothHangerTimer.read_ms() && clothHangerTimer.read_ms() < 350 && seq == 1) //`hutatume 1700ms
+              if (0 < clothHangerTimer.read_ms() && clothHangerTimer.read_ms() < 100 && seq == 1) //`hutatume 1700ms
               {
                 pegAttacher.launch();
                 seq = 2;
               }
-              if (350 < clothHangerTimer.read_ms() && seq == 2)
+              if (100 < clothHangerTimer.read_ms() && seq == 2)
               {
                 robotLocation.sendNext(); //次の座標を送信
                 wayPointSignature++;
