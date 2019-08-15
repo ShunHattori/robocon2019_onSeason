@@ -11,7 +11,7 @@ public:
   *   param:  Encoder型のオブジェクト,エンコーダの分解能
   *   return: none 
   */
-  MWodometry(QEI &_obj, int res, float wheRad) : QEIobj(&_obj), encoderResolution(res), wheelRadius(wheRad){};               //コンストラクタ
+  MWodometry(QEI &_obj, int res, double wheRad) : QEIobj(&_obj), encoderResolution(res), wheelRadius(wheRad){};               //コンストラクタ
   ~MWodometry(void);                                                                                                         //デストラクタ
 
   /*
@@ -31,5 +31,5 @@ public:
 private:
   QEI *QEIobj;
   int encoderResolution;
-  float wheelRadius;
+  double wheelRadius;
 };
