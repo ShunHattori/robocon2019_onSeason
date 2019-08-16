@@ -475,6 +475,7 @@ int main(void)
   static int currentRunningMode;
   while (1) //ボタン待機
   {
+    startButton.update();
     if (startButton.stats())
       break;
   }
