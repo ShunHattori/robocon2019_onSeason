@@ -1,8 +1,8 @@
 #ifndef MPU9250_h
 #define MPU9250_h
 
-#include "mbed.h"
 #include <math.h>
+#include "mbed.h"
 
 // Address of MPUs
 #define gyro_address 0x68 << 1 //adress of MPU9025(加速度、ジャイロ)
@@ -26,16 +26,15 @@ public:
   void read_accel(double *accel_roll, double *accel_pitch);                //指定したアドレスに加速度センサから算出したroll軸,pitch軸の回転角を返す
   void read_gyro(double *gyro_roll, double *gyro_pitch, double *gyro_yaw); //指定したアドレスにジャイロセンサから算出した各軸の回転角を返す
   void read_compass(double *Mx, double *My, double *Mz);                   //指定したアドレスに地磁気センサの生値を返す
-  void complement_Yaw();                                                   //各センサから補正したYaw軸の回転角を返す
+  double complement_Yaw();                                                 //各センサから補正したYaw軸の回転角を返す
   double gyro_Yaw();                                                       //ジャイロセンサから算出したYaw軸の回転角を返す
   double compass_Yaw();                                                    //地磁気センサから算出したYaw軸の回転角を返す
   double getYaw() { return yaw; }
-  void setYaw(double targetYaw){ yaw = targetYaw; }
+  void setYaw(double targetYaw) { yaw = targetYaw; }
 
 private:
   I2C *i2c_;
   Timer *timer_;
-  Serial *pc_;
 
   void writeByte(uint8_t address, uint8_t subAddress, uint8_t data)
   {

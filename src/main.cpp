@@ -30,7 +30,8 @@
     ゲーム用新型足回り制御
  */
 //#define GAME_DRIVE_NEWTYPE            //ロボットの動作は2mシーツ用
-#define GAME_MODECHANGE_ONBOARDSWITCH //基板上の青スイッチで動作切り替え（シーツ・バスタオル）
+//#define GAME_MODECHANGE_ONBOARDSWITCH //基板上の青スイッチで動作切り替え（シーツ・バスタオル）
+#define TEST_DRIVE
 
 //#define MECA_CLASS_DEBUG
 //#define TEST_RojarArm_UpDownLoop
@@ -48,12 +49,12 @@ struct baudRate
 struct parameter
 {
   const int encoderPPRLow = 48;
-  const int encoderPPRHigh = 2048;
+  const int encoderPPRHigh = 100;
   const double encoderAttachedWheelRadius = 2.54; //mini(50) omni
-  const double permitErrorCircleRadius = 3.0;
-  const int decreaseSpeedCircleRadius = 150;
-  const double estimateDriveMaxPWM = 0.6; // max:0.7, recommend:0.64 //DEFAULT 0.5
-  const double estimateDriveMinPWM = 0.19;
+  const double permitErrorCircleRadius = 2.0;
+  const int decreaseSpeedCircleRadius = 130;
+  const double estimateDriveMaxPWM = 0.1; // max:0.7, recommend:0.64 //DEFAULT 0.5
+  const double estimateDriveMinPWM = 0.1;
   const double estimatePegMaxPWM = 0.6;
   const double estimateHangerMaxPWM = 0.6;
   const double estimateRojarArmMaxPWM = 0.96;
@@ -73,11 +74,11 @@ struct For3WD
 
 struct
 {
-  PinName XAxisAPulse = PE_9;
-  PinName XAxisBPulse = PF_13;
+  PinName XAxisAPulse = PB_5;
+  PinName XAxisBPulse = PC_7;
   PinName XAxisIndexPulse = NC;
-  PinName YAxisAPulse = PB_5;
-  PinName YAxisBPulse = PC_7;
+  PinName YAxisAPulse = PE_9;
+  PinName YAxisBPulse = PF_13;
   PinName YAxisIndexPulse = NC;
 } OdometryPin;
 
@@ -86,7 +87,7 @@ struct
 #include "DriveSource\OmniKinematics4WD.h"
 OmniKinematics4WD OmniKinematics;
 MotorDriverAdapter4WD driveWheel(PB_10, PB_11, PE_12, PE_14, PD_12, PD_13, PE_8, PE_10);
-float output[4] = {};
+double output[4] = {};
 #endif // USING_4WD
 
 #ifdef USING_3WD
@@ -94,16 +95,16 @@ float output[4] = {};
 #include "DriveSource\OmniKinematics3WD.h"
 OmniKinematics3WD OmniKinematics;
 MotorDriverAdapter3WD driveWheel(DrivePin.FrontCW, DrivePin.FrontCCW, DrivePin.RightCW, DrivePin.RightCCW, DrivePin.LeftCW, DrivePin.LeftCCW);
-float output[3] = {};
+double output[3] = {};
 #endif // USING_3WD
 
 Timer TimerForQEI;
 MPU9250 IMU;
 QEI encoderXAxis(OdometryPin.XAxisAPulse, OdometryPin.XAxisBPulse, OdometryPin.XAxisIndexPulse, Robot.encoderPPRLow, &TimerForQEI, QEI::X4_ENCODING);
 QEI encoderYAxis(OdometryPin.YAxisAPulse, OdometryPin.YAxisBPulse, OdometryPin.YAxisIndexPulse, Robot.encoderPPRLow, &TimerForQEI, QEI::X4_ENCODING);
-MWodometry odometryXAxis(encoderXAxis, Robot.encoderPPRLow, Robot.encoderAttachedWheelRadius);
+MWodometry odometryXAxis(encoderXAxis, Robot.encoderPPRHigh, Robot.encoderAttachedWheelRadius);
 MWodometry odometryYAxis(encoderYAxis, Robot.encoderPPRLow, Robot.encoderAttachedWheelRadius);
-LocationManager<int> robotLocation(0, 0, 0);
+LocationManager<double> robotLocation(0, 0, 0);
 DriveTrain accelAlgorithm(robotLocation, odometryXAxis, odometryYAxis, IMU, Robot.permitErrorCircleRadius, Robot.decreaseSpeedCircleRadius);
 
 Serial STLinkTerminal(USBTX, USBRX, SerialBaud.HardwareSerial); //Surfaceのターミナルとの通信用ポート
@@ -471,6 +472,7 @@ int main(void)
     static bool stateHasChanged, previousState;
     static unsigned int pushedCounter;
     onBoardSwitch.update();
+    startButton.update();
     if (onBoardSwitch.stats() != previousState)
     {
       stateHasChanged = 1;
@@ -493,16 +495,19 @@ int main(void)
       modeIndicatorLED1.write(0);
       modeIndicatorLED2.write(1);
     }
+    if (startButton.stats())
+      break;
   }
 
   switch (currentRunningMode)
   {
-    case bathTowel:
-      robotLocation.addPoint(0, 0); //二本目のポール前
-      robotLocation.addPoint(0, 0); //さらに近づいてリミット監視開始
-      robotLocation.addPoint(0, 0); //横移動
-      robotLocation.addPoint(0, 0); //直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(0, 0); //初期位置
+    case bathTowel:                             //縦:112-170,横112-205
+      robotLocation.addPoint(0, -(340 + 47));   //二本目のポール前
+      robotLocation.addPoint(147, -(365 + 47)); //さらに近づいてリミット監視開始
+      robotLocation.addPoint(170, -(380 + 47));
+      robotLocation.addPoint(265, -(385 + 47)); //横移動
+      robotLocation.addPoint(10, -(335 + 47));  //直線移動できる位置まで戻ってくる
+      robotLocation.addPoint(10, -10);          //初期位置
       break;
     case Sheets:
       robotLocation.addPoint(0, -500, 0);
@@ -516,6 +521,7 @@ int main(void)
   holder.grasp('r');
   holder.grasp('l');
   robotLocation.sendNext();
+  accelAlgorithm.setAllocateErrorCircleRadius(20);
   while (1)
   {
     static unsigned int wayPointSignature = 1;
@@ -534,19 +540,23 @@ int main(void)
     rojarArmRight.update();
     pegAttacher.update();
     hanger.update();
-    accelAlgorithm.update();
     accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+    accelAlgorithm.update();
     OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
     driveWheel.apply(output);
 
     limitSwitchBarFront.update();
     if (limitSwitchBarFront.stats() && wayPointSignature == 2)
     {
-      accelAlgorithm.setCurrentYPosition(-380);
-      robotLocation.setCurrentPoint(robotLocation.getXLocationData(), -380, robotLocation.getYawStatsData());
+      accelAlgorithm.setCurrentYPosition(-(380 + 47));
+      robotLocation.setCurrentPoint(robotLocation.getXLocationData(), -(380 + 47), robotLocation.getYawStatsData());
       static int flag = 0;
       if (flag == 1000)
+      {
+        robotLocation.sendNext();
+        accelAlgorithm.update();
         wayPointSignature++;
+      }
       flag++;
     }
     if (robotLocation.checkMovingStats(accelAlgorithm.getStats()))
@@ -554,8 +564,9 @@ int main(void)
       switch (wayPointSignature)
       {
         case 1:
+          accelAlgorithm.setAllocateErrorCircleRadius(3.5);
           robotLocation.sendNext();
-          rojarArmRight.setHeight(1200);
+          rojarArmRight.setHeight(1600);
           wayPointSignature++;
           break;
         case 2:
@@ -627,12 +638,14 @@ int main(void)
               if (100 < clothHangerTimer.read_ms() && seq == 2)
               {
                 robotLocation.sendNext();
+                accelAlgorithm.setMaxOutput(0.25); //引っ張るときはゆっくり
                 wayPointSignature++;
               }
             }
           }
           break;
         case 4:
+          accelAlgorithm.setMaxOutput(Robot.estimateDriveMaxPWM);
           holder.release('l');
           rojarArmRight.setHeight(0);
           robotLocation.sendNext();
@@ -667,6 +680,64 @@ int main(void)
   }
 
 #endif //GAME_MODECHANGE_ONBOARDSWITCH
+
+#ifdef TEST_DRIVE
+
+  struct
+  {
+    PinName LCD1TX = PC_6;
+    PinName LCD1RX = NC;
+  } serialDevice;
+
+  struct
+  {
+    PinName toBegin = PG_2;
+  } Switch;
+
+  DebounceSwitch startButton(Switch.toBegin, 'U'); //create object using pin "PG_2" with PullUpped
+  accelAlgorithm.setMaxOutput(Robot.estimateDriveMaxPWM);
+  accelAlgorithm.setMinOutput(Robot.estimateDriveMinPWM);
+  OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
+  driveWheel.setMaxPWM(Robot.estimateDriveMaxPWM);
+  robotLocation.addPoint(0, -520, 0);
+  robotLocation.addPoint(300, -520, 0);
+  robotLocation.addPoint(250, -300, 0);
+  robotLocation.addPoint(0, 0, 0);
+  IMU.setup(PB_9, PB_8);
+  IMUisReadyLED.write(1);
+  while (1) //モードセレクト処理
+  {
+    static bool stateHasChanged, previousState;
+    static unsigned int pushedCounter;
+    startButton.update();
+    if (startButton.stats())
+      break;
+  }
+  while (1)
+  {
+    static unsigned int wayPointSignature = 0;
+    accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+    accelAlgorithm.update();
+    OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+    driveWheel.apply(output);
+    if (robotLocation.checkMovingStats(accelAlgorithm.getStats()))
+    {
+      if (wayPointSignature == 4)
+        break;
+      robotLocation.sendNext();
+      wayPointSignature++;
+    }
+    STLinkTerminal.printf("%4.4lf,%4.4lf,%4.4lf\r\n", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), accelAlgorithm.getCurrentYawPosition());
+  }
+  while (1)
+  {
+    accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+    accelAlgorithm.update();
+    OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+    driveWheel.apply(output);
+    STLinkTerminal.printf("%4.4lf,%4.4lf,%4.4lf\r\n", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), accelAlgorithm.getCurrentYawPosition());
+  }
+#endif
 
 #ifdef TEST_DRIVE_NEWTYPE
   Serial serialLCD(PC_6, NC, 9600);

@@ -25,7 +25,6 @@ void MPU9250::setup(PinName sda, PinName scl)
   init();
   i2c_ = new I2C(sda, scl);
   i2c_->frequency(400000);
-  pc_ = new Serial(USBTX, USBRX);
   timer_ = new Timer();
   timer_->start();
 
@@ -35,7 +34,6 @@ void MPU9250::setup(PinName sda, PinName scl)
 
   while (readByte(gyro_address, reg_WAI) != 0x71)
   {
-    pc_->printf("WAI = %d", readByte(gyro_address, reg_WAI));
   }
 
   int16_t raw_gx = 0, raw_gy = 0, raw_gz = 0;
@@ -79,13 +77,6 @@ void MPU9250::setup(PinName sda, PinName scl)
   offset_mx /= 3000;
   offset_my /= 3000;
   offset_mz /= 3000;
-  pc_->printf("--OFFSETS--\r\n");
-  pc_->printf("%.2lf\r\n", offset_gx);
-  pc_->printf("%.2lf\r\n", offset_gy);
-  pc_->printf("%.2lf\r\n", offset_gz);
-  pc_->printf("%.2lf\r\n", offset_mx);
-  pc_->printf("%.2lf\r\n", offset_my);
-  pc_->printf("%.2lf\r\n", offset_mz);
 
   offset_mag = atan2(offset_mx, offset_my) * 180 / 3.141593;
   if (offset_mag >= 0)
@@ -100,13 +91,12 @@ void MPU9250::setup(PinName sda, PinName scl)
   }
 }
 
-void MPU9250::complement_Yaw()
+double MPU9250::complement_Yaw()
 {
-  //gyro_yaw = gyro_Yaw();
-  //compass_angle = compass_Yaw();
-  //complement_angle = 0.9 * gyro_yaw + 0.1 * compass_angle; //値のブレが大きい場合は適宜調整してくれ
-  //yaw = complement_angle;
-  yaw = gyro_Yaw();
+  gyro_yaw = gyro_Yaw();
+  compass_angle = compass_Yaw();
+  complement_angle = 0.9 * gyro_yaw + 0.1 * compass_angle; //値のブレが大きい場合は適宜調整してくれ
+  return complement_angle;
 }
 
 void MPU9250::read_accel(double *accel_roll, double *accel_pitch)

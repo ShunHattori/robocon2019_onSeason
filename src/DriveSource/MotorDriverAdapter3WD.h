@@ -14,17 +14,17 @@ public:
 
   /*
     *   desc:   入力されたPWMを元にピンに出力する
-    *   param:  pwm[3](float)
+    *   param:  pwm[3](double)
     *   return: none
     */
-  void apply(float pwm[3]);
-  
+  void apply(double pwm[3]);
+
   /*
     *   desc:   MDにかかる最大PWMを設定
-    *   param:  maxPWM(float)
+    *   param:  maxPWM(double)
     *   return: none
     */
-  void setMaxPWM(float maxPwm)
+  void setMaxPWM(double maxPwm)
   {
     maxAllocateOutput = maxPwm;
   }
@@ -32,11 +32,11 @@ public:
 private:
   PinName FCWPin, FCCWPin, BRCWPin, BRCCWPin, BLCWPin, BLCCWPin;
   PwmOut *FCR, *FCN, *BRR, *BRN, *BLR, *BLN;
-  float duty[3];
+  double duty[3];
 
-  static const float RCconstant = 0.7;
-  float maxAllocateOutput;
-  float prevPWM[3];
+  static const double RCconstant = 0.7;
+  double maxAllocateOutput;
+  double prevPWM[3];
 
-  float absFloat(float);
+  double absdouble(double);
 };

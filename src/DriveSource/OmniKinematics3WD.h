@@ -1,7 +1,8 @@
 #pragma once
 
-#include "mbed.h"
 #include "math.h"
+#include "mbed.h"
+
 
 class OmniKinematics3WD
 {
@@ -14,22 +15,22 @@ public:
 
   /*
     *   desc:   MDにかかる最大PWMを設定
-    *   param:  maxPWM(float)
+    *   param:  maxPWM(double)
     *   return: none
     */
-  void setMaxPWM(float maxPwm)
+  void setMaxPWM(double maxPwm)
   {
     maxAllocateOutput = maxPwm;
   }
 
   /*
     *   desc:   ロボット全体の移動方向を指定し、MDにかけるPWMを取得
-    *   param:  x,y,yaw方向の移動量(float) 駆動輪数に応じたfloat配列
+    *   param:  x,y,yaw方向の移動量(double) 駆動輪数に応じたdouble配列
     *   return: none(引数に代入)
     */
-  void getOutput(float x, float y, float yaw, float pwm[]);
+  void getOutput(double x, double y, double yaw, double pwm[]);
 
 private:
-  float XVector, YVector, YawVector;
-  float maxAllocateOutput;
+  double XVector, YVector, YawVector;
+  double maxAllocateOutput;
 };

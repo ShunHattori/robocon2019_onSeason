@@ -14,18 +14,18 @@ public:
 
   /*
     *   desc:   入力されたPWMを元にピンに出力する
-    *   param:  pwm[4](float)
+    *   param:  pwm[4](double)
     *   return: none
     */
-  void apply(float pwm[4]);
+  void apply(double pwm[4]);
 
 private:
   PinName FRCWPin, FRCCWPin, FLCWPin, FLCCWPin, BRCWPin, BRCCWPin, BLCWPin, BLCCWPin;
   PwmOut *FRR, *FRN, *FLR, *FLN, *BRR, *BRN, *BLR, *BLN;
-  float duty[4];
+  double duty[4];
 
-  static const float RCconstant = 0.7;
-  float prevPWM[4];
+  static const double RCconstant = 0.7;
+  double prevPWM[4];
 
-  float absFloat(float);
+  double absdouble(double);
 };
