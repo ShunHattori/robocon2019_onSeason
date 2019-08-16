@@ -6,9 +6,8 @@ class RojarArm
 {
 public:
   /*
-        PWM割り当てがされているピンx2
      */
-  RojarArm(PinName motorCW, PinName motorCCW);
+  RojarArm(double *);
 
   /*
         現在の移動状況を取得する　(展開完了== 1, 展開中or展開不可 == 0)
@@ -41,8 +40,7 @@ public:
   void update(void);
 
 private:
-  PwmOut *MotorCW, *MotorCCW;
-
+  double *motorPWM;
   int16_t heightTarget, heightCurrent;
   float pwm;
 };
