@@ -3,29 +3,31 @@
 #include "LocationManager.h"
 #include "MWodometry.h"
 #include "SensorSource\MPU9250.h"
+#include "TimeIncreaser.h"
 #include "math.h"
 #include "mbed.h"
 
 class DriveTrain
 {
 public:
-  DriveTrain(LocationManager<double> &lcmObj, MWodometry &X1, MWodometry &Y1, MPU9250 &IMUobj, int AllocateError, int DecreaseRadius)
+  DriveTrain(LocationManager<double> &lcmObj, MWodometry &X1, MWodometry &Y1, MPU9250 &IMUobj, double AllocateError, double DecreaseRadius)
   {
     LCM = &lcmObj;
     XAxis_1 = &X1;
     YAxis_1 = &Y1;
     imu = &IMUobj;
-    allocateError = AllocateError;
-    decreaseRadius = DecreaseRadius;
-    Max = 0.3;
-    Min = 0.05;
-    ConfirmStatsInitialFlag = 1;
-    encoderMode = 1;
-    currentX = 0;
-    currentY = 0;
-    currentYaw = 0;
-    xReachedMaxPWM = 0.35;
-    yReachedMaxPWM = 0.35;
+    xAxisAccelor = new TimeIncreaser(5, 0.002);
+    yAxisAccelor = new TimeIncreaser(5, 0.002);
+    Drive.allocateError = AllocateError;
+    Drive.decreaseRadius = DecreaseRadius;
+    Drive.ConfirmStatsInitialFlag = 1;
+    Drive.maxPWM = 0.3;
+    Drive.maxPWM = 0.1;
+    Drive.reachedPWM[0] = 0.35;
+    Drive.reachedPWM[1] = 0.35;
+    xAxis.current = 0;
+    yAxis.current = 0;
+    yawAxis.current = 0;
   }
 
   /*
@@ -42,7 +44,7 @@ public:
      */
   bool getStats()
   {
-    return stats;
+    return Drive.stats;
   }
 
   /*
@@ -52,7 +54,7 @@ public:
      */
   void setAllocateErrorCircleRadius(double radius)
   {
-    allocateError = radius;
+    Drive.allocateError = radius;
   }
 
   /*
@@ -62,7 +64,7 @@ public:
      */
   void setDecreaseCircleRadius(double radius)
   {
-    decreaseRadius = radius;
+    Drive.decreaseRadius = radius;
   }
 
   /*
@@ -72,25 +74,15 @@ public:
      */
   double getXVector()
   {
-    return Vec[0];
+    return Drive.vector[0];
   }
   double getYVector()
   {
-    return Vec[1];
+    return Drive.vector[1];
   }
   double getYawVector()
   {
-    return Vec[2];
-  }
-
-  void setSensorDistance(int distance)
-  {
-    sensorDistance = distance;
-  }
-
-  void switchMode()
-  {
-    encoderMode = !encoderMode;
+    return Drive.vector[2];
   }
 
   /*
@@ -100,15 +92,15 @@ public:
      */
   double getCurrentXPosition()
   {
-    return currentX;
+    return xAxis.current;
   }
   double getCurrentYPosition()
   {
-    return currentY;
+    return yAxis.current;
   }
   double getCurrentYawPosition()
   {
-    return currentYaw;
+    return yawAxis.current;
   }
 
   /*
@@ -118,15 +110,15 @@ public:
      */
   void setCurrentXPosition(double position)
   {
-    currentX = position;
+    xAxis.current = position;
   }
   void setCurrentYPosition(double position)
   {
-    currentY = position;
+    yAxis.current = position;
   }
   void setCurrentYawPosition(double position)
   {
-    currentYaw = -position;
+    yawAxis.current = -position;
   }
 
   /*
@@ -136,9 +128,8 @@ public:
      */
   void setMaxOutput(double max)
   {
-    Max = max;
+    Drive.maxPWM = max;
   }
-
   /*
      * desc:   出力の最小値を設定する
      * param:  最小値
@@ -146,36 +137,47 @@ public:
      */
   void setMinOutput(double min)
   {
-    Min = min;
+    Drive.minPWM = min;
   }
 
 private:
   LocationManager<double> *LCM;
   MWodometry *XAxis_1, *YAxis_1;
-  Timer ConfirmStats;
   MPU9250 *imu;
-  /*
-     *   current~ : 現在のロボットの位置を保存している
-     *   target~  : ロボットの目標位置
-     *   error~   : 目標座標と現在位置の偏差
-     *   stats    : フラグ(1=移動完了,0=移動中)
-     *   encoderAttachDiff   :   同軸の計測輪取り付け距離
-     *   XEncodedDistanceDiff:   同軸エンコーダ間の誤差　これからYAWを計算
-     *   allocateError       :   停止地点の許容誤差
-     *   decreaseRadius      :   減速開始判定円の半径
-     */
-  double currentX, currentY, tempX, tempY, tempYaw;
-  double targetX, targetY;
-  double errorX, errorY, errorYaw;
-  bool stats;
-  double currentYaw, targetYaw;
-  double allocateError, decreaseRadius;
+  Timer movingComfirmTimer;
+  TimeIncreaser *xAxisAccelor, *yAxisAccelor;
 
-  double Vec[3];
-  double sensorDistance;
-  double Max, Min;
-  double xReachedMaxPWM, yReachedMaxPWM;
-  bool ConfirmStatsInitialFlag, encoderMode;
+  //array[0]:X ,[1]:Y ,[2]:YAW
+  struct
+  {
+    double vector[3];
+    double allocateError;
+    double decreaseRadius;
+    double maxPWM, minPWM;
+    double reachedPWM[2];
+    bool ConfirmStatsInitialFlag;
+    bool stats;
+  } Drive;
 
-  double mapdouble(double value, double in_min, double in_max, double out_min, double out_max);
+  struct location
+  {
+    double current;
+    double target;
+    double error;
+    double temp;
+  } xAxis, yAxis, yawAxis;
+
+  struct yawParam
+  {
+    double allocateError;
+    double decreaseRadius;
+    double turningStrength; //Be applied with reciprocal of 1
+    double turningPWM;
+  } yawSensitivity;
+
+  double mapDouble(double value, double in_min, double in_max, double out_min, double out_max);
+  bool getMovingStats();
+  void retentionDriving();
+  void accelerationDriving();
+  void yawAxisRetentionDriving();
 };

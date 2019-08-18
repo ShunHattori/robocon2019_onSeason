@@ -1,6 +1,7 @@
 #include "DriveSource\DriveTrain.h"
 #include "DriveSource\LocationManager.h"
 #include "DriveSource\MWodometry.h"
+#include "DriveSource\TimeIncreaser.h"
 #include "MechanismSource\ClothHang.h"
 #include "MechanismSource\ClothHold.h"
 #include "MechanismSource\Peg.h"
