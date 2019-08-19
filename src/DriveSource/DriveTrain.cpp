@@ -59,7 +59,7 @@ void DriveTrain::retentionDriving()
   }
   else
   {
-    Drive.vector[0] = xAxis.error < 0 ? mapDouble(xAxis.error, 0, -Drive.decreaseRadius, Drive.minPWM, -Drive.maxPWM) : mapDouble(xAxis.error, 0, Drive.decreaseRadius, Drive.minPWM, Drive.maxPWM);
+    Drive.vector[0] = xAxis.error < 0 ? mapDouble(xAxis.error, 0, -Drive.decreaseRadius, -Drive.minPWM, -Drive.maxPWM) : mapDouble(xAxis.error, 0, Drive.decreaseRadius, Drive.minPWM, Drive.maxPWM);
   }
   //yAxis Process
   if (-Drive.allocateError < yAxis.error && yAxis.error < Drive.allocateError)
@@ -72,12 +72,20 @@ void DriveTrain::retentionDriving()
   }
   else
   {
-    Drive.vector[1] = yAxis.error < 0 ? mapDouble(yAxis.error, 0, -Drive.decreaseRadius, Drive.minPWM, -Drive.maxPWM) : mapDouble(yAxis.error, 0, Drive.decreaseRadius, Drive.minPWM, Drive.maxPWM);
+    Drive.vector[1] = yAxis.error < 0 ? mapDouble(yAxis.error, 0, -Drive.decreaseRadius, -Drive.minPWM, -Drive.maxPWM) : mapDouble(yAxis.error, 0, Drive.decreaseRadius, Drive.minPWM, Drive.maxPWM);
   }
 }
 
 void DriveTrain::accelerationDriving()
 {
+  //Drive.decreaseRadiusより次点の偏差が小さい場合、最大値が０でMAP処理をしてしまうのでDrive.minPWMより小さい場合少なくともminPWMでMAP処理をするようにする
+  for (int axis = 0; axis < 2; axis++)
+  {
+    if (abs(Drive.reachedPWM[axis]) < Drive.minPWM)
+    {
+      Drive.reachedPWM[axis] = Drive.minPWM;
+    }
+  }
   //xAxis Process
   if (Drive.decreaseRadius < abs(xAxis.error)) //減速半径外の時
   {
@@ -108,7 +116,7 @@ void DriveTrain::accelerationDriving()
     }
     else
     {
-      Drive.vector[0] = xAxis.error < 0 ? mapDouble(xAxis.error, 0, -Drive.decreaseRadius, Drive.minPWM, -Drive.reachedPWM[0]) : mapDouble(xAxis.error, 0, Drive.decreaseRadius, Drive.minPWM, Drive.reachedPWM[0]);
+      Drive.vector[0] = xAxis.error < 0 ? mapDouble(xAxis.error, 0, -Drive.decreaseRadius, -Drive.minPWM, -Drive.reachedPWM[0]) : mapDouble(xAxis.error, 0, Drive.decreaseRadius, Drive.minPWM, Drive.reachedPWM[0]);
     }
   }
 
@@ -117,12 +125,12 @@ void DriveTrain::accelerationDriving()
   {
     if (0 < yAxis.error)
     {
-      Drive.vector[1] += 0.0002;
+      Drive.vector[1] += yAxisAccelor->getValue();
       Drive.reachedPWM[0] = Drive.vector[1];
     }
     else
     {
-      Drive.vector[1] -= 0.0002;
+      Drive.vector[1] -= yAxisAccelor->getValue();
       Drive.reachedPWM[0] = -Drive.vector[1];
     }
     if (Drive.vector[1] < -Drive.decreaseRadius || Drive.decreaseRadius < Drive.vector[1])
@@ -142,7 +150,7 @@ void DriveTrain::accelerationDriving()
     }
     else
     {
-      Drive.vector[1] = yAxis.error < 0 ? mapDouble(yAxis.error, 0, -Drive.decreaseRadius, Drive.minPWM, -Drive.reachedPWM[0]) : mapDouble(yAxis.error, 0, Drive.decreaseRadius, Drive.minPWM, Drive.reachedPWM[0]);
+      Drive.vector[1] = yAxis.error < 0 ? mapDouble(yAxis.error, 0, -Drive.decreaseRadius, -Drive.minPWM, -Drive.reachedPWM[0]) : mapDouble(yAxis.error, 0, Drive.decreaseRadius, Drive.minPWM, Drive.reachedPWM[0]);
     }
   }
 }
