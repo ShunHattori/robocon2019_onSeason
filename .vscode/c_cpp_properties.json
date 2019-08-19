@@ -49,7 +49,6 @@
             ],
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
-                "databaseFilename": "${workspaceRoot}/.vscode/.browse.c_cpp.db",
                 "path": [
                     "c:/Users/kirar/OneDrive/Documents/GitHub/robocon2019_onSeason/include",
                     "c:/Users/kirar/OneDrive/Documents/GitHub/robocon2019_onSeason/src",
