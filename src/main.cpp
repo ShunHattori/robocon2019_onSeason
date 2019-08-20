@@ -1,6 +1,7 @@
 #include "DriveSource\DriveTrain.h"
 #include "DriveSource\LocationManager.h"
 #include "DriveSource\MWodometry.h"
+#include "DriveSource\TimeIncreaser.h"
 #include "MechanismSource\ClothHang.h"
 #include "MechanismSource\ClothHold.h"
 #include "MechanismSource\Peg.h"
@@ -138,7 +139,7 @@ int main(void)
     hanger.update();
     accelAlgorithm.update();
     accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
-    OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+    OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), IMU.gyro_Yaw(), output);
     //display current robot vectors (3-Axis) and calculated PWMs
     //STLinkTerminal.printf("CurrentVector:%.1lf %.1lf %.1lf  \t", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
     //STLinkTerminal.printf("CalculatedPWM:%.2f %.2f %.2f \r\n", output[0], output[1], output[2]);
@@ -524,7 +525,7 @@ int main(void)
     hangerRight.update();
     accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
     accelAlgorithm.update();
-    OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), driverPWMOutput);
+    OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), IMU.gyro_Yaw(), driverPWMOutput);
     //ここにMMD送信(drive)
     int MDD1Packet[6] = {
         driverPWMOutput[0] < 0 ? 0 : (int)(driverPWMOutput[0] * 100),
@@ -731,7 +732,7 @@ int main(void)
     static unsigned int wayPointSignature = 0;
     accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
     accelAlgorithm.update();
-    OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+    OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), IMU.gyro_Yaw(), output);
     driveWheel.apply(output);
     if (robotLocation.checkMovingStats(accelAlgorithm.getStats()))
     {
@@ -746,7 +747,7 @@ int main(void)
   {
     accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
     accelAlgorithm.update();
-    OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+    OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), IMU.gyro_Yaw(), output);
     driveWheel.apply(output);
     STLinkTerminal.printf("%4.4lf,%4.4lf,%4.4lf\r\n", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), accelAlgorithm.getCurrentYawPosition());
   }
@@ -801,7 +802,7 @@ int main(void)
     }
     accelAlgorithm.update();
     accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
-    OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), output);
+    OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), IMU.gyro_Yaw(), output);
     driveWheel.apply(output);
     static unsigned long int prevDisplayed = 0;
     if (((LCDtimer.read_ms() - prevDisplayed) > 40) && !initialButtonPressToken) //about 24Hz flash rate
