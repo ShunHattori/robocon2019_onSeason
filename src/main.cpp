@@ -44,9 +44,9 @@ struct parameter
   const int encoderPPRHigh = 100;
   const double encoderAttachedWheelRadius = 2.54; //mini(50) omni
   const double permitErrorCircleRadius = 2.0;
-  const int decreaseSpeedCircleRadius = 130;
-  const double estimateDriveMaxPWM = 0.1; // max:0.7, recommend:0.64 //DEFAULT 0.5
-  const double estimateDriveMinPWM = 0.1;
+  const int decreaseSpeedCircleRadius = 70;
+  const double estimateDriveMaxPWM = 0.4; // max:0.7, recommend:0.64 //DEFAULT 0.5
+  const double estimateDriveMinPWM = 0.2;
   const double estimatePegMaxPWM = 0.6;
   const double estimateHangerMaxPWM = 0.6;
   const double estimateRojarArmMaxPWM = 0.96;
@@ -488,7 +488,7 @@ int main(void)
       robotLocation.addPoint(170, -(380 + 47));
       robotLocation.addPoint(265, -(385 + 47)); //横移動
       robotLocation.addPoint(10, -(335 + 47));  //直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(10, -10);          //初期位置
+      robotLocation.addPoint(0, 0);             //初期位置
       break;
     case Sheets:
       robotLocation.addPoint(0, -500, 0);
@@ -505,6 +505,7 @@ int main(void)
   accelAlgorithm.setAllocateErrorCircleRadius(20);
   while (1)
   {
+    STLinkTerminal.printf("%.1lf %.1lf %.1lf   ", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
     static unsigned int wayPointSignature = 1;
     /*static unsigned long int prevDisplayed = 0;
     if (((TimerForLCD.read_ms() - prevDisplayed) > 100)) //about 10Hz flash rate
@@ -536,14 +537,15 @@ int main(void)
     MDD1.transmit(6, MDD1Packet);
 
     int MDD2Packet[6] = {
-        (int)(pegAttacherPWM[0][0] * 100),
-        (int)(pegAttacherPWM[0][1] * 100),
+        (int)(rojarArmPWM[0][1] * 100),
+        (int)(rojarArmPWM[0][0] * 100),
         (int)(hangerPWM[0][0] * 100),
         (int)(hangerPWM[0][1] * 100),
-        (int)(rojarArmPWM[0][0] * 100),
-        (int)(rojarArmPWM[0][1] * 100),
+        (int)(pegAttacherPWM[0][1] * 100),
+        (int)(pegAttacherPWM[0][0] * 100),
     };
     MDD2.transmit(6, MDD2Packet);
+    STLinkTerminal.printf("%d\t%d\t%d\t%d\t%d\t%d\t\r\n", (int)(pegAttacherPWM[0][0] * 100), (int)(pegAttacherPWM[0][1] * 100), (int)(hangerPWM[0][0] * 100), (int)(hangerPWM[0][1] * 100), (int)(rojarArmPWM[0][0] * 100), (int)(rojarArmPWM[0][1] * 100));
 
     limitSwitchBarFrontRight.update();
     if (limitSwitchBarFrontRight.stats() && wayPointSignature == 2)
@@ -551,7 +553,7 @@ int main(void)
       accelAlgorithm.setCurrentYPosition(-(380 + 47));
       robotLocation.setCurrentPoint(robotLocation.getXLocationData(), -(380 + 47), robotLocation.getYawStatsData());
       static int flag = 0;
-      if (flag == 1000)
+      if (flag == 100)
       {
         robotLocation.sendNext();
         accelAlgorithm.update();
@@ -667,6 +669,17 @@ int main(void)
             //LCDDriver.setCursor(2, 0);
             accelAlgorithm.update();
             accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+            OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), driverPWMOutput);
+            //ここにMMD送信(drive)
+            int MDD1Packet[6] = {
+                driverPWMOutput[0] < 0 ? 0 : (int)(driverPWMOutput[0] * 100),
+                driverPWMOutput[0] > 0 ? 0 : -(int)(driverPWMOutput[0] * 100),
+                driverPWMOutput[1] < 0 ? 0 : (int)(driverPWMOutput[1] * 100),
+                driverPWMOutput[1] > 0 ? 0 : -(int)(driverPWMOutput[1] * 100),
+                driverPWMOutput[2] < 0 ? 0 : (int)(driverPWMOutput[2] * 100),
+                driverPWMOutput[2] > 0 ? 0 : -(int)(driverPWMOutput[2] * 100),
+            };
+            MDD1.transmit(6, MDD1Packet);
             //serialLCD.printf("%.1lf %.1lf %.1lf", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
           }
           break;
