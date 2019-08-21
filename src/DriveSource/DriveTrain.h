@@ -16,8 +16,8 @@ public:
     XAxis_1 = &X1;
     YAxis_1 = &Y1;
     imu = &IMUobj;
-    xAxisAccelor = new TimeIncreaser(5, 0.002);
-    yAxisAccelor = new TimeIncreaser(5, 0.002);
+    xAxisAccelor = new TimeIncreaser(4, 0.003);
+    yAxisAccelor = new TimeIncreaser(4, 0.003);
     Drive.allocateError = AllocateError;
     Drive.decreaseRadius = DecreaseRadius;
     Drive.ConfirmStatsInitialFlag = 1;

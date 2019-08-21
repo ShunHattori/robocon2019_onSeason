@@ -49,6 +49,7 @@
             ],
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": "${workspaceRoot}/.vscode/.browse.c_cpp.db",
                 "path": [
                     "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/include",
                     "c:/Users/USER/OneDrive - Otago Polytechnic/Documents/GitHub/STM32F767_test/src",

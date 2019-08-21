@@ -45,9 +45,9 @@ struct parameter
   const int encoderPPRHigh = 100;
   const double encoderAttachedWheelRadius = 2.54; //mini(50) omni
   const double permitErrorCircleRadius = 2.0;
-  const int decreaseSpeedCircleRadius = 70;
-  const double estimateDriveMaxPWM = 0.4; // max:0.7, recommend:0.64 //DEFAULT 0.5
-  const double estimateDriveMinPWM = 0.2;
+  const int decreaseSpeedCircleRadius = 100;
+  const double estimateDriveMaxPWM = 0.5; // max:0.7, recommend:0.64 //DEFAULT 0.5
+  const double estimateDriveMinPWM = 0.15;
   const double estimatePegMaxPWM = 0.6;
   const double estimateHangerMaxPWM = 0.6;
   const double estimateRojarArmMaxPWM = 0.96;
@@ -392,8 +392,8 @@ int main(void)
   struct
   {
     PinName toBegin = PG_2;
-    PinName frontR = PE_10;
-    PinName frontL = PE_12;
+    PinName frontR = PE_12;
+    PinName frontL = PE_10;
     PinName sideR = PE_14;
     PinName sideL = PE_15;
     PinName rojarBottomR = PE_7;
@@ -416,10 +416,10 @@ int main(void)
     PinName rojarArmRightEncoderBPulse = PB_9;
     PinName rojarArmLeftEncoderAPulse = PA_5;
     PinName rojarArmLeftEncoderBPulse = PA_6;
-    PinName holderRightServoR = PE_5;
-    PinName holderRightServoL = PE_6;
-    PinName holderLeftServoR = PF_8;
-    PinName holderLeftServoL = PF_7;
+    PinName holderRightServoR = PF_8; //pf8
+    PinName holderRightServoL = PF_7; //pf7
+    PinName holderLeftServoR = PE_5;
+    PinName holderLeftServoL = PE_6;
   } MecaPin;
 
   UnitProtocol UIF(serialDevice.UIFTX, serialDevice.UIFRX, SerialBaud.HardwareSerial);
@@ -434,6 +434,7 @@ int main(void)
   DebounceSwitch startButton(Switch.toBegin, 'U'); //create object using pin "PG_2" with PullUpped
   DebounceSwitch limitSwitchBarFrontRight(Switch.frontR, 'U');
   DebounceSwitch limitSwitchBarFrontLeft(Switch.frontL, 'U');
+  DebounceSwitch limitSwitchRightSide(Switch.sideR, 'U');
 
   DigitalOut modeIndicatorLED1(LED2);
   DigitalOut modeIndicatorLED2(LED3);
@@ -447,7 +448,7 @@ int main(void)
   QEI RojarArmLeftEncoder(MecaPin.rojarArmLeftEncoderAPulse, MecaPin.rojarArmLeftEncoderBPulse, NC, Robot.encoderPPRLow, &TimerForQEI, QEI::X4_ENCODING);
 
   ClothHold holderRight(MecaPin.holderRightServoR, MecaPin.holderRightServoL); //right,leftServo
-  ClothHold holderLeft(MecaPin.holderLeftServoR, MecaPin.holderLeftServoL);    //right,leftServo
+  //ClothHold holderLeft(MecaPin.holderLeftServoR, MecaPin.holderLeftServoL);    //right,leftServo
 
   static double pegAttacherPWM[2][2];                                                               //right(CW,CCW),left(CW,CCW)
   Peg pegAttacherRight(Robot.estimatePegMaxPWM, Robot.PegVoltageImpressionTime, pegAttacherPWM[0]); //pwm, time
@@ -544,7 +545,7 @@ int main(void)
       serialLCD.printf("%.1lf %.1lf %.1lf   ", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
       prevDisplayed = TimerForLCD.read_ms();
     }*/
-    static unsigned int wayPointSignature = 1, initialButtonPressToken = 1;
+    static unsigned int wayPointSignature = 1;
     rojarArmRight.setEncoderPulse(rojarArmRightEncoder.getPulses());
     hangerRight.setEncoderPulse(clothHangRightEncoder.getPulses());
     rojarArmRight.update();
@@ -723,17 +724,6 @@ int main(void)
         //display current robot vectors (3-Axis) and calculated PWMs
         //STLinkTerminal.printf("CurrentVector:%.1lf %.1lf %.1lf  \t", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
         //STLinkTerminal.printf("CalculatedPWM:%.2f %.2f %.2f \r\n", output[0], output[1], output[2]);
-        if (initialButtonPressToken)
-        {
-          startButton.update();
-          if (startButton.stats() && initialButtonPressToken)
-          {
-            initialButtonPressToken = 0;
-            robotLocation.sendNext(); //機構テスト時はコメントアウト
-            holderRight.grasp('r');
-            holderRight.grasp('l');
-          }
-        }
         rojarArmRight.setEncoderPulse(rojarArmRightEncoder.getPulses());
         rojarArmRight.update();
         pegAttacherRight.update();
@@ -752,18 +742,35 @@ int main(void)
           serialLCD.printf("%.1lf %.1lf %.1lf   ", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
           prevDisplayed = TimerForLCD.read_ms();
         }*/
-        limitSwitchBarFrontLeft.update();
-        if (limitSwitchBarFrontLeft.stats() && wayPointSignature == 2)
+        limitSwitchBarFrontRight.update();
+        if (limitSwitchBarFrontRight.stats() && wayPointSignature == 2)
         {
+          accelAlgorithm.setAllocateErrorCircleRadius(Robot.permitErrorCircleRadius);
           accelAlgorithm.setCurrentYPosition(-(580 + 47));
           robotLocation.setCurrentPoint(robotLocation.getXLocationData(), -(580 + 47), robotLocation.getYawStatsData());
           static int flag = 0;
           if (flag == 100)
+          {
             wayPointSignature++;
+          }
           flag++;
         }
 
-        if (robotLocation.checkMovingStats(accelAlgorithm.getStats()) && !initialButtonPressToken)
+        limitSwitchRightSide.update();
+        if (limitSwitchRightSide.stats() && wayPointSignature == 4)
+        {
+          accelAlgorithm.setAllocateErrorCircleRadius(Robot.permitErrorCircleRadius);
+          accelAlgorithm.setCurrentXPosition((455 - 70));
+          robotLocation.setCurrentPoint((455 - 70), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
+          static int flag = 0;
+          if (flag == 100)
+          {
+            wayPointSignature++;
+          }
+          flag++;
+        }
+
+        if (robotLocation.checkMovingStats(accelAlgorithm.getStats()))
         {
           switch (wayPointSignature)
           {
@@ -776,8 +783,9 @@ int main(void)
 
             case 2:
               //static int savedXLocation = accelAlgorithm.getCurrentXPosition();
-              limitSwitchBarFrontLeft.update();
-              if (!limitSwitchBarFrontLeft.stats())
+              accelAlgorithm.setAllocateErrorCircleRadius(10);
+              limitSwitchBarFrontRight.update();
+              if (!limitSwitchBarFrontRight.stats())
               {
                 robotLocation.setCurrentPoint(robotLocation.getXLocationData(), robotLocation.getYLocationData() - 5, robotLocation.getYawStatsData());
                 break;
@@ -855,6 +863,15 @@ int main(void)
               }
               break;
             case 4:
+              accelAlgorithm.setAllocateErrorCircleRadius(10);
+              limitSwitchRightSide.update();
+              if (!limitSwitchRightSide.stats())
+              {
+                robotLocation.setCurrentPoint(robotLocation.getXLocationData() + 5, robotLocation.getYLocationData(), robotLocation.getYawStatsData());
+                break;
+              }
+              break;
+            case 5:
               static bool initialFlag = 1;
               if (initialFlag)
               {
@@ -869,7 +886,7 @@ int main(void)
                 wayPointSignature++;
               }
               break;
-            case 5:
+            case 6:
               holderRight.release('l');
               rojarArmRight.setHeight(0); //ロジャーアーム縮小
               //pegAttacher.reload();
@@ -878,7 +895,7 @@ int main(void)
               wayPointSignature++;
               break;
 
-            case 6:
+            case 7:
               accelAlgorithm.setAllocateErrorCircleRadius(3.7);
               holderRight.grasp('r');
               holderRight.grasp('l');
@@ -886,13 +903,13 @@ int main(void)
               wayPointSignature++;
               break;
 
-            case 7:
+            case 8:
               if (rojarArmRight.stats())
               {
                 wayPointSignature++;
               }
               break;
-            case 8:
+            case 9:
               holderRight.free('r');
               holderRight.free('l');
               //LCDDriver.clear();
