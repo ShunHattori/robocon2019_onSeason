@@ -72,9 +72,9 @@ double driverPWMOutput[3] = {};
 Timer TimerForQEI;
 MPU9250 IMU;
 QEI encoderXAxis(OdometryPin.XAxisAPulse, OdometryPin.XAxisBPulse, OdometryPin.XAxisIndexPulse, Robot.encoderPPRHigh, &TimerForQEI, QEI::X4_ENCODING);
-QEI encoderYAxis(OdometryPin.YAxisAPulse, OdometryPin.YAxisBPulse, OdometryPin.YAxisIndexPulse, Robot.encoderPPRLow, &TimerForQEI, QEI::X4_ENCODING);
+QEI encoderYAxis(OdometryPin.YAxisAPulse, OdometryPin.YAxisBPulse, OdometryPin.YAxisIndexPulse, Robot.encoderPPRHigh, &TimerForQEI, QEI::X4_ENCODING);
 MWodometry odometryXAxis(encoderXAxis, Robot.encoderPPRHigh, Robot.encoderAttachedWheelRadius);
-MWodometry odometryYAxis(encoderYAxis, Robot.encoderPPRLow, Robot.encoderAttachedWheelRadius);
+MWodometry odometryYAxis(encoderYAxis, Robot.encoderPPRHigh, Robot.encoderAttachedWheelRadius);
 LocationManager<double> robotLocation(0, 0, 0);
 DriveTrain accelAlgorithm(robotLocation, odometryXAxis, odometryYAxis, IMU, Robot.permitErrorCircleRadius, Robot.decreaseSpeedCircleRadius);
 
@@ -476,28 +476,53 @@ int main(void)
   static int currentRunningMode;
   while (1) //ボタン待機
   {
+    static bool stateHasChanged, previousState;
+    static unsigned int pushedCounter;
+    onBoardSwitch.update();
     startButton.update();
+    if (onBoardSwitch.stats() != previousState)
+    {
+      stateHasChanged = 1;
+    }
+    else
+      stateHasChanged = 0;
+    if (onBoardSwitch.stats() && stateHasChanged)
+    {
+      pushedCounter++;
+      currentRunningMode = (pushedCounter % 2) == 0 ? bathTowel : Sheets;
+    }
+    previousState = onBoardSwitch.stats();
+    if (currentRunningMode)
+    {
+      modeIndicatorLED1.write(1);
+      modeIndicatorLED2.write(0);
+    }
+    else
+    {
+      modeIndicatorLED1.write(0);
+      modeIndicatorLED2.write(1);
+    }
     if (startButton.stats())
       break;
   }
 
   switch (currentRunningMode)
   {
-    case bathTowel:                             //縦:112-170,横112-205
-      robotLocation.addPoint(0, -(340 + 47));   //二本目のポール前
-      robotLocation.addPoint(147, -(365 + 47)); //さらに近づいてリミット監視開始
-      robotLocation.addPoint(170, -(380 + 47));
-      robotLocation.addPoint(265, -(385 + 47)); //横移動
-      robotLocation.addPoint(10, -(335 + 47));  //直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(0, 0);             //初期位置
+    case bathTowel:                                    //縦:112-170,横112-205
+      robotLocation.addPoint(0, -(340 + 47));          //二本目のポール前
+      robotLocation.addPoint((112 + 35), -(365 + 47)); //さらに近づいてリミット監視開始
+      robotLocation.addPoint((135 + 35), -(380 + 47));
+      robotLocation.addPoint((230 + 35), -(385 + 47)); //横移動
+      robotLocation.addPoint(10, -(335 + 47));         //直線移動できる位置まで戻ってくる
+      robotLocation.addPoint(0, 0);                    //初期位置
       break;
     case Sheets:
-      robotLocation.addPoint(0, -500, 0);
-      robotLocation.addPoint(112, -565, 0);
-      robotLocation.addPoint(340, -585, 0);
-      robotLocation.addPoint(340, -575, 0);
-      robotLocation.addPoint(0, -520, 0);
-      robotLocation.addPoint(-10, 5, 0);
+      robotLocation.addPoint(0, -(500 + 47), 0);
+      robotLocation.addPoint((112 + 35), -(565 + 47), 0);
+      robotLocation.addPoint((340 + 35), -(585 + 47), 0);
+      robotLocation.addPoint((340 + 35), -(575 + 47), 0);
+      robotLocation.addPoint(0, -(520 + 47), 0);
+      robotLocation.addPoint(0, 0, 0);
       break;
   }
   holderRight.grasp('r');
@@ -506,8 +531,9 @@ int main(void)
   accelAlgorithm.setAllocateErrorCircleRadius(20);
   while (1)
   {
-    STLinkTerminal.printf("%.1lf %.1lf %.1lf   ", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
-    static unsigned int wayPointSignature = 1;
+    //STLinkTerminal.printf("%.1lf %.1lf %.1lf   ", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
+    //STLinkTerminal.printf("%.3lf\t%.3lf\t%.3lf\r\n", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
+    //STLinkTerminal.printf("%d\t%d\t%d\t%d\t%d\t%d\t\r\n", (int)(pegAttacherPWM[0][0] * 100), (int)(pegAttacherPWM[0][1] * 100), (int)(hangerPWM[0][0] * 100), (int)(hangerPWM[0][1] * 100), (int)(rojarArmPWM[0][0] * 100), (int)(rojarArmPWM[0][1] * 100));
     /*static unsigned long int prevDisplayed = 0;
     if (((TimerForLCD.read_ms() - prevDisplayed) > 100)) //about 10Hz flash rate
     {
@@ -518,6 +544,7 @@ int main(void)
       serialLCD.printf("%.1lf %.1lf %.1lf   ", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
       prevDisplayed = TimerForLCD.read_ms();
     }*/
+    static unsigned int wayPointSignature = 1, initialButtonPressToken = 1;
     rojarArmRight.setEncoderPulse(rojarArmRightEncoder.getPulses());
     hangerRight.setEncoderPulse(clothHangRightEncoder.getPulses());
     rojarArmRight.update();
@@ -526,7 +553,6 @@ int main(void)
     accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
     accelAlgorithm.update();
     OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), IMU.gyro_Yaw(), driverPWMOutput);
-    //ここにMMD送信(drive)
     int MDD1Packet[6] = {
         driverPWMOutput[0] < 0 ? 0 : (int)(driverPWMOutput[0] * 100),
         driverPWMOutput[0] > 0 ? 0 : -(int)(driverPWMOutput[0] * 100),
@@ -535,8 +561,6 @@ int main(void)
         driverPWMOutput[2] < 0 ? 0 : (int)(driverPWMOutput[2] * 100),
         driverPWMOutput[2] > 0 ? 0 : -(int)(driverPWMOutput[2] * 100),
     };
-    MDD1.transmit(6, MDD1Packet);
-
     int MDD2Packet[6] = {
         (int)(rojarArmPWM[0][1] * 100),
         (int)(rojarArmPWM[0][0] * 100),
@@ -545,151 +569,351 @@ int main(void)
         (int)(pegAttacherPWM[0][1] * 100),
         (int)(pegAttacherPWM[0][0] * 100),
     };
+    MDD1.transmit(6, MDD1Packet);
     MDD2.transmit(6, MDD2Packet);
-    STLinkTerminal.printf("%d\t%d\t%d\t%d\t%d\t%d\t\r\n", (int)(pegAttacherPWM[0][0] * 100), (int)(pegAttacherPWM[0][1] * 100), (int)(hangerPWM[0][0] * 100), (int)(hangerPWM[0][1] * 100), (int)(rojarArmPWM[0][0] * 100), (int)(rojarArmPWM[0][1] * 100));
+    switch (currentRunningMode)
+    {
+      case bathTowel:
+        limitSwitchBarFrontRight.update();
+        if (limitSwitchBarFrontRight.stats() && wayPointSignature == 2)
+        {
+          accelAlgorithm.setCurrentYPosition(-(380 + 47));
+          robotLocation.setCurrentPoint(robotLocation.getXLocationData(), -(380 + 47), robotLocation.getYawStatsData());
+          static int flag = 0;
+          if (flag == 100)
+          {
+            robotLocation.sendNext();
+            accelAlgorithm.update();
+            wayPointSignature++;
+          }
+          flag++;
+        }
+        if (accelAlgorithm.getStats())
+        {
+          switch (wayPointSignature)
+          {
+            case 1:
+              accelAlgorithm.setAllocateErrorCircleRadius(3.5);
+              robotLocation.sendNext();
+              rojarArmRight.setHeight(1600);
+              wayPointSignature++;
+              break;
+            case 2:
+              limitSwitchBarFrontRight.update();
+              if (!limitSwitchBarFrontRight.stats())
+              {
+                robotLocation.setCurrentPoint(robotLocation.getXLocationData(), robotLocation.getYLocationData() - 5, robotLocation.getYawStatsData());
+                break;
+              }
+              break;
+            case 3:
+              static int armPhase = 1, hangerHasDoneFlag = 0; //phase1=洗濯物掛ける, phase2=洗濯ばさみつける
+              if (rojarArmRight.stats() && armPhase == 1)     //ロジャーアーム展開完了
+              {
+                static int initialHangerFlag = 1;
+                if (initialHangerFlag) //ロジャー展開後初めての処理
+                {
+                  hangerRight.setLength(1200); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
+                  hangerRight.update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
+                  initialHangerFlag = 0;
+                }
+                if (hangerRight.stats() && !initialHangerFlag && !hangerHasDoneFlag)
+                {
+                  hangerHasDoneFlag = 1;
+                  hangerRight.setLength(0);
+                  hangerRight.update();
+                }
+              }
+              if (hangerRight.stats() && hangerHasDoneFlag)
+              {
+                static unsigned int seq = 1, timerStartFlag = 1;
+                if (timerStartFlag)
+                {
+                  clothHangerTimer.start();
+                  timerStartFlag = 0;
+                }
+                if (0 < clothHangerTimer.read_ms() && seq == 1)
+                {
+                  holderRight.release('r');
+                  seq = 2;
+                }
+                if (1300 < clothHangerTimer.read_ms() && seq == 2)
+                {
+                  holderRight.center('r');
+                  seq = 3;
+                }
+                if (1900 < clothHangerTimer.read_ms() && seq == 3)
+                {
+                  armPhase = 2;
+                  clothHangerTimer.stop();
+                  clothHangerTimer.reset();
+                }
+              }
+              if (armPhase == 2)
+              {
+                if (hangerRight.stats()) //洗濯物が竿にかかっているだけの状態
+                {
+                  static unsigned int seq = 1, timerStartFlag = 1;
+                  if (timerStartFlag)
+                  {
+                    clothHangerTimer.start();
+                    timerStartFlag = 0;
+                  }
+                  if (0 < clothHangerTimer.read_ms() && clothHangerTimer.read_ms() < 100 && seq == 1)
+                  {
+                    pegAttacherRight.launch();
+                    seq = 2;
+                  }
+                  if (100 < clothHangerTimer.read_ms() && seq == 2)
+                  {
+                    robotLocation.sendNext();
+                    accelAlgorithm.setMaxOutput(0.25); //引っ張るときはゆっくり
+                    wayPointSignature++;
+                  }
+                }
+              }
+              break;
+            case 4:
+              accelAlgorithm.setMaxOutput(Robot.estimateDriveMaxPWM);
+              holderRight.release('l');
+              rojarArmRight.setHeight(0);
+              robotLocation.sendNext();
+              wayPointSignature++;
+              break;
+            case 5:
+              holderRight.grasp('r');
+              holderRight.grasp('l');
+              robotLocation.sendNext();
+              wayPointSignature++;
+              break;
+            case 6:
+              //LCDDriver.clear();
+              //serialLCD.printf("TASKS CLOSED");
+              holderRight.free('r');
+              holderRight.free('l');
+              while (1)
+              {
+                //LCDDriver.setCursor(2, 0);
+                accelAlgorithm.update();
+                accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+                OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), IMU.gyro_Yaw(), driverPWMOutput);
+                //ここにMMD送信(drive)
+                int MDD1Packet[6] = {
+                    driverPWMOutput[0] < 0 ? 0 : (int)(driverPWMOutput[0] * 100),
+                    driverPWMOutput[0] > 0 ? 0 : -(int)(driverPWMOutput[0] * 100),
+                    driverPWMOutput[1] < 0 ? 0 : (int)(driverPWMOutput[1] * 100),
+                    driverPWMOutput[1] > 0 ? 0 : -(int)(driverPWMOutput[1] * 100),
+                    driverPWMOutput[2] < 0 ? 0 : (int)(driverPWMOutput[2] * 100),
+                    driverPWMOutput[2] > 0 ? 0 : -(int)(driverPWMOutput[2] * 100),
+                };
+                MDD1.transmit(6, MDD1Packet);
+                //serialLCD.printf("%.1lf %.1lf %.1lf", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
+              }
+              break;
+            default:
+              //LCDDriver.clear();
+              //serialLCD.printf("WayPoint ERROR");
+              while (1)
+                ;
+          }
+        }
+        break;
 
-    limitSwitchBarFrontRight.update();
-    if (limitSwitchBarFrontRight.stats() && wayPointSignature == 2)
-    {
-      accelAlgorithm.setCurrentYPosition(-(380 + 47));
-      robotLocation.setCurrentPoint(robotLocation.getXLocationData(), -(380 + 47), robotLocation.getYawStatsData());
-      static int flag = 0;
-      if (flag == 100)
-      {
-        robotLocation.sendNext();
+      case Sheets:
+        //display current robot vectors (3-Axis) and calculated PWMs
+        //STLinkTerminal.printf("CurrentVector:%.1lf %.1lf %.1lf  \t", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
+        //STLinkTerminal.printf("CalculatedPWM:%.2f %.2f %.2f \r\n", output[0], output[1], output[2]);
+        if (initialButtonPressToken)
+        {
+          startButton.update();
+          if (startButton.stats() && initialButtonPressToken)
+          {
+            initialButtonPressToken = 0;
+            robotLocation.sendNext(); //機構テスト時はコメントアウト
+            holderRight.grasp('r');
+            holderRight.grasp('l');
+          }
+        }
+        rojarArmRight.setEncoderPulse(rojarArmRightEncoder.getPulses());
+        rojarArmRight.update();
+        pegAttacherRight.update();
+        hangerRight.setEncoderPulse(clothHangRightEncoder.getPulses());
+        hangerRight.update();
         accelAlgorithm.update();
-        wayPointSignature++;
-      }
-      flag++;
-    }
-    if (robotLocation.checkMovingStats(accelAlgorithm.getStats()))
-    {
-      switch (wayPointSignature)
-      {
-        case 1:
-          accelAlgorithm.setAllocateErrorCircleRadius(3.5);
-          robotLocation.sendNext();
-          rojarArmRight.setHeight(1600);
-          wayPointSignature++;
-          break;
-        case 2:
-          limitSwitchBarFrontRight.update();
-          if (!limitSwitchBarFrontRight.stats())
+        accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+        OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), IMU.gyro_Yaw(), driverPWMOutput);
+        /*static unsigned long int prevDisplayed = 0;
+        if (((TimerForLCD.read_ms() - prevDisplayed) > 100) && !initialButtonPressToken) //about 24Hz flash rate
+        {
+          LCDDriver.clear();
+          LCDDriver.home();
+          serialLCD.printf("%d %d %d", robotLocation.getXLocationData(), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
+          LCDDriver.setCursor(2, 0);
+          serialLCD.printf("%.1lf %.1lf %.1lf   ", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
+          prevDisplayed = TimerForLCD.read_ms();
+        }*/
+        limitSwitchBarFrontLeft.update();
+        if (limitSwitchBarFrontLeft.stats() && wayPointSignature == 2)
+        {
+          accelAlgorithm.setCurrentYPosition(-(580 + 47));
+          robotLocation.setCurrentPoint(robotLocation.getXLocationData(), -(580 + 47), robotLocation.getYawStatsData());
+          static int flag = 0;
+          if (flag == 100)
+            wayPointSignature++;
+          flag++;
+        }
+
+        if (robotLocation.checkMovingStats(accelAlgorithm.getStats()) && !initialButtonPressToken)
+        {
+          switch (wayPointSignature)
           {
-            robotLocation.setCurrentPoint(robotLocation.getXLocationData(), robotLocation.getYLocationData() - 5, robotLocation.getYawStatsData());
-            break;
-          }
-          break;
-        case 3:
-          static int armPhase = 1, hangerHasDoneFlag = 0; //phase1=洗濯物掛ける, phase2=洗濯ばさみつける
-          if (rojarArmRight.stats() && armPhase == 1)     //ロジャーアーム展開完了
-          {
-            static int initialHangerFlag = 1;
-            if (initialHangerFlag) //ロジャー展開後初めての処理
-            {
-              hangerRight.setLength(1200); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
-              hangerRight.update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
-              initialHangerFlag = 0;
-            }
-            if (hangerRight.stats() && !initialHangerFlag && !hangerHasDoneFlag)
-            {
-              hangerHasDoneFlag = 1;
-              hangerRight.setLength(0);
-              hangerRight.update();
-            }
-          }
-          if (hangerRight.stats() && hangerHasDoneFlag)
-          {
-            static unsigned int seq = 1, timerStartFlag = 1;
-            if (timerStartFlag)
-            {
-              clothHangerTimer.start();
-              timerStartFlag = 0;
-            }
-            if (0 < clothHangerTimer.read_ms() && seq == 1)
-            {
-              holderRight.release('r');
-              seq = 2;
-            }
-            if (1300 < clothHangerTimer.read_ms() && seq == 2)
-            {
-              holderRight.center('r');
-              seq = 3;
-            }
-            if (1900 < clothHangerTimer.read_ms() && seq == 3)
-            {
-              armPhase = 2;
-              clothHangerTimer.stop();
-              clothHangerTimer.reset();
-            }
-          }
-          if (armPhase == 2)
-          {
-            if (hangerRight.stats()) //洗濯物が竿にかかっているだけの状態
-            {
-              static unsigned int seq = 1, timerStartFlag = 1;
-              if (timerStartFlag)
+            case 1:
+              accelAlgorithm.setAllocateErrorCircleRadius(3.65);
+              robotLocation.sendNext();      //三本目のポール少し手前の位置
+              rojarArmRight.setHeight(2600); //2100-洗濯物干し最適高さ , 2850-洗濯バサミ最適高さ
+              wayPointSignature++;
+              break;
+
+            case 2:
+              //static int savedXLocation = accelAlgorithm.getCurrentXPosition();
+              limitSwitchBarFrontLeft.update();
+              if (!limitSwitchBarFrontLeft.stats())
               {
-                clothHangerTimer.start();
-                timerStartFlag = 0;
+                robotLocation.setCurrentPoint(robotLocation.getXLocationData(), robotLocation.getYLocationData() - 5, robotLocation.getYawStatsData());
+                break;
               }
-              if (0 < clothHangerTimer.read_ms() && clothHangerTimer.read_ms() < 100 && seq == 1)
+              break;
+
+            case 3:
+              static int armPhase = 1, hangerHasDoneFlag = 0; //phase1=洗濯物掛ける, phase2=洗濯ばさみつける
+              if (rojarArmRight.stats() && armPhase == 1)     //ロジャーアーム展開完了
               {
-                pegAttacherRight.launch();
-                seq = 2;
+                static int initialHangerFlag = 1;
+                if (initialHangerFlag) //ロジャー展開後初めての処理
+                {
+                  hangerRight.setLength(1200); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
+                  hangerRight.update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
+                  initialHangerFlag = 0;
+                }
+                if (hangerRight.stats() && !initialHangerFlag && !hangerHasDoneFlag)
+                {
+                  hangerHasDoneFlag = 1;
+                  hangerRight.setLength(0);
+                  hangerRight.update();
+                }
               }
-              if (100 < clothHangerTimer.read_ms() && seq == 2)
+              static int initialChangeHeightFlag = 1;
+              if (hangerRight.stats() && hangerHasDoneFlag && initialChangeHeightFlag)
+              {
+                static unsigned int seq = 1, timerStartFlag = 1;
+                if (timerStartFlag)
+                {
+                  clothHangerTimer.start();
+                  timerStartFlag = 0;
+                }
+                if (0 < clothHangerTimer.read_ms() && clothHangerTimer.read_ms() < 1300 && seq == 1)
+                {
+                  holderRight.release('r');
+                  seq = 2;
+                }
+                if (1300 < clothHangerTimer.read_ms() && clothHangerTimer.read_ms() < 1900 && seq == 2)
+                {
+                  holderRight.center('r');
+                  rojarArmRight.setHeight(3200);
+                  rojarArmRight.update();
+                  seq = 3;
+                }
+                if (seq == 3)
+                {
+                  armPhase = 2;
+                  clothHangerTimer.stop();
+                  clothHangerTimer.reset();
+                  initialChangeHeightFlag = 0;
+                }
+              }
+              if (rojarArmRight.stats() && armPhase == 2)
+              {
+                if (hangerRight.stats() && hangerHasDoneFlag) //洗濯物が竿にかかっているだけの状態
+                {
+                  static unsigned int seq = 1, timerStartFlag = 1;
+                  if (timerStartFlag)
+                  {
+                    clothHangerTimer.start();
+                    timerStartFlag = 0;
+                  }
+                  if (0 < clothHangerTimer.read_ms() && clothHangerTimer.read_ms() < 100 && seq == 1) //`hutatume 1700ms
+                  {
+                    pegAttacherRight.launch();
+                    seq = 2;
+                  }
+                  if (100 < clothHangerTimer.read_ms() && seq == 2)
+                  {
+                    robotLocation.sendNext(); //次の座標を送信
+                    wayPointSignature++;
+                  }
+                }
+              }
+              break;
+            case 4:
+              static bool initialFlag = 1;
+              if (initialFlag)
               {
                 robotLocation.sendNext();
-                accelAlgorithm.setMaxOutput(0.25); //引っ張るときはゆっくり
+                rojarArmRight.setMaxPWM(0.5);
+                rojarArmRight.setHeight(2420);
+                rojarArmRight.update();
+                initialFlag = 0;
+              }
+              if (rojarArmRight.stats())
+              {
                 wayPointSignature++;
               }
-            }
+              break;
+            case 5:
+              holderRight.release('l');
+              rojarArmRight.setHeight(0); //ロジャーアーム縮小
+              //pegAttacher.reload();
+              accelAlgorithm.setAllocateErrorCircleRadius(30);
+              robotLocation.sendNext();
+              wayPointSignature++;
+              break;
+
+            case 6:
+              accelAlgorithm.setAllocateErrorCircleRadius(3.7);
+              holderRight.grasp('r');
+              holderRight.grasp('l');
+              robotLocation.sendNext();
+              wayPointSignature++;
+              break;
+
+            case 7:
+              if (rojarArmRight.stats())
+              {
+                wayPointSignature++;
+              }
+              break;
+            case 8:
+              holderRight.free('r');
+              holderRight.free('l');
+              //LCDDriver.clear();
+              //serialLCD.printf("TASKS CLOSED");
+              while (1)
+              {
+                accelAlgorithm.update();
+                accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+                //LCDDriver.setCursor(2, 0);
+                //serialLCD.printf("%.1lf %.1lf %.1lf", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
+              }
+              break;
+            default:
+              //LCDDriver.clear();
+              //serialLCD.printf("WayPoint ERROR");
+              while (1)
+              {
+              }
           }
-          break;
-        case 4:
-          accelAlgorithm.setMaxOutput(Robot.estimateDriveMaxPWM);
-          holderRight.release('l');
-          rojarArmRight.setHeight(0);
-          robotLocation.sendNext();
-          wayPointSignature++;
-          break;
-        case 5:
-          holderRight.grasp('r');
-          holderRight.grasp('l');
-          robotLocation.sendNext();
-          wayPointSignature++;
-          break;
-        case 6:
-          //LCDDriver.clear();
-          //serialLCD.printf("TASKS CLOSED");
-          holderRight.free('r');
-          holderRight.free('l');
-          while (1)
-          {
-            //LCDDriver.setCursor(2, 0);
-            accelAlgorithm.update();
-            accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
-            OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), driverPWMOutput);
-            //ここにMMD送信(drive)
-            int MDD1Packet[6] = {
-                driverPWMOutput[0] < 0 ? 0 : (int)(driverPWMOutput[0] * 100),
-                driverPWMOutput[0] > 0 ? 0 : -(int)(driverPWMOutput[0] * 100),
-                driverPWMOutput[1] < 0 ? 0 : (int)(driverPWMOutput[1] * 100),
-                driverPWMOutput[1] > 0 ? 0 : -(int)(driverPWMOutput[1] * 100),
-                driverPWMOutput[2] < 0 ? 0 : (int)(driverPWMOutput[2] * 100),
-                driverPWMOutput[2] > 0 ? 0 : -(int)(driverPWMOutput[2] * 100),
-            };
-            MDD1.transmit(6, MDD1Packet);
-            //serialLCD.printf("%.1lf %.1lf %.1lf", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
-          }
-          break;
-        default:
-          //LCDDriver.clear();
-          //serialLCD.printf("WayPoint ERROR");
-          while (1)
-            ;
-      }
+        }
+        break;
     }
   }
 
