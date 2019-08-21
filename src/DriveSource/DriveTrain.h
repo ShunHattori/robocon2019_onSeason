@@ -25,9 +25,15 @@ public:
     Drive.maxPWM = 0.1;
     Drive.reachedPWM[0] = 0.35;
     Drive.reachedPWM[1] = 0.35;
+    Drive.vector[0] = 0;
+    Drive.vector[1] = 0;
+    Drive.vector[2] = 0;
     xAxis.current = 0;
     yAxis.current = 0;
     yawAxis.current = 0;
+    yawSensitivity.turningStrength = 0.5;
+    yawSensitivity.allocateError = 0.2;
+    yawSensitivity.turningPWM = 0.12;
   }
 
   /*
@@ -170,7 +176,6 @@ private:
   struct yawParam
   {
     double allocateError;
-    double decreaseRadius;
     double turningStrength; //Be applied with reciprocal of 1
     double turningPWM;
   } yawSensitivity;

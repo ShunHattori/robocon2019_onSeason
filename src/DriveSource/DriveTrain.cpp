@@ -39,8 +39,6 @@ bool DriveTrain::getMovingStats()
   }
   if (movingComfirmTimer.read_ms() > 50)
   {
-    movingComfirmTimer.reset();
-    movingComfirmTimer.stop();
     return 1;
   }
   return 0;
@@ -99,7 +97,7 @@ void DriveTrain::accelerationDriving()
       Drive.vector[0] -= xAxisAccelor->getValue();
       Drive.reachedPWM[0] = -Drive.vector[0];
     }
-    if (Drive.vector[0] < -Drive.decreaseRadius || Drive.decreaseRadius < Drive.vector[0])
+    if (Drive.vector[0] < -Drive.maxPWM || Drive.maxPWM < Drive.vector[0])
     {
       Drive.vector[0] = Drive.vector[0] < 0 ? -Drive.maxPWM : Drive.maxPWM;
     }
@@ -126,14 +124,14 @@ void DriveTrain::accelerationDriving()
     if (0 < yAxis.error)
     {
       Drive.vector[1] += yAxisAccelor->getValue();
-      Drive.reachedPWM[0] = Drive.vector[1];
+      Drive.reachedPWM[1] = Drive.vector[1];
     }
     else
     {
       Drive.vector[1] -= yAxisAccelor->getValue();
-      Drive.reachedPWM[0] = -Drive.vector[1];
+      Drive.reachedPWM[1] = -Drive.vector[1];
     }
-    if (Drive.vector[1] < -Drive.decreaseRadius || Drive.decreaseRadius < Drive.vector[1])
+    if (Drive.vector[1] < -Drive.maxPWM || Drive.maxPWM < Drive.vector[1])
     {
       Drive.vector[1] = Drive.vector[1] < 0 ? -Drive.maxPWM : Drive.maxPWM;
     }
@@ -170,8 +168,6 @@ void DriveTrain::yawAxisRetentionDriving()
 
 void DriveTrain::update()
 {
-  Drive.reachedPWM[0] = 0.19;
-  Drive.reachedPWM[1] = 0.19;
   xAxis.temp = XAxis_1->getDistance() / 2;
   XAxis_1->setDistance(0);
   yAxis.temp = YAxis_1->getDistance() / 2;
