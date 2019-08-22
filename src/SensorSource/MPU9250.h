@@ -22,7 +22,8 @@
 class MPU9250
 {
 public:
-  void setup(PinName, PinName);                                            //センサーの設定＋オフセット値の取得
+  MPU9250(PinName, PinName, int);
+  void setup();                                                            //オフセット値の計算
   void read_accel(double *accel_roll, double *accel_pitch);                //指定したアドレスに加速度センサから算出したroll軸,pitch軸の回転角を返す
   void read_gyro(double *gyro_roll, double *gyro_pitch, double *gyro_yaw); //指定したアドレスにジャイロセンサから算出した各軸の回転角を返す
   void read_compass(double *Mx, double *My, double *Mz);                   //指定したアドレスに地磁気センサの生値を返す
