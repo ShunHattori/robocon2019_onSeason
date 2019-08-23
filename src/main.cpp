@@ -23,13 +23,15 @@
 //#define TEST_HoldServo
 //#define TEST_RojarArmUpDownOnce
 
-enum
-{
+enum gameMode
+{ //剰余計算のために作成中は順番を崩している
   RED_FRONT_bathTowelLeft,
-  RED_MIDDLE_bathTowelRight,
   RED_MIDDLE_bathTowelLeft,
-  RED_MIDDLE_bathTowelboth,
   RED_BACK_Sheets,
+
+  //↓ not yet
+  RED_MIDDLE_bathTowelRight,
+  RED_MIDDLE_bathTowelboth,
   BLUE_FRONT_bathTowelRight,
   BLUE_MIDDLE_bathTowelRight,
   BLUE_MIDDLE_bathTowelLeft,
@@ -194,7 +196,7 @@ int main(void)
     if (onBoardSwitch.stats() && stateHasChanged)
     {
       pushedCounter++;
-      currentRunningMode = (pushedCounter % 2) == 0 ? bathTowel : Sheets;
+      currentRunningMode = pushedCounter % 3;
     }
     previousState = onBoardSwitch.stats();
     if (currentRunningMode)
@@ -202,9 +204,14 @@ int main(void)
       modeIndicatorLED1.write(1);
       modeIndicatorLED2.write(0);
     }
-    else
+    else if
     {
       modeIndicatorLED1.write(0);
+      modeIndicatorLED2.write(1);
+    }
+    else
+    {
+      modeIndicatorLED1.write(1);
       modeIndicatorLED2.write(1);
     }
     if (startButton.stats())
@@ -216,6 +223,11 @@ int main(void)
   switch (currentRunningMode)
   {
     case RED_FRONT_bathTowelLeft:
+      robotLocation.addPoint(0, -(140 + 47));          //一本目のポール前
+      robotLocation.addPoint((112 + 35), -(165 + 47)); //さらに近づいてリミット監視開始
+      robotLocation.addPoint((135 + 35), -(180 + 47));
+      robotLocation.addPoint((230 + 35), -(185 + 47)); //横移動
+      robotLocation.addPoint(0, 0);                    //初期位置
       break;
     case RED_MIDDLE_bathTowelLeft:                     //縦:112-170,横112-205
       robotLocation.addPoint(0, -(340 + 47));          //二本目のポール前
@@ -234,7 +246,7 @@ int main(void)
       robotLocation.addPoint((112 + 35), -(565 + 47));
       robotLocation.addPoint((340 + 35), -(585 + 47));
       robotLocation.addPoint((340 + 35), -(575 + 47));
-      robotLocation.addPoint(0, -(520 + 47));
+      robotLocation.addPoint(10, -(520 + 47));
       robotLocation.addPoint(0, 0);
       break;
     case BLUE_FRONT_bathTowelRight:
@@ -308,6 +320,130 @@ int main(void)
     MDD2.transmit(6, MDD2Packet);
     switch (currentRunningMode)
     {
+      case RED_FRONT_bathTowelLeft:
+        limitSwitchBarFrontRight.update();
+        if (limitSwitchBarFrontRight.stats() && wayPointSignature == 2)
+        {
+          accelAlgorithm.setCurrentYPosition(-(180 + 47));
+          robotLocation.setCurrentPoint(robotLocation.getXLocationData(), -(180 + 47), robotLocation.getYawStatsData());
+          static int flag = 0;
+          if (flag == 100)
+          {
+            robotLocation.sendNext();
+            accelAlgorithm.update();
+            wayPointSignature++;
+          }
+          flag++;
+        }
+        if (accelAlgorithm.getStats())
+        {
+          switch (wayPointSignature)
+          {
+            case 1:
+              accelAlgorithm.setAllocateErrorCircleRadius(3.5);
+              robotLocation.sendNext();
+              wayPointSignature++;
+              break;
+            case 2:
+              limitSwitchBarFrontRight.update();
+              if (!limitSwitchBarFrontRight.stats())
+              {
+                robotLocation.setCurrentPoint(robotLocation.getXLocationData(), robotLocation.getYLocationData() - 5, robotLocation.getYawStatsData());
+                break;
+              }
+              break;
+            case 3:
+              static int armPhase = 1, hangerHasDoneFlag = 0; //phase1=洗濯物掛ける, phase2=洗濯ばさみつける
+              if (rojarArmRight.stats() && armPhase == 1)     //ロジャーアーム展開完了
+              {
+                static int initialHangerFlag = 1;
+                if (initialHangerFlag) //ロジャー展開後初めての処理
+                {
+                  hangerRight.setLength(1200); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
+                  hangerRight.update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
+                  initialHangerFlag = 0;
+                }
+                if (hangerRight.stats() && !initialHangerFlag && !hangerHasDoneFlag)
+                {
+                  hangerHasDoneFlag = 1;
+                  hangerRight.setLength(0);
+                  hangerRight.update();
+                }
+              }
+              if (hangerRight.stats() && hangerHasDoneFlag)
+              {
+                static unsigned int seq = 1, timerStartFlag = 1;
+                if (timerStartFlag)
+                {
+                  clothHangerTimer.start();
+                  timerStartFlag = 0;
+                }
+                if (0 < clothHangerTimer.read_ms() && seq == 1)
+                {
+                  holderRight.release('r');
+                  seq = 2;
+                }
+                if (1300 < clothHangerTimer.read_ms() && seq == 2)
+                {
+                  holderRight.center('r');
+                  seq = 3;
+                }
+                if (1900 < clothHangerTimer.read_ms() && seq == 3)
+                {
+                  armPhase = 2;
+                  clothHangerTimer.stop();
+                  clothHangerTimer.reset();
+                }
+              }
+              if (armPhase == 2)
+              {
+                if (hangerRight.stats()) //洗濯物が竿にかかっているだけの状態
+                {
+                  static unsigned int seq = 1, timerStartFlag = 1;
+                  if (timerStartFlag)
+                  {
+                    clothHangerTimer.start();
+                    timerStartFlag = 0;
+                  }
+                  if (0 < clothHangerTimer.read_ms() && clothHangerTimer.read_ms() < 100 && seq == 1)
+                  {
+                    pegAttacherRight.launch();
+                    seq = 2;
+                  }
+                  if (100 < clothHangerTimer.read_ms() && seq == 2)
+                  {
+                    robotLocation.sendNext();
+                    accelAlgorithm.setMaxOutput(0.25); //引っ張るときはゆっくり
+                    wayPointSignature++;
+                  }
+                }
+              }
+              break;
+            case 4:
+              accelAlgorithm.setMaxOutput(Robot.estimateDriveMaxPWM);
+              holderRight.release('l');
+              robotLocation.sendNext();
+              wayPointSignature++;
+              break;
+            case 5:
+              //LCDDriver.clear();
+              //serialLCD.printf("TASKS CLOSED");
+              holderRight.free('r');
+              holderRight.free('l');
+              while (1)
+              {
+                //LCDDriver.setCursor(2, 0);
+                //serialLCD.printf("%.1lf %.1lf %.1lf", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
+              }
+              break;
+            default:
+              //LCDDriver.clear();
+              //serialLCD.printf("WayPoint ERROR");
+              while (1)
+                ;
+          }
+        }
+        break;
       case RED_MIDDLE_bathTowelLeft:
         limitSwitchBarFrontRight.update();
         if (limitSwitchBarFrontRight.stats() && wayPointSignature == 2)
@@ -454,7 +590,7 @@ int main(void)
         }
         break;
 
-      case Sheets:
+      case RED_BACK_Sheets:
         //display current robot vectors (3-Axis) and calculated PWMs
         //STLinkTerminal.printf("CurrentVector:%.1lf %.1lf %.1lf  \t", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
         //STLinkTerminal.printf("CalculatedPWM:%.2f %.2f %.2f \r\n", output[0], output[1], output[2]);
