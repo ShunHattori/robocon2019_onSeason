@@ -25,8 +25,16 @@
 
 enum
 {
-  bathTowel,
-  Sheets,
+  RED_FRONT_bathTowelLeft,
+  RED_MIDDLE_bathTowelRight,
+  RED_MIDDLE_bathTowelLeft,
+  RED_MIDDLE_bathTowelboth,
+  RED_BACK_Sheets,
+  BLUE_FRONT_bathTowelRight,
+  BLUE_MIDDLE_bathTowelRight,
+  BLUE_MIDDLE_bathTowelLeft,
+  BLUE_MIDDLE_bathTowelboth,
+  BLUE_BACK_Sheets,
 };
 
 struct baudRate
@@ -43,8 +51,8 @@ struct parameter
   const double encoderAttachedWheelRadius = 2.54; //mini(50) omni
   const double permitErrorCircleRadius = 2.0;
   const int decreaseSpeedCircleRadius = 100;
-  const double estimateDriveMaxPWM = 0.5; // max:0.7, recommend:0.64 //DEFAULT 0.5
-  const double estimateDriveMinPWM = 0.15;
+  const double estimateDriveMaxPWM = 0.45; // max:0.7, recommend:0.64 //DEFAULT 0.5
+  const double estimateDriveMinPWM = 0.1;
   const double estimatePegMaxPWM = 0.6;
   const double estimateHangerMaxPWM = 0.6;
   const double estimateRojarArmMaxPWM = 0.96;
@@ -201,11 +209,15 @@ int main(void)
     }
     if (startButton.stats())
       break;
+    int UIFData[1]; //sequence number
+    UIF.receive(UIFData);
   }
 
   switch (currentRunningMode)
   {
-    case bathTowel:                                    //縦:112-170,横112-205
+    case RED_FRONT_bathTowelLeft:
+      break;
+    case RED_MIDDLE_bathTowelLeft:                     //縦:112-170,横112-205
       robotLocation.addPoint(0, -(340 + 47));          //二本目のポール前
       robotLocation.addPoint((112 + 35), -(365 + 47)); //さらに近づいてリミット監視開始
       robotLocation.addPoint((135 + 35), -(380 + 47));
@@ -213,11 +225,37 @@ int main(void)
       robotLocation.addPoint(10, -(335 + 47));         //直線移動できる位置まで戻ってくる
       robotLocation.addPoint(0, 0);                    //初期位置
       break;
-    case Sheets:
+    case RED_MIDDLE_bathTowelRight:
+      break;
+    case RED_MIDDLE_bathTowelboth:
+      break;
+    case RED_BACK_Sheets:
       robotLocation.addPoint(0, -(500 + 47));
       robotLocation.addPoint((112 + 35), -(565 + 47));
       robotLocation.addPoint((340 + 35), -(585 + 47));
       robotLocation.addPoint((340 + 35), -(575 + 47));
+      robotLocation.addPoint(0, -(520 + 47));
+      robotLocation.addPoint(0, 0);
+      break;
+    case BLUE_FRONT_bathTowelRight:
+      break;
+    case BLUE_MIDDLE_bathTowelLeft:                     //縦:112-170,横112-205
+      robotLocation.addPoint(0, -(340 + 47));           //二本目のポール前
+      robotLocation.addPoint(-(112 + 35), -(365 + 47)); //さらに近づいてリミット監視開始
+      robotLocation.addPoint(-(135 + 35), -(380 + 47));
+      robotLocation.addPoint(-(230 + 35), -(385 + 47)); //横移動
+      robotLocation.addPoint(-10, -(335 + 47));         //直線移動できる位置まで戻ってくる
+      robotLocation.addPoint(0, 0);                     //初期位置
+      break;
+    case BLUE_MIDDLE_bathTowelRight:
+      break;
+    case BLUE_MIDDLE_bathTowelboth:
+      break;
+    case BLUE_BACK_Sheets:
+      robotLocation.addPoint(0, -(500 + 47));
+      robotLocation.addPoint(-(112 + 35), -(565 + 47));
+      robotLocation.addPoint(-(340 + 35), -(585 + 47));
+      robotLocation.addPoint(-(340 + 35), -(575 + 47));
       robotLocation.addPoint(0, -(520 + 47));
       robotLocation.addPoint(0, 0);
       break;
@@ -270,7 +308,7 @@ int main(void)
     MDD2.transmit(6, MDD2Packet);
     switch (currentRunningMode)
     {
-      case bathTowel:
+      case RED_MIDDLE_bathTowelLeft:
         limitSwitchBarFrontRight.update();
         if (limitSwitchBarFrontRight.stats() && wayPointSignature == 2)
         {
