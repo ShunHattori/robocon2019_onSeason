@@ -22,7 +22,7 @@ public:
     Drive.decreaseRadius = DecreaseRadius;
     Drive.ConfirmStatsInitialFlag = 1;
     Drive.maxPWM = 0.3;
-    Drive.maxPWM = 0.1;
+    Drive.minPWM = 0.1;
     Drive.reachedPWM[0] = 0.35;
     Drive.reachedPWM[1] = 0.35;
     Drive.vector[0] = 0;
