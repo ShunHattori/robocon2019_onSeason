@@ -1,7 +1,8 @@
 #include "RojarArm.h"
 
-RojarArm::RojarArm(double* variableToStore)
+RojarArm::RojarArm(double* variableToStore, DebounceSwitch& mySwitch)
 {
+  bottomSwitch = &mySwitch;
   motorPWM = variableToStore;
   heightCurrent = 0;
   heightTarget = 0;
