@@ -137,22 +137,22 @@ UnitProtocol UIF(serialDevice.UIFTX, serialDevice.UIFRX, SerialBaud.HardwareSeri
 UnitProtocol MDD1(serialDevice.MDD1TX, serialDevice.MDD1RX, SerialBaud.HardwareSerial);
 UnitProtocol MDD2(serialDevice.MDD2TX, serialDevice.MDD2RX, SerialBaud.HardwareSerial);
 UnitProtocol MDD3(serialDevice.MDD3TX, serialDevice.MDD3RX, SerialBaud.HardwareSerial);
-DebounceSwitch onBoardSwitch(USER_BUTTON, 'd');
-DebounceSwitch startButton(Switch.toBegin, 'U'); //create object using pin "PG_2" with PullUpped
-DebounceSwitch limitSwitchBarFrontRight(Switch.frontR, 'U');
-DebounceSwitch limitSwitchBarFrontLeft(Switch.frontL, 'U');
-DebounceSwitch limitSwitchRightSide(Switch.sideR, 'U');
-DebounceSwitch limitSwitchLeftSide(Switch.sideL, 'U');
-DebounceSwitch limitSwitchRightRojarArm(Switch.rojarBottomR, 'U');
-DebounceSwitch limitSwitchLeftRojarArm(Switch.rojarBottomL, 'U');
+DebounceSwitch onBoardSwitch(USER_BUTTON, DebounceSwitch::PULLDOWN);
+DebounceSwitch startButton(Switch.toBegin, DebounceSwitch::PULLUP); //create object using pin "PG_2" with PullUpped
+DebounceSwitch limitSwitchBarFrontRight(Switch.frontR, DebounceSwitch::PULLUP);
+DebounceSwitch limitSwitchBarFrontLeft(Switch.frontL, DebounceSwitch::PULLUP);
+DebounceSwitch limitSwitchRightSide(Switch.sideR, DebounceSwitch::PULLUP);
+DebounceSwitch limitSwitchLeftSide(Switch.sideL, DebounceSwitch::PULLUP);
+DebounceSwitch limitSwitchRightRojarArm(Switch.rojarBottomR, DebounceSwitch::PULLUP);
+DebounceSwitch limitSwitchLeftRojarArm(Switch.rojarBottomL, DebounceSwitch::PULLUP);
 ClothHold holderRight(MecaPin.holderRightServoR, MecaPin.holderRightServoL);                      //right,leftServo
 ClothHold holderLeft(MecaPin.holderLeftServoR, MecaPin.holderLeftServoL);                         //right,leftServo
 Peg pegAttacherRight(Robot.estimatePegMaxPWM, Robot.PegVoltageImpressionTime, pegAttacherPWM[0]); //pwm, time
 Peg pegAttacherLeft(Robot.estimatePegMaxPWM, Robot.PegVoltageImpressionTime, pegAttacherPWM[1]);  //pwm, time
 ClothHang hangerRight(hangerPWM[0]);
 ClothHang hangerLeft(hangerPWM[1]);
-RojarArm rojarArmRight(rojarArmPWM[0]);
-RojarArm rojarArmLeft(rojarArmPWM[1]);
+RojarArm rojarArmRight(rojarArmPWM[0], limitSwitchRightRojarArm);
+RojarArm rojarArmLeft(rojarArmPWM[1], limitSwitchLeftRojarArm);
 QEI encoderXAxis(OdometryPin.XAxisAPulse, OdometryPin.XAxisBPulse, OdometryPin.XAxisIndexPulse, Robot.encoderPPRHigh, &TimerForQEI, QEI::X4_ENCODING);
 QEI encoderYAxis(OdometryPin.YAxisAPulse, OdometryPin.YAxisBPulse, OdometryPin.YAxisIndexPulse, Robot.encoderPPRHigh, &TimerForQEI, QEI::X4_ENCODING);
 QEI clothHangRightEncoder(MecaPin.clothHangRightEncoderAPulse, MecaPin.clothHangRightEncoderBPulse, NC, Robot.encoderPPRLow, &TimerForQEI, QEI::X4_ENCODING);
@@ -164,6 +164,8 @@ MWodometry odometryYAxis(encoderYAxis, Robot.encoderPPRHigh, Robot.encoderAttach
 LocationManager<double> robotLocation(0, 0, 0);
 DriveTrain accelAlgorithm(robotLocation, odometryXAxis, odometryYAxis, IMU, Robot.permitErrorCircleRadius, Robot.decreaseSpeedCircleRadius);
 OmniKinematics3WD OmniKinematics;
+
+int getRunningMode();
 
 int main(void)
 {
@@ -216,8 +218,8 @@ int main(void)
     }
     if (startButton.stats())
       break;
-    /*int UIFData[1]; //sequence number
-    UIF.receive(UIFData);*/
+
+    //currentRunningMode = getRunningMode();
   }
 
   switch (currentRunningMode)
@@ -1022,4 +1024,16 @@ int main(void)
     rojarArmRight.update();
   }
 #endif //TEST_RojarArmUpDownOnce
+}
+
+int getRunningMode()
+{
+  int UIFData[1]; //sequence number
+  if (!UIF.receive(&UIFData[0]))
+  {
+    return 0;
+  }
+  int ACK = 0x06;
+  UIF.transmit(1, &ACK); //モード受けとり確認用シグナル
+  return UIFData[0];
 }
