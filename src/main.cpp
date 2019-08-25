@@ -53,8 +53,8 @@ struct parameter
   const double encoderAttachedWheelRadius = 2.54; //mini(50) omni
   const double permitErrorCircleRadius = 2.0;
   const int decreaseSpeedCircleRadius = 100;
-  const double estimateDriveMaxPWM = 0.45; // max:0.7, recommend:0.64 //DEFAULT 0.5
-  const double estimateDriveMinPWM = 0.1;
+  const double estimateDriveMaxPWM = 0.5; // max:0.7, recommend:0.64 //DEFAULT 0.5
+  const double estimateDriveMinPWM = 0.13;
   const double estimatePegMaxPWM = 0.6;
   const double estimateHangerMaxPWM = 0.6;
   const double estimateRojarArmMaxPWM = 0.96;
@@ -223,17 +223,20 @@ int main(void)
   switch (currentRunningMode)
   {
     case RED_FRONT_bathTowelLeft:
-      robotLocation.addPoint((112 + 35), -(165 + 47)); //さらに近づいてリミット監視開始
-      robotLocation.addPoint((135 + 35), -(180 + 47));
-      robotLocation.addPoint((230 + 35), -(185 + 47)); //横移動
+      robotLocation.addPoint((122 + 35), -(165 + 47)); //さらに近づいてリミット監視開始
+      robotLocation.addPoint((217 + 35), -(180 + 47));
+      robotLocation.addPoint((217 + 35), -(193 + 47)); //最初に直進
+      robotLocation.addPoint((325 + 35), -(193 + 47)); //横移動
+      robotLocation.addPoint((325 + 35), -(180 + 47)); //ロジャー降ろしながら後ろに引く
       robotLocation.addPoint(0, 0);                    //初期位置
       break;
     case RED_MIDDLE_bathTowelLeft:                     //縦:112-170,横112-205
       robotLocation.addPoint(0, -(340 + 47));          //二本目のポール前
       robotLocation.addPoint((122 + 35), -(365 + 47)); //さらに近づいてリミット監視開始
       robotLocation.addPoint((217 + 35), -(380 + 47));
-      robotLocation.addPoint((217 + 35), -(400 + 47)); //最初に直進
-      robotLocation.addPoint((325 + 35), -(400 + 47)); //横移動
+      robotLocation.addPoint((217 + 35), -(393 + 47)); //最初に直進
+      robotLocation.addPoint((325 + 35), -(393 + 47)); //横移動
+      robotLocation.addPoint((325 + 35), -(380 + 47)); //ロジャー降ろしながら後ろに引く
       robotLocation.addPoint(10, -(335 + 47));         //直線移動できる位置まで戻ってくる
       robotLocation.addPoint(0, 0);                    //初期位置
       break;
@@ -340,6 +343,7 @@ int main(void)
           switch (wayPointSignature)
           {
             case 1:
+              accelAlgorithm.setAllocateErrorCircleRadius(3.5);
               limitSwitchBarFrontRight.update();
               if (!limitSwitchBarFrontRight.stats())
               {
@@ -407,20 +411,48 @@ int main(void)
                   }
                   if (100 < clothHangerTimer.read_ms() && seq == 2)
                   {
+                    clothHangerTimer.stop();
+                    clothHangerTimer.reset();
                     robotLocation.sendNext();
-                    accelAlgorithm.setMaxOutput(0.25); //引っ張るときはゆっくり
+                    OmniKinematics.setMaxPWM(0.2); //引っ張るときはゆっくり
+                    rojarArmRight.setMaxPWM(0.4);
+                    rojarArmRight.setHeight(500);
                     wayPointSignature++;
                   }
                 }
               }
               break;
             case 3:
-              accelAlgorithm.setMaxOutput(Robot.estimateDriveMaxPWM);
+              if (rojarArmRight.stats())
+              {
+                wayPointSignature++;
+              }
+              break;
+            case 4:
+              robotLocation.sendNext(); //横移動
+              wayPointSignature++;
+              break;
+            case 5:
+              static bool initialFlag = 1;
+              if (initialFlag)
+              {
+                robotLocation.sendNext();
+                rojarArmRight.setHeight(0);
+                rojarArmRight.update();
+                initialFlag = 0;
+              }
+              if (rojarArmRight.stats())
+              {
+                wayPointSignature++;
+              }
+              break;
+            case 6:
+              OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
               holderRight.release('l');
               robotLocation.sendNext();
               wayPointSignature++;
               break;
-            case 4:
+            case 7:
               //LCDDriver.clear();
               //serialLCD.printf("TASKS CLOSED");
               holderRight.free('r');
@@ -428,6 +460,8 @@ int main(void)
               while (1)
               {
                 //LCDDriver.setCursor(2, 0);
+                accelAlgorithm.update();
+                accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
                 //serialLCD.printf("%.1lf %.1lf %.1lf", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
               }
               break;
@@ -535,49 +569,52 @@ int main(void)
                     clothHangerTimer.stop();
                     clothHangerTimer.reset();
                     robotLocation.sendNext();
-                    OmniKinematics.setMaxPWM(0.15); //引っ張るときはゆっくり
+                    OmniKinematics.setMaxPWM(0.2); //引っ張るときはゆっくり 前進
+                    rojarArmRight.setMaxPWM(0.4);
+                    rojarArmRight.setHeight(2100);
                     wayPointSignature++;
                   }
                 }
               }
               break;
             case 4:
-              static unsigned int timerStartFlag = 1;
-              if (timerStartFlag)
+              if (rojarArmRight.stats())
               {
-                clothHangerTimer.start();
-                timerStartFlag = 0;
-              }
-              if (0 < clothHangerTimer.read_ms() && clothHangerTimer.read_ms() < 1300)
-              {
-                holderRight.release('l');
-              }
-              if (1300 < clothHangerTimer.read_ms() && clothHangerTimer.read_ms() < 2500)
-              {
-                holderRight.grasp('l');
-              }
-              if (2500 < clothHangerTimer.read_ms())
-              {
-                clothHangerTimer.stop();
-                clothHangerTimer.reset();
-                robotLocation.sendNext();
                 wayPointSignature++;
               }
               break;
             case 5:
+              robotLocation.sendNext(); //横移動
+              wayPointSignature++;
+              break;
+            case 6:
+              static bool initialFlag = 1;
+              if (initialFlag)
+              {
+                robotLocation.sendNext();
+                rojarArmRight.setHeight(1600);
+                rojarArmRight.update();
+                initialFlag = 0;
+              }
+              if (rojarArmRight.stats())
+              {
+                wayPointSignature++;
+              }
+              break;
+            case 7:
               OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
               holderRight.release('l');
               rojarArmRight.setHeight(0);
               robotLocation.sendNext();
               wayPointSignature++;
               break;
-            case 6:
+            case 8:
               holderRight.grasp('r');
               holderRight.grasp('l');
               robotLocation.sendNext();
               wayPointSignature++;
               break;
-            case 7:
+            case 9:
               //LCDDriver.clear();
               //serialLCD.printf("TASKS CLOSED");
               holderRight.free('r');
@@ -587,17 +624,6 @@ int main(void)
                 //LCDDriver.setCursor(2, 0);
                 accelAlgorithm.update();
                 accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
-                OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), IMU.gyro_Yaw(), driverPWMOutput);
-                //ここにMMD送信(drive)
-                int MDD1Packet[6] = {
-                    driverPWMOutput[0] < 0 ? 0 : (int)(driverPWMOutput[0] * 100),
-                    driverPWMOutput[0] > 0 ? 0 : -(int)(driverPWMOutput[0] * 100),
-                    driverPWMOutput[1] < 0 ? 0 : (int)(driverPWMOutput[1] * 100),
-                    driverPWMOutput[1] > 0 ? 0 : -(int)(driverPWMOutput[1] * 100),
-                    driverPWMOutput[2] < 0 ? 0 : (int)(driverPWMOutput[2] * 100),
-                    driverPWMOutput[2] > 0 ? 0 : -(int)(driverPWMOutput[2] * 100),
-                };
-                MDD1.transmit(6, MDD1Packet);
                 //serialLCD.printf("%.1lf %.1lf %.1lf", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
               }
               break;
