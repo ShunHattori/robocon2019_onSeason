@@ -1,11 +1,8 @@
 #include "RojarArm.h"
 
-RojarArm::RojarArm(PinName motorCW, PinName motorCCW)
+RojarArm::RojarArm(double* variableToStore)
 {
-  MotorCW = new PwmOut(motorCW);
-  MotorCCW = new PwmOut(motorCCW);
-  MotorCW->period_us(40);
-  MotorCCW->period_us(40);
+  motorPWM = variableToStore;
   heightCurrent = 0;
   heightTarget = 0;
 }
@@ -46,20 +43,20 @@ void RojarArm::update(void)
 {
   if ((heightTarget - 24) < heightCurrent && heightCurrent < (heightTarget + 24))
   {
-    MotorCW->write(0);
-    MotorCCW->write(0);
+    motorPWM[0] = 0;
+    motorPWM[1] = 0;
   }
   else
   {
     if (heightTarget < heightCurrent)
     {
-      MotorCW->write(pwm);
-      MotorCCW->write(0);
+      motorPWM[0] = pwm;
+      motorPWM[1] = 0;
     }
     else if (heightTarget > heightCurrent)
     {
-      MotorCW->write(0);
-      MotorCCW->write(pwm);
+      motorPWM[0] = 0;
+      motorPWM[1] = pwm;
     }
   }
 }

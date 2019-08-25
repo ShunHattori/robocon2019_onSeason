@@ -3,7 +3,6 @@
 #include "math.h"
 #include "mbed.h"
 
-
 class OmniKinematics3WD
 {
 public:
@@ -28,7 +27,7 @@ public:
     *   param:  x,y,yaw方向の移動量(double) 駆動輪数に応じたdouble配列
     *   return: none(引数に代入)
     */
-  void getOutput(double x, double y, double yaw, double pwm[]);
+  void getOutput(double, double, double, double, double pwm[]);
 
 private:
   double XVector, YVector, YawVector;

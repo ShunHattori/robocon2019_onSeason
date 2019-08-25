@@ -2,6 +2,15 @@
 #include <math.h>
 #include "mbed.h"
 
+MPU9250::MPU9250(PinName sda, PinName scl, int baud)
+{
+  init();
+  i2c_ = new I2C(sda, scl);
+  i2c_->frequency(baud);
+  timer_ = new Timer();
+  timer_->start();
+}
+
 void MPU9250::init()
 {
   offset_gx = 0;
@@ -20,14 +29,8 @@ void MPU9250::init()
   tmz = 0;
 }
 
-void MPU9250::setup(PinName sda, PinName scl)
+void MPU9250::setup()
 {
-  init();
-  i2c_ = new I2C(sda, scl);
-  i2c_->frequency(400000);
-  timer_ = new Timer();
-  timer_->start();
-
   writeByte(gyro_address, 0x6B, 0x00);
   writeByte(gyro_address, 0x37, 0x02);
   writeByte(mag_address, 0x0A, 0x06);
@@ -38,20 +41,17 @@ void MPU9250::setup(PinName sda, PinName scl)
 
   int16_t raw_gx = 0, raw_gy = 0, raw_gz = 0;
   int16_t raw_mx = 0, raw_my = 0, raw_mz = 0;
-  for (int i = 0; i < 3000; i++) // loop for calclation offsets 3000times
+  for (int i = 0; i < 6000; i++) // loop for calclation offsets 6000times
   {
     uint8_t readGyro[6];
     uint8_t magData[7];
+
     readBytes(gyro_address, reg_roll, 6, &readGyro[0]);
     raw_gx = (int16_t)(((int16_t)readGyro[0] << 8) | readGyro[1]);
     raw_gy = (int16_t)(((int16_t)readGyro[2] << 8) | readGyro[3]);
     raw_gz = (int16_t)(((int16_t)readGyro[4] << 8) | readGyro[5]);
-    //pc_->printf("%d\t", raw_gx);
-    //pc_->printf("%d\t", raw_gy);
-    //pc_->printf("%d\t", raw_gz);
 
     readBytes(mag_address, reg_mag, 7, &magData[0]);
-
     uint8_t c = magData[6];
     if (!(c & 0x08))
     {
@@ -59,9 +59,6 @@ void MPU9250::setup(PinName sda, PinName scl)
       raw_my = (int16_t)(((int16_t)magData[3] << 8) | magData[2]);
       raw_mz = (int16_t)(((int16_t)magData[5] << 8) | magData[4]);
     }
-    //pc_->printf("%d\t", raw_mx);
-    //pc_->printf("%d\t", raw_my);
-    //pc_->printf("%d\r\n", raw_mz);
 
     offset_gx += raw_gx / 131.0;
     offset_gy += raw_gy / 131.0;
@@ -71,12 +68,12 @@ void MPU9250::setup(PinName sda, PinName scl)
     offset_mz += (double)raw_mz * 0.15;
   }
 
-  offset_gx /= 3000;
-  offset_gy /= 3000;
-  offset_gz /= 3000;
-  offset_mx /= 3000;
-  offset_my /= 3000;
-  offset_mz /= 3000;
+  offset_gx /= 6000;
+  offset_gy /= 6000;
+  offset_gz /= 6000;
+  offset_mx /= 6000;
+  offset_my /= 6000;
+  offset_mz /= 6000;
 
   offset_mag = atan2(offset_mx, offset_my) * 180 / 3.141593;
   if (offset_mag >= 0)

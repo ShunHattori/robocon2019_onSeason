@@ -5,27 +5,26 @@
 class Peg
 {
 public:
-    /*
-        PWM割り当てがされているピンx2, モータのpwm, 1回あたりの機構動作時間(s)
+  /*
+        モータのpwm, 1回あたりの機構動作時間(s)
     */
-    Peg(PinName motorCW, PinName motorCCW, float pwm, float movingTime);
+  Peg(double pwm, double movingTime, double *variableToStore);
 
-    /*
+  /*
         機構タスク追加, コンストラクタで指定した秒数分モータを回転させる
      */
-    void launch(void);
+  void launch(void);
 
-    void reload(void);
+  void reload(void);
 
-    /*
+  /*
         設定された秒数に応じてピンを制御する
      */
-    void update(void);
+  void update(void);
 
 private:
-    PwmOut *MotorCW, *MotorCCW;
-    Timer *timer;
-    float maxPwm, timePerOnce;
-    bool launchFlag = false, reloadFlag = false,
-         extendFlag = false, reduceFlag = false;
+  Timer *timer;
+  double maxPwm, timePerOnce, *outputPWM;
+  bool launchFlag = false, reloadFlag = false,
+       extendFlag = false, reduceFlag = false;
 };
