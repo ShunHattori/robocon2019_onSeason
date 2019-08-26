@@ -10,10 +10,6 @@ DebounceSwitch::DebounceSwitch(PinName inputPin, Pinmode pinmode) : _switch(inpu
   {
     _switch.mode(PullDown);
   }
-  else
-  {
-    _switch.mode(PullNone);
-  }
   mode = pinmode;
   samplingTimer.start();
   samplingPeriod = 10;
@@ -23,28 +19,26 @@ DebounceSwitch::DebounceSwitch(PinName inputPin, Pinmode pinmode) : _switch(inpu
 
 void DebounceSwitch::update()
 {
-  static int buttonPressCount = 0;
-
   if (samplingPeriod < samplingTimer.read_ms()) //サンプリング方式
   {
     switch (mode) //カウントアップ方式
     {
-    case PULLUP:
-      if (!_switch.read())
-      {
-        buttonPressCount++;
-      }
-      else
-        buttonPressCount = 0;
-      break;
-    case PULLDOWN:
-      if (_switch.read())
-      {
-        buttonPressCount++;
-      }
-      else
-        buttonPressCount = 0;
-      break;
+      case PULLUP:
+        if (!_switch.read())
+        {
+          buttonPressCount++;
+        }
+        else
+          buttonPressCount = 0;
+        break;
+      case PULLDOWN:
+        if (_switch.read())
+        {
+          buttonPressCount++;
+        }
+        else
+          buttonPressCount = 0;
+        break;
     }
     samplingTimer.reset();
   }
