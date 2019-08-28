@@ -59,6 +59,11 @@ void DriveTrain::retentionDriving()
   {
     Drive.vector[0] = xAxis.error < 0 ? mapDouble(xAxis.error, 0, -Drive.decreaseRadius, -Drive.minPWM, -Drive.maxPWM) : mapDouble(xAxis.error, 0, Drive.decreaseRadius, Drive.minPWM, Drive.maxPWM);
   }
+  if (Drive.vector[0] < -Drive.maxPWM || Drive.maxPWM < Drive.vector[0])
+  {
+    Drive.vector[0] = Drive.vector[0] < 0 ? -Drive.maxPWM : Drive.maxPWM;
+  }
+
   //yAxis Process
   if (-Drive.allocateError < yAxis.error && yAxis.error < Drive.allocateError)
   {
@@ -71,6 +76,10 @@ void DriveTrain::retentionDriving()
   else
   {
     Drive.vector[1] = yAxis.error < 0 ? mapDouble(yAxis.error, 0, -Drive.decreaseRadius, -Drive.minPWM, -Drive.maxPWM) : mapDouble(yAxis.error, 0, Drive.decreaseRadius, Drive.minPWM, Drive.maxPWM);
+  }
+  if (Drive.vector[1] < -Drive.maxPWM || Drive.maxPWM < Drive.vector[1])
+  {
+    Drive.vector[1] = Drive.vector[1] < 0 ? -Drive.maxPWM : Drive.maxPWM;
   }
 }
 
