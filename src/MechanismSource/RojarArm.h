@@ -28,7 +28,7 @@ public:
   /*
         モータに印加するPWMを指定する
      */
-  void setMaxPWM(float);
+  void setMaxPWM(double);
 
   /*
         現在の高さを取得する
@@ -43,6 +43,7 @@ public:
 private:
   DebounceSwitch *bottomSwitch;
   double *motorPWM;
-  int16_t heightTarget, heightCurrent;
-  float pwm;
+  double userPWM, aroundZeroPointPWM;
+  int heightTarget, heightCurrent;
+  bool isTargetHeightAroundZeroPoint;
 };

@@ -12,75 +12,76 @@
 class QEI
 {
 protected:
-    PinName Pin[3];
-    QEI(const QEI &q);
-    QEI &operator=(const QEI &q)
-    {
-        return *this;
-    }
+  PinName Pin[3];
+  QEI &operator=(const QEI &q)
+  {
+    return *this;
+  }
 
 public:
-    typedef enum Encoding
-    {
+  QEI(const QEI &q);
 
-        X2_ENCODING,
-        X4_ENCODING
+  typedef enum Encoding
+  {
 
-    } Encoding;
+    X2_ENCODING,
+    X4_ENCODING
 
-    QEI(PinName channelA, PinName channelB, PinName index, int pulsesPerRev, Timer *T, Encoding encoding = X2_ENCODING);
+  } Encoding;
 
-    void qei_reset(void);
+  QEI(PinName channelA, PinName channelB, PinName index, int pulsesPerRev, Timer *T, Encoding encoding = X2_ENCODING);
 
-    int getCurrentState(void);
+  void qei_reset(void);
 
-    void set(int pul, int rev);
+  int getCurrentState(void);
 
-    int getPulses(void);
+  void set(int pul, int rev);
 
-    int getRevolutions(void);
+  int getPulses(void);
 
-    int getAng_rev();
+  int getRevolutions(void);
 
-    double getAngle();
-    double getSumangle();
-    double getRPM();
-    double getRPS();
-    double getRPMS();
-    double getRPUS();
-    int pulsesPerRev_;
-    void state(int i);
+  int getAng_rev();
+
+  double getAngle();
+  double getSumangle();
+  double getRPM();
+  double getRPS();
+  double getRPMS();
+  double getRPUS();
+  int pulsesPerRev_;
+  void state(int i);
 
 private:
-    Timer *timer;
-    //Ticker Tick;
-    double RPM, RPS, RPMS, RPUS;
-    float gettime()
-    {
-        timer->start();
-        static float prev_time;
-        float a = timer->read() - prev_time;
-        prev_time = timer->read();
-        return a;
-    }
+  Timer *timer;
+  //Ticker Tick;
+  double RPM, RPS, RPMS, RPUS;
+  float gettime()
+  {
+    timer->start();
+    static float prev_time;
+    float a = timer->read() - prev_time;
+    prev_time = timer->read();
+    return a;
+  }
 
-    void encode(void);
+  void encode(void);
 
-    void index(void);
+  void index(void);
 
-    Encoding encoding_;
+  Encoding encoding_;
 
-    InterruptIn channelA_;
-    InterruptIn channelB_;
-    InterruptIn index_;
-    int round_rev;
+  InterruptIn channelA_;
+  InterruptIn channelB_;
+  InterruptIn index_;
+  int round_rev;
 
-    int prevState_;
-    int currState_;
-    double angle_, sumangle;
-    int angle_pulses;
-    volatile int pulses_;
-    volatile int revolutions_;
+  int prevState_;
+  int currState_;
+  double angle_, sumangle;
+  int angle_pulses;
+  volatile int pulses_;
+  volatile int revolutions_;
 };
 
 #endif

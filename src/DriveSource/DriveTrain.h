@@ -10,7 +10,7 @@
 class DriveTrain
 {
 public:
-  DriveTrain(LocationManager<double> &lcmObj, MWodometry &X1, MWodometry &Y1, MPU9250 &IMUobj, double AllocateError, double DecreaseRadius)
+  DriveTrain(LocationManager<double> &lcmObj, MWodometry &X1, MWodometry &Y1, MPU9250 &IMUobj, double AllocateError, double DriveDisableError, double DecreaseRadius)
   {
     LCM = &lcmObj;
     XAxis_1 = &X1;
@@ -19,8 +19,10 @@ public:
     xAxisAccelor = new TimeIncreaser(4, 0.003);
     yAxisAccelor = new TimeIncreaser(4, 0.003);
     Drive.allocateError = AllocateError;
+    Drive.driveDisableError = DriveDisableError;
     Drive.decreaseRadius = DecreaseRadius;
     Drive.ConfirmStatsInitialFlag = 1;
+    Drive.isTargetPositionChanged = 0;
     Drive.maxPWM = 0.3;
     Drive.minPWM = 0.1;
     Drive.reachedPWM[0] = 0.35;
@@ -28,6 +30,8 @@ public:
     Drive.vector[0] = 0;
     Drive.vector[1] = 0;
     Drive.vector[2] = 0;
+    Drive.outputRate[0] = 0;
+    Drive.outputRate[1] = 0;
     xAxis.current = 0;
     yAxis.current = 0;
     yawAxis.current = 0;
@@ -63,6 +67,15 @@ public:
     Drive.allocateError = radius;
   }
 
+  /*
+     * desc:　  モーター出力停止円の半径閾値変更
+     * param:   半径(double)
+     * return:  none
+     */
+  void setDriveDisableErrorCircleRadius(double radius)
+  {
+    Drive.driveDisableError = radius;
+  }
   /*
      * desc:　  減速開始判定円の半径閾値変更
      * param:   半径(double)
@@ -146,6 +159,11 @@ public:
     Drive.minPWM = min;
   }
 
+  void setPositionChangedFlag()
+  {
+    Drive.isTargetPositionChanged = 1;
+  }
+
 private:
   LocationManager<double> *LCM;
   MWodometry *XAxis_1, *YAxis_1;
@@ -157,12 +175,15 @@ private:
   struct
   {
     double vector[3];
-    double allocateError;
+    double allocateError;     //到達半径は大きめにとる
+    double driveDisableError; //収束半径は小さめにする
     double decreaseRadius;
     double maxPWM, minPWM;
     double reachedPWM[2];
+    double outputRate[2];
     bool ConfirmStatsInitialFlag;
     bool stats;
+    bool isTargetPositionChanged;
   } Drive;
 
   struct location
@@ -185,4 +206,5 @@ private:
   void retentionDriving();
   void accelerationDriving();
   void yawAxisRetentionDriving();
+  void calcOutputRateWhenTargetChanged();
 };
