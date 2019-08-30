@@ -16,8 +16,8 @@ public:
     XAxis_1 = &X1;
     YAxis_1 = &Y1;
     imu = &IMUobj;
-    xAxisAccelor = new TimeIncreaser(4, 0.003);
-    yAxisAccelor = new TimeIncreaser(4, 0.003);
+    xAxisAccelor = new TimeIncreaser(2, 0.003);
+    yAxisAccelor = new TimeIncreaser(2, 0.003);
     Drive.allocateError = AllocateError;
     Drive.driveDisableError = DriveDisableError;
     Drive.decreaseRadius = DecreaseRadius;
@@ -25,19 +25,28 @@ public:
     Drive.isTargetPositionChanged = 0;
     Drive.maxPWM = 0.3;
     Drive.minPWM = 0.1;
-    Drive.reachedPWM[0] = 0.35;
-    Drive.reachedPWM[1] = 0.35;
+    Drive.reachedPWM[0] = 0;
+    Drive.reachedPWM[1] = 0;
     Drive.vector[0] = 0;
     Drive.vector[1] = 0;
     Drive.vector[2] = 0;
-    Drive.outputRate[0] = 0;
-    Drive.outputRate[1] = 0;
+    Drive.outputRate[0] = 1;
+    Drive.outputRate[1] = 1;
     xAxis.current = 0;
+    xAxis.target = 0;
+    xAxis.error = 0;
+    xAxis.temp = 0;
     yAxis.current = 0;
+    yAxis.target = 0;
+    yAxis.error = 0;
+    yAxis.temp = 0;
     yawAxis.current = 0;
-    yawSensitivity.turningStrength = 0.5;
-    yawSensitivity.allocateError = 0.2;
-    yawSensitivity.turningPWM = 0.12;
+    yawAxis.target = 0;
+    yawAxis.error = 0;
+    yawAxis.temp = 0;
+    yawSensitivity.turningStrength = 0.02;
+    yawSensitivity.allocateError = 0;
+    yawSensitivity.turningPWM = 0.35;
   }
 
   /*

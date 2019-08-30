@@ -62,7 +62,7 @@ void DriveTrain::retentionDriving()
   }
 
   //yAxis Process
-  if (-Drive.allocateError < yAxis.error && yAxis.error < Drive.allocateError)
+  if (-Drive.driveDisableError < yAxis.error && yAxis.error < Drive.driveDisableError)
   {
     Drive.vector[1] = 0;
   }
@@ -146,8 +146,8 @@ void DriveTrain::accelerationDriving()
     }
   }
   //目標位置まで直線で移動できるように補正
-  Drive.vector[0] = Drive.outputRate[0];
-  Drive.vector[1] = Drive.outputRate[1];
+  //Drive.vector[0] = Drive.outputRate[0];
+  //Drive.vector[1] = Drive.outputRate[1];
 }
 
 void DriveTrain::yawAxisRetentionDriving()
@@ -160,6 +160,10 @@ void DriveTrain::yawAxisRetentionDriving()
   else
   {
     Drive.vector[2] = mapDouble(yawAxis.error, -1 / yawSensitivity.turningStrength, 1 / yawSensitivity.turningStrength, -yawSensitivity.turningPWM, yawSensitivity.turningPWM);
+  }
+  if (Drive.vector[2] < -yawSensitivity.turningPWM || yawSensitivity.turningPWM < Drive.vector[2])
+  {
+    Drive.vector[2] = Drive.vector[2] < 0 ? Drive.vector[2] = -yawSensitivity.turningPWM : Drive.vector[2] = yawSensitivity.turningPWM;
   }
 }
 
@@ -202,7 +206,7 @@ void DriveTrain::calcOutputRateWhenTargetChanged()
   static bool prevFlagState;
   if (Drive.isTargetPositionChanged && (prevFlagState != Drive.isTargetPositionChanged))
   { //新しく座標が設定されたとき
-    double tempRate[2];
+    static double tempRate[2];
     tempRate[0] = abs(xAxis.error) / abs(xAxis.error) + abs(yAxis.error);
     tempRate[1] = abs(yAxis.error) / abs(xAxis.error) + abs(yAxis.error);
     double biggerRate = tempRate[0] > tempRate[1] ? tempRate[0] : tempRate[1];

@@ -7,7 +7,7 @@ RojarArm::RojarArm(double* variableToStore, DebounceSwitch& mySwitch)
   heightCurrent = 0;
   heightTarget = 0;
   isTargetHeightAroundZeroPoint = 1;
-  aroundZeroPointPWM = 0.15;
+  aroundZeroPointPWM = 0.1;
 }
 
 bool RojarArm::stats(void)
@@ -19,7 +19,7 @@ bool RojarArm::stats(void)
     return 0;
   }
 
-  if ((heightTarget - 24) < heightCurrent && heightCurrent < (heightTarget + 24))
+  if ((heightTarget - 34) < heightCurrent && heightCurrent < (heightTarget + 34))
   {
     return 1;
   }
@@ -58,14 +58,14 @@ void RojarArm::update(void)
   bottomSwitch->update();
   if (isTargetHeightAroundZeroPoint)
   { //目標停止位置が０
-    if (heightCurrent < 150)
+    if (heightCurrent < 200)
     { //現在の高さが150パルスよりも小さい
       if (bottomSwitch->stats())
       { //最下点スイッチが押されている
         motorPWM[0] = 0;
         motorPWM[1] = 0;
+        return;
       }
-      return;
       if (0 < heightCurrent)
       {
         motorPWM[0] = aroundZeroPointPWM;
@@ -80,7 +80,7 @@ void RojarArm::update(void)
     }
   }
 
-  if ((heightTarget - 24) < heightCurrent && heightCurrent < (heightTarget + 24))
+  if ((heightTarget - 34) < heightCurrent && heightCurrent < (heightTarget + 34))
   {
     motorPWM[0] = 0;
     motorPWM[1] = 0;
