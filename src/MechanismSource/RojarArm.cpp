@@ -71,11 +71,6 @@ void RojarArm::update(void)
         motorPWM[0] = aroundZeroPointPWM;
         motorPWM[1] = 0;
       }
-      else if (0 > heightCurrent)
-      {
-        motorPWM[0] = 0;
-        motorPWM[1] = aroundZeroPointPWM;
-      }
       return;
     }
   }

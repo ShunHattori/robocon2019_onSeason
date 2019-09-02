@@ -44,7 +44,7 @@ public:
     yawAxis.target = 0;
     yawAxis.error = 0;
     yawAxis.temp = 0;
-    yawSensitivity.turningStrength = 0.02;
+    yawSensitivity.turningStrength = 0.1;
     yawSensitivity.allocateError = 0;
     yawSensitivity.turningPWM = 0.35;
   }
@@ -171,6 +171,11 @@ public:
   void setPositionChangedFlag()
   {
     Drive.isTargetPositionChanged = 1;
+  }
+
+  void setYawTurningStrength(double val)
+  {
+    yawSensitivity.turningStrength = val;
   }
 
 private:
