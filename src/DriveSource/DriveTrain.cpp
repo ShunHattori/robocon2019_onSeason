@@ -159,7 +159,7 @@ void DriveTrain::yawAxisRetentionDriving()
   }
   else
   {
-    Drive.vector[2] = mapDouble(yawAxis.error, -1 / yawSensitivity.turningStrength, 1 / yawSensitivity.turningStrength, -yawSensitivity.turningPWM, yawSensitivity.turningPWM);
+    Drive.vector[2] = mapDouble(yawAxis.error, -yawSensitivity.turningStrength, yawSensitivity.turningStrength, -yawSensitivity.turningPWM, yawSensitivity.turningPWM);
   }
   if (Drive.vector[2] < -yawSensitivity.turningPWM || yawSensitivity.turningPWM < Drive.vector[2])
   {
