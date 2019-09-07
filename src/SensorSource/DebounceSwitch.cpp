@@ -1,55 +1,49 @@
 #include "DebounceSwitch.h"
 
-DebounceSwitch::DebounceSwitch(PinName inputPin, char mode) : _switch(inputPin)
+DebounceSwitch::DebounceSwitch(PinName inputPin, Pinmode pinmode) : _switch(inputPin)
 {
-  if (mode == 'u' || mode == 'U')
+  if (pinmode == PULLUP)
   {
     _switch.mode(PullUp);
-    PINMODE = 1;
   }
-  else if (mode == 'd' || mode == 'D')
+  else if (pinmode == PULLDOWN)
   {
     _switch.mode(PullDown);
-    PINMODE = 2;
   }
-  else
-  {
-    _switch.mode(PullNone);
-    PINMODE = 3;
-  }
-  detectFlagNumber = 500;
+  mode = pinmode;
+  samplingTimer.start();
+  samplingPeriod = 10;
+  detectFlagNumber = 3;
   ButtonStats = 0;
 }
 
 void DebounceSwitch::update()
 {
-  int buttonPressCount = 0;
-
-  switch (PINMODE)
+  if (samplingPeriod < samplingTimer.read_ms()) //サンプリング方式
   {
-    case 1:
-      for (int i = 0; i < 500; i++)
-      {
-        buttonPressCount += !_switch.read();
-      }
-      break;
-    case 2:
-      for (int i = 0; i < 500; i++)
-      {
-        buttonPressCount += _switch.read();
-      }
-      break;
-    case 3:
-      for (int i = 0; i < 500; i++)
-      {
-        buttonPressCount += _switch.read();
-      }
-      break;
-    default:
-      break;
+    switch (mode) //カウントアップ方式
+    {
+      case PULLUP:
+        if (!_switch.read())
+        {
+          buttonPressCount++;
+        }
+        else
+          buttonPressCount = 0;
+        break;
+      case PULLDOWN:
+        if (_switch.read())
+        {
+          buttonPressCount++;
+        }
+        else
+          buttonPressCount = 0;
+        break;
+    }
+    samplingTimer.reset();
   }
 
-  if (buttonPressCount == 500)
+  if (detectFlagNumber < buttonPressCount)
   {
     ButtonStats = 1;
   }
@@ -57,4 +51,9 @@ void DebounceSwitch::update()
   {
     ButtonStats = 0;
   }
+}
+
+void DebounceSwitch::setDetectCount(int count)
+{
+  detectFlagNumber = count;
 }

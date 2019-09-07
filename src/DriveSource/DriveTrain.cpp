@@ -39,6 +39,7 @@ bool DriveTrain::getMovingStats()
   }
   if (movingComfirmTimer.read_ms() > 50)
   {
+    Drive.isTargetPositionChanged = 0;
     return 1;
   }
   return 0;
@@ -47,20 +48,21 @@ bool DriveTrain::getMovingStats()
 void DriveTrain::retentionDriving()
 {
   //xAxis Process
-  if (-Drive.allocateError < xAxis.error && xAxis.error < Drive.allocateError)
-  {
+  if (-Drive.driveDisableError < xAxis.error && xAxis.error < Drive.driveDisableError)
+  { //偏差がモーター停止円半径内だったらベクトルを0に設定する
     Drive.vector[0] = 0;
   }
   else if (xAxis.error < -Drive.decreaseRadius || Drive.decreaseRadius < xAxis.error)
-  {
+  { //減速判定円より偏差が大きい場合ベクトルを最大に設定する
     Drive.vector[0] = xAxis.error < 0 ? -Drive.maxPWM : Drive.maxPWM;
   }
   else
-  {
+  { //偏差が二つの円の間にある場合p制御を行う
     Drive.vector[0] = xAxis.error < 0 ? mapDouble(xAxis.error, 0, -Drive.decreaseRadius, -Drive.minPWM, -Drive.maxPWM) : mapDouble(xAxis.error, 0, Drive.decreaseRadius, Drive.minPWM, Drive.maxPWM);
   }
+
   //yAxis Process
-  if (-Drive.allocateError < yAxis.error && yAxis.error < Drive.allocateError)
+  if (-Drive.driveDisableError < yAxis.error && yAxis.error < Drive.driveDisableError)
   {
     Drive.vector[1] = 0;
   }
@@ -85,36 +87,32 @@ void DriveTrain::accelerationDriving()
     }
   }
   //xAxis Process
-  if (Drive.decreaseRadius < abs(xAxis.error)) //減速半径外の時
-  {
+  if (Drive.decreaseRadius < abs(xAxis.error))
+  { //減速半径外の時
     if (0 < xAxis.error)
     {
       Drive.vector[0] += xAxisAccelor->getValue();
-      Drive.reachedPWM[0] = Drive.vector[0];
+      Drive.reachedPWM[0] = abs(Drive.vector[0]);
     }
     else
     {
       Drive.vector[0] -= xAxisAccelor->getValue();
-      Drive.reachedPWM[0] = -Drive.vector[0];
+      Drive.reachedPWM[0] = abs(Drive.vector[0]);
     }
     if (Drive.vector[0] < -Drive.maxPWM || Drive.maxPWM < Drive.vector[0])
-    {
+    { //台形制御により最大出力よりもベクトルが大きくなった場合制限する
       Drive.vector[0] = Drive.vector[0] < 0 ? -Drive.maxPWM : Drive.maxPWM;
     }
   }
   else
-  {
-    if (-Drive.allocateError < xAxis.error && xAxis.error < Drive.allocateError)
-    {
+  { //偏差が減速半径よりも小さくなったorもとから小さかった場合
+    if (-Drive.driveDisableError < xAxis.error && xAxis.error < Drive.driveDisableError)
+    { //偏差がモーター停止円半径内だったらベクトルを0に設定する
       Drive.vector[0] = 0;
     }
-    else if (xAxis.error < -Drive.decreaseRadius || Drive.decreaseRadius < xAxis.error)
-    {
-      Drive.vector[0] = xAxis.error < 0 ? -Drive.maxPWM : Drive.maxPWM;
-    }
     else
-    {
-      Drive.vector[0] = xAxis.error < 0 ? mapDouble(xAxis.error, 0, -Drive.decreaseRadius, -Drive.minPWM, -Drive.reachedPWM[0]) : mapDouble(xAxis.error, 0, Drive.decreaseRadius, Drive.minPWM, Drive.reachedPWM[0]);
+    { //加速時に到達した最大速度を上限にp制御を行う、無加速時はminPWM,minPWMでmapするので等速移動になる
+      Drive.vector[0] = xAxis.error < 0 ? mapDouble(xAxis.error, Drive.allocateError, -Drive.decreaseRadius, -Drive.minPWM, -Drive.reachedPWM[0]) : mapDouble(xAxis.error, -Drive.allocateError, Drive.decreaseRadius, Drive.minPWM, Drive.reachedPWM[0]);
     }
   }
 
@@ -124,12 +122,12 @@ void DriveTrain::accelerationDriving()
     if (0 < yAxis.error)
     {
       Drive.vector[1] += yAxisAccelor->getValue();
-      Drive.reachedPWM[1] = Drive.vector[1];
+      Drive.reachedPWM[1] = abs(Drive.vector[1]);
     }
     else
     {
       Drive.vector[1] -= yAxisAccelor->getValue();
-      Drive.reachedPWM[1] = -Drive.vector[1];
+      Drive.reachedPWM[1] = abs(Drive.vector[1]);
     }
     if (Drive.vector[1] < -Drive.maxPWM || Drive.maxPWM < Drive.vector[1])
     {
@@ -138,19 +136,18 @@ void DriveTrain::accelerationDriving()
   }
   else
   {
-    if (-Drive.allocateError < yAxis.error && yAxis.error < Drive.allocateError)
+    if (-Drive.driveDisableError < yAxis.error && yAxis.error < Drive.driveDisableError)
     {
       Drive.vector[1] = 0;
     }
-    else if (yAxis.error < -Drive.decreaseRadius || Drive.decreaseRadius < yAxis.error)
-    {
-      Drive.vector[1] = yAxis.error < 0 ? -Drive.maxPWM : Drive.maxPWM;
-    }
     else
     {
-      Drive.vector[1] = yAxis.error < 0 ? mapDouble(yAxis.error, 0, -Drive.decreaseRadius, -Drive.minPWM, -Drive.reachedPWM[0]) : mapDouble(yAxis.error, 0, Drive.decreaseRadius, Drive.minPWM, Drive.reachedPWM[0]);
+      Drive.vector[1] = yAxis.error < 0 ? mapDouble(yAxis.error, Drive.allocateError, -Drive.decreaseRadius, -Drive.minPWM, -Drive.reachedPWM[0]) : mapDouble(yAxis.error, -Drive.allocateError, Drive.decreaseRadius, Drive.minPWM, Drive.reachedPWM[0]);
     }
   }
+  //目標位置まで直線で移動できるように補正
+  //Drive.vector[0] = Drive.outputRate[0];
+  //Drive.vector[1] = Drive.outputRate[1];
 }
 
 void DriveTrain::yawAxisRetentionDriving()
@@ -162,7 +159,11 @@ void DriveTrain::yawAxisRetentionDriving()
   }
   else
   {
-    Drive.vector[2] = mapDouble(yawAxis.error, -1 / yawSensitivity.turningStrength, 1 / yawSensitivity.turningStrength, -yawSensitivity.turningPWM, yawSensitivity.turningPWM);
+    Drive.vector[2] = mapDouble(yawAxis.error, -yawSensitivity.turningStrength, yawSensitivity.turningStrength, -yawSensitivity.turningPWM, yawSensitivity.turningPWM);
+  }
+  if (Drive.vector[2] < -yawSensitivity.turningPWM || yawSensitivity.turningPWM < Drive.vector[2])
+  {
+    Drive.vector[2] = Drive.vector[2] < 0 ? Drive.vector[2] = -yawSensitivity.turningPWM : Drive.vector[2] = yawSensitivity.turningPWM;
   }
 }
 
@@ -187,14 +188,31 @@ void DriveTrain::update()
   yawAxis.error = yawAxis.target - yawAxis.current;
   //ロボットの自己位置が指定された許容範囲内であればstatsを更新する
   Drive.stats = getMovingStats();
+  calcOutputRateWhenTargetChanged();
   //yaw軸は常に姿勢維持制御
   yawAxisRetentionDriving();
   //Drive.statsにより出力の計算を切り替える
-  if (Drive.stats) //現在地維持制御
+  if (!Drive.isTargetPositionChanged) //現在地維持制御
   {
     retentionDriving();
     return;
   }
   accelerationDriving();
   return;
+}
+
+void DriveTrain::calcOutputRateWhenTargetChanged()
+{
+  static bool prevFlagState;
+  if (Drive.isTargetPositionChanged && (prevFlagState != Drive.isTargetPositionChanged))
+  { //新しく座標が設定されたとき
+    static double tempRate[2];
+    tempRate[0] = abs(xAxis.error) / abs(xAxis.error) + abs(yAxis.error);
+    tempRate[1] = abs(yAxis.error) / abs(xAxis.error) + abs(yAxis.error);
+    double biggerRate = tempRate[0] > tempRate[1] ? tempRate[0] : tempRate[1];
+    double correctionMultiplyToOne = 1 / biggerRate;
+    Drive.outputRate[0] = tempRate[0] * correctionMultiplyToOne;
+    Drive.outputRate[1] = tempRate[1] * correctionMultiplyToOne;
+  }
+  prevFlagState = Drive.isTargetPositionChanged;
 }

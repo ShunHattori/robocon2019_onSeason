@@ -5,18 +5,22 @@
 class DebounceSwitch
 {
 public:
-    DebounceSwitch(PinName, char);
+  typedef enum Pinmode {
+    PULLUP,
+    PULLDOWN,
+  } Pinmode;
 
-    void update();
-
-    bool stats()
-    {
-        return ButtonStats;
-    }
+  DebounceSwitch(PinName, Pinmode);
+  void update();
+  void setDetectCount(int);
+  bool stats()
+  {
+    return ButtonStats;
+  }
 
 private:
-    DigitalIn _switch;
-    int detectFlagNumber;
-    bool ButtonStats;
-    int PINMODE;
+  Timer samplingTimer;
+  DigitalIn _switch;
+  int detectFlagNumber, samplingPeriod, mode, buttonPressCount;
+  bool ButtonStats;
 };

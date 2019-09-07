@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SensorSource\DebounceSwitch.h"
 #include "mbed.h"
 
 class RojarArm
@@ -7,7 +8,7 @@ class RojarArm
 public:
   /*
      */
-  RojarArm(double *);
+  RojarArm(double *, DebounceSwitch &);
 
   /*
         現在の移動状況を取得する　(展開完了== 1, 展開中or展開不可 == 0)
@@ -27,7 +28,7 @@ public:
   /*
         モータに印加するPWMを指定する
      */
-  void setMaxPWM(float);
+  void setMaxPWM(double);
 
   /*
         現在の高さを取得する
@@ -40,7 +41,9 @@ public:
   void update(void);
 
 private:
+  DebounceSwitch *bottomSwitch;
   double *motorPWM;
-  int16_t heightTarget, heightCurrent;
-  float pwm;
+  double userPWM, aroundZeroPointPWM;
+  int heightTarget, heightCurrent;
+  bool isTargetHeightAroundZeroPoint;
 };
