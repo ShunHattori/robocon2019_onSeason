@@ -15,12 +15,12 @@
 #include "UnitProtocol.hpp"
 #include "mbed.h"
 
-#define GAME_MODECHANGE_ONBOARDSWITCH //基板上の青スイッチで動作切り替え（シーツ・バスタオル）
+//#define GAME_MODECHANGE_ONBOARDSWITCH //基板上の青スイッチで動作切り替え（シーツ・バスタオル）
 //#define TEST_DRIVE
 //#define TEST_RojarArm_UpDownLoop
 //#define TEST_PEGLaunch      //tested on 6/20(Thur)
 //#define TEST_HangerMovement //tested on 6/20(Thur)
-//#define TEST_HoldServo
+#define TEST_HoldServo
 //#define TEST_RojarArmUpDownOnce
 
 enum gameMode
@@ -30,12 +30,11 @@ enum gameMode
   RED_MIDDLE_PRE_bathTowelLeft,
   RED_MIDDLE_PRE_bathTowelboth,
   RED_BACK_Sheets,
-
-  //↓ not yet
   RED_MIDDLE_FINAL_bathTowelRight,
   RED_MIDDLE_FINAL_bathTowelLeft,
   RED_MIDDLE_FINAL_bathTowelboth,
 
+  //↓ not yet
   BLUE_FRONT_PRE_bathTowelRight,
   BLUE_MIDDLE_PRE_bathTowelLeft,
   BLUE_MIDDLE_PRE_bathTowelRight,
@@ -60,10 +59,10 @@ struct parameter
   const double encoderAttachedWheelRadius = 2.54; //mini(50) omni
   const double permitErrorCircleRadius = 6.0;
   const double driveDisableRadius = 1.5;
-  const int decreaseSpeedCircleRadius = 100;
+  const int decreaseSpeedCircleRadius = 70;
   const double estimateDriveMaxPWM = 0.5; // max:0.7, recommend:0.64 //DEFAULT 0.5
-  const double estimateDriveMinPWM = 0.12;
-  const double estimatePegMaxPWM = 0.43;
+  const double estimateDriveMinPWM = 0.11;
+  const double estimatePegMaxPWM = 0.6;
   const double estimateHangerMaxPWM = 0.6;
   const double estimateRojarArmMaxPWM = 0.75;
   const double PegVoltageImpressionTime = 0.35;
@@ -344,99 +343,102 @@ int main(void)
   {
     case RED_FRONT_PRE_bathTowelLeft: //左ロジャー
       whichMecha = left;
-      robotLocation.addPoint((120), -(205)); //近づいてリミット監視開始 初期位置ずれてるから長めになってる！
-      robotLocation.addPoint((212), -(190)); //竿目印のところまで移動(ちょっと後ろ目)
-      robotLocation.addPoint((212), -(190)); //ハサミつく位置まで前に
-      robotLocation.addPoint((212), -(190)); //最初に直進 //198
+      robotLocation.addPoint((123), -(205)); //近づいてリミット監視開始 初期位置ずれてるから長めになってる！
+      robotLocation.addPoint((207), -(190)); //竿目印のところまで移動(ちょっと後ろ目)
+      robotLocation.addPoint((207), -(190)); //ハサミつく位置まで前に
+      robotLocation.addPoint((207), -(190)); //最初に直進 //198
       robotLocation.addPoint((307), -(200)); //洗濯物横に引っ張る //202
       robotLocation.addPoint((307), -(190)); //ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint((307), -(180));
-      robotLocation.addPoint(30, 40); //初期位置
+      robotLocation.addPoint((307), -(170));
+      robotLocation.addPoint(30, 30); //初期位置
       break;
     case RED_MIDDLE_PRE_bathTowelLeft: //(横掛け), 左ロジャー
       whichMecha = left;
       robotLocation.addPoint(10, -(390));    //二本目のポール前
-      robotLocation.addPoint((127), -(395)); //リミット接触前ちょこちょこ進む
-      robotLocation.addPoint((211), -(380)); //竿目印のところまで移動
-      robotLocation.addPoint((211), -(390)); //ハサミつく位置まで前に
-      robotLocation.addPoint((211), -(390)); //最初に直進
-      robotLocation.addPoint((310), -(400)); //洗濯物横に引っ張る
-      robotLocation.addPoint((310), -(390)); //ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint((310), -(380));
+      robotLocation.addPoint((123), -(395)); //リミット接触前ちょこちょこ進む
+      robotLocation.addPoint((208), -(380)); //竿目印のところまで移動
+      robotLocation.addPoint((208), -(390)); //ハサミつく位置まで前に
+      robotLocation.addPoint((208), -(390)); //最初に直進
+      robotLocation.addPoint((308), -(400)); //洗濯物横に引っ張る
+      robotLocation.addPoint((308), -(390)); //ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint((308), -(370));
       robotLocation.addPoint(30, -(335)); //直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(30, 40);     //初期位置
+      robotLocation.addPoint(30, 30);     //初期位置
       break;
     case RED_MIDDLE_PRE_bathTowelRight: //縦:112-170,横112-205 (縦掛け), 右ロジャー
       whichMecha = right;
       robotLocation.addPoint(10, -(390));    //二本目のポール前
-      robotLocation.addPoint((127), -(395)); //リミット接触前ちょこちょこ進む
-      robotLocation.addPoint((327), -(380)); //竿目印のところまで移動
-      robotLocation.addPoint((327), -(390)); //ハサミつく位置まで前に
-      robotLocation.addPoint((327), -(390)); //最初に直進
-      robotLocation.addPoint((366), -(400)); //洗濯物横に引っ張る
-      robotLocation.addPoint((366), -(390)); //ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint((366), -(380));
+      robotLocation.addPoint((123), -(395)); //リミット接触前ちょこちょこ進む
+      robotLocation.addPoint((320), -(380)); //竿目印のところまで移動
+      robotLocation.addPoint((320), -(390)); //ハサミつく位置まで前に
+      robotLocation.addPoint((320), -(390)); //最初に直進
+      robotLocation.addPoint((360), -(400)); //洗濯物横に引っ張る
+      robotLocation.addPoint((360), -(385)); //ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint((360), -(370));
       robotLocation.addPoint(30, -(335)); //直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(30, 40);     //初期位置
+      robotLocation.addPoint(30, 30);     //初期位置
       break;
     case RED_MIDDLE_PRE_bathTowelboth:       //予選(左ロジャー縦掛け),(右ロジャー横掛け)
       whichMecha = left;                     //途中で変わる!!
       robotLocation.addPoint(10, -(390));    //1二本目のポール前
-      robotLocation.addPoint((127), -(395)); //2リミット接触前ちょこちょこ進む
-      robotLocation.addPoint((211), -(390)); //3竿目印のところまで移動
-      robotLocation.addPoint((211), -(390)); //4ハサミつく位置まで前に
-      robotLocation.addPoint((211), -(390)); //5最初に直進
-      robotLocation.addPoint((310), -(400)); //6洗濯物横に引っ張る
-      robotLocation.addPoint((310), -(390)); //7ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint((327), -(390)); //8竿目印のところまで移動     2つ目！
-      robotLocation.addPoint((327), -(390)); //9ハサミつく位置まで前に
-      robotLocation.addPoint((366), -(400)); //10洗濯物横に引っ張る
-      robotLocation.addPoint((366), -(390)); //11ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint((366), -(380)); //12
+      robotLocation.addPoint((123), -(395)); //2リミット接触前ちょこちょこ進む
+      robotLocation.addPoint((208), -(390)); //3竿目印のところまで移動
+      robotLocation.addPoint((208), -(390)); //4ハサミつく位置まで前に
+      robotLocation.addPoint((208), -(390)); //5最初に直進
+      robotLocation.addPoint((308), -(400)); //6洗濯物横に引っ張る
+      robotLocation.addPoint((308), -(390)); //7ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint((320), -(390)); //8竿目印のところまで移動     2つ目！
+      robotLocation.addPoint((320), -(390)); //9ハサミつく位置まで前に
+      robotLocation.addPoint((360), -(400)); //10洗濯物横に引っ張る
+      robotLocation.addPoint((360), -(385)); //11ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint((360), -(370)); //12
       robotLocation.addPoint(30, -(335));    //13直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(30, 40);        //14初期位置
+      robotLocation.addPoint(30, 30);        //14初期位置
       break;
     case RED_MIDDLE_FINAL_bathTowelLeft:
       whichMecha = left;
-      robotLocation.addPoint(10, -(365));    //二本目のポール前
-      robotLocation.addPoint((125), -(370)); //リミット接触前ちょこちょこ進む
-      robotLocation.addPoint((185), -(380)); //竿目印のところまで移動
-      robotLocation.addPoint((185), -(390)); //ハサミつく位置まで前に
-      robotLocation.addPoint((185), -(390)); //最初に直進
-      robotLocation.addPoint((283), -(390)); //洗濯物横に引っ張る
-      robotLocation.addPoint((283), -(390)); //ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint(30, -(335));    //直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(30, 20);        //初期位置
+      robotLocation.addPoint(10, -(390));    //二本目のポール前
+      robotLocation.addPoint((123), -(395)); //リミット接触前ちょこちょこ進む
+      robotLocation.addPoint((180), -(380)); //竿目印のところまで移動
+      robotLocation.addPoint((180), -(390)); //ハサミつく位置まで前に
+      robotLocation.addPoint((180), -(390)); //最初に直進
+      robotLocation.addPoint((275), -(400)); //洗濯物横に引っ張る
+      robotLocation.addPoint((275), -(390)); //ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint((275), -(370));
+      robotLocation.addPoint(30, -(335)); //直線移動できる位置まで戻ってくる
+      robotLocation.addPoint(30, 30);     //初期位置
       break;
     case RED_MIDDLE_FINAL_bathTowelRight:
       whichMecha = right;
-      robotLocation.addPoint(10, -(365));    //二本目のポール前
-      robotLocation.addPoint((125), -(370)); //リミット接触前ちょこちょこ進む
-      robotLocation.addPoint((280), -(380)); //竿目印のところまで移動
-      robotLocation.addPoint((280), -(390)); //ハサミつく位置まで前に
-      robotLocation.addPoint((280), -(390)); //最初に直進
-      robotLocation.addPoint((375), -(390)); //洗濯物横に引っ張る
-      robotLocation.addPoint((375), -(360)); //ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint(30, -(335));    //直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(30, 20);        //初期位置
+      robotLocation.addPoint(10, -(390));    //二本目のポール前
+      robotLocation.addPoint((123), -(395)); //リミット接触前ちょこちょこ進む
+      robotLocation.addPoint((275), -(380)); //竿目印のところまで移動
+      robotLocation.addPoint((275), -(390)); //ハサミつく位置まで前に
+      robotLocation.addPoint((275), -(390)); //最初に直進
+      robotLocation.addPoint((375), -(400)); //洗濯物横に引っ張る
+      robotLocation.addPoint((375), -(390)); //ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint((375), -(370));
+      robotLocation.addPoint(30, -(335)); //直線移動できる位置まで戻ってくる
+      robotLocation.addPoint(30, 30);     //初期位置
       break;
     case RED_MIDDLE_FINAL_bathTowelboth:     //決勝(左ロジャー横掛け),(右ロジャー横掛け)
       whichMecha = left;                     //途中で変わる!!
-      robotLocation.addPoint(10, -(365));    //二本目のポール前
-      robotLocation.addPoint((125), -(370)); //リミット接触前ちょこちょこ進む
-      robotLocation.addPoint((185), -(390)); //竿目印のところまで移動
-      robotLocation.addPoint((185), -(390)); //ハサミつく位置まで前に
-      robotLocation.addPoint((185), -(390)); //最初に直進
-      robotLocation.addPoint((283), -(390)); //洗濯物横に引っ張る
-      robotLocation.addPoint((283), -(390)); //ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint((280), -(390)); //竿目印のところまで移動     2つ目！
-      robotLocation.addPoint((280), -(390)); //ハサミつく位置まで前に
-      robotLocation.addPoint((280), -(390)); //最初に直進
-      robotLocation.addPoint((375), -(390)); //洗濯物横に引っ張る
-      robotLocation.addPoint((375), -(390)); //ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint(30, -(335));    //直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(30, 20);        //初期位置      break;
-    case RED_BACK_Sheets:                    //右ロジャー
+      robotLocation.addPoint(10, -(390));    //1二本目のポール前
+      robotLocation.addPoint((123), -(395)); //2リミット接触前ちょこちょこ進む
+      robotLocation.addPoint((180), -(390)); //3竿目印のところまで移動
+      robotLocation.addPoint((180), -(390)); //4ハサミつく位置まで前に
+      robotLocation.addPoint((180), -(390)); //5最初に直進
+      robotLocation.addPoint((275), -(400)); //6洗濯物横に引っ張る
+      robotLocation.addPoint((275), -(390)); //7ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint((275), -(390)); //8竿目印のところまで移動     2つ目！
+      robotLocation.addPoint((275), -(390)); //9ハサミつく位置まで前に
+      robotLocation.addPoint((375), -(400)); //10洗濯物横に引っ張る
+      robotLocation.addPoint((375), -(385)); //11ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint((375), -(370)); //12
+      robotLocation.addPoint(30, -(335));    //13直線移動できる位置まで戻ってくる
+      robotLocation.addPoint(30, 30);        //14初期位置
+      break;
+    case RED_BACK_Sheets: //右ロジャー
       whichMecha = right;
       robotLocation.addPoint(10, -(500));
       robotLocation.addPoint((140), -(570));
@@ -502,7 +504,7 @@ int main(void)
           {
             case 1:
               accelAlgorithm.setAllocateErrorCircleRadius(Robot.permitErrorCircleRadius);
-              rojarArm[whichMecha].setHeight(500);
+              rojarArm[whichMecha].setHeight(455);
               limitSwitchBar[left].update();
               if (!limitSwitchBar[left].stats())
               {
@@ -531,7 +533,7 @@ int main(void)
                   hangerHasDoneFlag = 1;
                   hanger[whichMecha].setLength(0);
                   hanger[whichMecha].update();
-                  rojarArm[whichMecha].setHeight(30);
+                  rojarArm[whichMecha].setHeight(0);
                 }
               }
               if (hanger[whichMecha].stats() && rojarArm[whichMecha].stats() && hangerHasDoneFlag)
@@ -594,7 +596,7 @@ int main(void)
               }
               break;
             case 5:
-              OmniKinematics.setMaxPWM(0.2);
+              OmniKinematics.setMaxPWM(0.17);
               robotLocation.sendNext(); //横移動
               accelAlgorithm.setPositionChangedFlag();
               wayPointSignature++;
@@ -625,7 +627,7 @@ int main(void)
               }
               break;
             case 7:
-              if (450 < clothHangerTimer.read_ms())
+              if (650 < clothHangerTimer.read_ms())
               {
                 robotLocation.sendNext();
                 accelAlgorithm.setPositionChangedFlag();
@@ -635,10 +637,12 @@ int main(void)
               }
               break;
             case 8:
+              accelAlgorithm.setDecreaseCircleRadius(200);
               rojarArm[whichMecha].setHeight(0);
               robotLocation.sendNext();
               accelAlgorithm.setPositionChangedFlag();
               wayPointSignature++;
+              pegAttacher[whichMecha].reload();
               break;
             case 9:
               LCDDriver.clear();
@@ -781,7 +785,7 @@ int main(void)
               }
               break;
             case 6:
-              OmniKinematics.setMaxPWM(0.2);
+              OmniKinematics.setMaxPWM(0.17);
               robotLocation.sendNext(); //横移動
               accelAlgorithm.setPositionChangedFlag();
               wayPointSignature++;
@@ -812,7 +816,7 @@ int main(void)
               }
               break;
             case 8:
-              if (450 < clothHangerTimer.read_ms())
+              if (650 < clothHangerTimer.read_ms())
               {
                 robotLocation.sendNext();
                 accelAlgorithm.setPositionChangedFlag();
@@ -830,6 +834,7 @@ int main(void)
             case 10:
               holder[whichMecha].grasp('r');
               holder[whichMecha].grasp('l');
+              pegAttacher[whichMecha].reload();
               robotLocation.sendNext();
               accelAlgorithm.setPositionChangedFlag();
               wayPointSignature++;
@@ -976,7 +981,7 @@ int main(void)
               }
               break;
             case 6:
-              OmniKinematics.setMaxPWM(0.2);
+              OmniKinematics.setMaxPWM(0.17);
               robotLocation.sendNext(); //横移動
               accelAlgorithm.setPositionChangedFlag();
               wayPointSignature++;
@@ -1005,11 +1010,9 @@ int main(void)
                 wayPointSignature++;
                 clothHangerTimer.start();
               }
-              LCDDriver.clear();
-              serialLCD.printf("6");
               break;
             case 8:
-              if (450 < clothHangerTimer.read_ms())
+              if (650 < clothHangerTimer.read_ms())
               {
                 robotLocation.sendNext();
                 accelAlgorithm.setPositionChangedFlag();
@@ -1027,11 +1030,10 @@ int main(void)
             case 10:
               holder[whichMecha].grasp('r');
               holder[whichMecha].grasp('l');
+              pegAttacher[whichMecha].reload();
               robotLocation.sendNext();
               accelAlgorithm.setPositionChangedFlag();
               wayPointSignature++;
-              LCDDriver.clear();
-              serialLCD.printf("9");
               break;
             case 11:
               LCDDriver.clear();
@@ -1175,7 +1177,7 @@ int main(void)
               }
               break;
             case 6:
-              OmniKinematics.setMaxPWM(0.2);
+              OmniKinematics.setMaxPWM(0.17);
               robotLocation.sendNext(); //横移動 6
               accelAlgorithm.setPositionChangedFlag();
               wayPointSignature++;
@@ -1208,11 +1210,11 @@ int main(void)
             case 8:
               rojarArm[whichMecha].setHeight(0);
 
-              if (450 < clothHangerTimer.read_ms())
+              if (650 < clothHangerTimer.read_ms())
               {
                 clothHangerTimer.stop();
                 clothHangerTimer.reset();
-                holder[whichMecha].free('l');
+                holder[whichMecha].grasp('l');
                 whichMecha = !whichMecha; //途中で機構入れ替え！！
                 rojarArm[whichMecha].setHeight(1600);
                 robotLocation.sendNext(); //8
@@ -1299,7 +1301,7 @@ int main(void)
               }
               break;
             case 11:
-              OmniKinematics.setMaxPWM(0.2);
+              OmniKinematics.setMaxPWM(0.17);
               robotLocation.sendNext(); //横移動 10
               accelAlgorithm.setPositionChangedFlag();
               wayPointSignature++;
@@ -1330,7 +1332,7 @@ int main(void)
               }
               break;
             case 13:
-              if (450 < clothHangerTimer.read_ms())
+              if (650 < clothHangerTimer.read_ms())
               {
                 robotLocation.sendNext(); //12
                 accelAlgorithm.setPositionChangedFlag();
@@ -1346,8 +1348,12 @@ int main(void)
               wayPointSignature++;
               break;
             case 15:
-              holder[whichMecha].grasp('r');
-              holder[whichMecha].grasp('l');
+              holder[right].grasp('r');
+              holder[right].grasp('l');
+              holder[left].grasp('r');
+              holder[left].grasp('l');
+              pegAttacher[right].reload();
+              pegAttacher[left].reload();
               robotLocation.sendNext(); //14
               accelAlgorithm.setPositionChangedFlag();
               wayPointSignature++;
@@ -1479,15 +1485,18 @@ int main(void)
                     clothHangerTimer.start();
                     timerStartFlag = 0;
                   }
-                  if (0 < clothHangerTimer.read_ms() && clothHangerTimer.read_ms() < 100 && seq == 1) //`hutatume 1700ms
+                  if (0 < clothHangerTimer.read_ms() && clothHangerTimer.read_ms() < 370 && seq == 1) //`hutatume 1700ms
                   {
                     pegAttacher[whichMecha].launch();
                     seq = 2;
                   }
-                  if (100 < clothHangerTimer.read_ms() && seq == 2)
+                  if (370 < clothHangerTimer.read_ms() && seq == 2)
                   {
-                    //accelAlgorithm.setMaxOutput(0.4);
-                    //accelAlgorithm.setMinOutput(0.15);
+                    pegAttacher[whichMecha].reload();
+                    seq = 3;
+                  }
+                  if (700 < clothHangerTimer.read_ms() && seq == 3)
+                  {
                     robotLocation.sendNext(); //次の座標を送信
                     accelAlgorithm.setPositionChangedFlag();
                     wayPointSignature++;
@@ -1541,6 +1550,7 @@ int main(void)
             case 8:
               holder[whichMecha].grasp('r');
               holder[whichMecha].grasp('l');
+              pegAttacher[whichMecha].reload();
               robotLocation.sendNext();
               accelAlgorithm.setPositionChangedFlag();
               wayPointSignature++;

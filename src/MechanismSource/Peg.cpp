@@ -48,7 +48,7 @@ void Peg::update(void)
       reduceFlag = 1;
       extendFlag = 0;
     }
-    else if (reduceFlag && timer->read() > timePerOnce / 3)
+    else if (reduceFlag && timer->read() > timePerOnce / 2)
     {
       reduceFlag = 0;
       reloadFlag = 0;
