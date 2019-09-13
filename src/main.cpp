@@ -30,7 +30,7 @@ enum gameMode
   RED_MIDDLE_PRE_bathTowelLeft,
   RED_MIDDLE_PRE_bathTowelboth,
   RED_BACK_Sheets,
-
+  
   //↓ not yet
   RED_MIDDLE_FINAL_bathTowelRight,
   RED_MIDDLE_FINAL_bathTowelLeft,
@@ -81,8 +81,8 @@ struct
 
 struct
 {
-  PinName LCD1TX = PB_6;
-  PinName LCD1RX = PB_15;
+  //PinName LCD1TX = PB_6;
+  //PinName LCD1RX = PB_15;
   PinName UIFTX = PB_6; //user interface
   PinName UIFRX = PB_15;
   PinName MDD1TX = PD_5;
@@ -132,8 +132,8 @@ static double hangerPWM[2][2];      //right(CW,CCW),left(CW,CCW)
 static double rojarArmPWM[2][2];    //right(CW,CCW),left(CW,CCW)
 
 Serial STLinkTerminal(USBTX, USBRX, SerialBaud.HardwareSerial); //Surfaceのターミナルとの通信用ポート
-Serial serialLCD(serialDevice.LCD1TX, serialDevice.LCD1RX, SerialBaud.LCD);
-NewHavenDisplay LCDDriver(serialLCD);
+//Serial serialLCD(serialDevice.LCD1TX, serialDevice.LCD1RX, SerialBaud.LCD);
+//NewHavenDisplay LCDDriver(serialLCD);
 Timer TimerForQEI;                  //エンコーダクラス用共有タイマー
 Timer TimerForLCD;                  //LCD更新用タイマー
 Timer clothHangerTimer;             //機構シーケンス用タイマー
@@ -141,7 +141,7 @@ DigitalOut modeIndicatorLED1(LED1); //一時的モード切替表示用LED
 DigitalOut modeIndicatorLED2(LED2); //一時的モード切替表示用LED
 DigitalOut modeIndicatorLED3(LED3); //一時的モード切替表示用LED
 MPU9250 IMU(I2CPin.IMUSDA, I2CPin.IMUSCL, SerialBaud.I2C);
-//UnitProtocol UIF(serialDevice.UIFTX, serialDevice.UIFRX, SerialBaud.HardwareSerial);
+UnitProtocol UIF(serialDevice.UIFTX, serialDevice.UIFRX, SerialBaud.HardwareSerial);
 enum MDDName
 {
   Drive,
@@ -243,9 +243,13 @@ void allUpdate()
       (int)(pegAttacherPWM[1][1] * 100),
       (int)(pegAttacherPWM[1][0] * 100),
   };
+  int UIFDataPacket[54] = {
+
+  };
   MDDSlave[Drive].transmit(6, MDDDrivePacket);
   MDDSlave[Meca1].transmit(6, MDDMeca1Packet);
   MDDSlave[Meca2].transmit(6, MDDMeca2Packet);
+  UIF.transmit(54,UIFDataPacket);
 }
 
 int main(void)
@@ -263,8 +267,8 @@ int main(void)
 #ifdef GAME_MODECHANGE_ONBOARDSWITCH
 
   IMU.setup();
-  TimerForLCD.start();
-  serialLCD.printf("WAITING...");
+  //TimerForLCD.start();
+  //serialLCD.printf("WAITING...");
 
   static int currentRunningMode, whichMecha;
   while (1) //ボタン待機
@@ -1700,12 +1704,14 @@ int main(void)
     hanger[1].setEncoderPulse(clothHangEncoder[1].getPulses());
     hanger[1].update();
     int MDDMeca1Packet[4] = {
-        0, 0,
+        0,
+        0,
         (int)(hangerPWM[0][0] * 100),
         (int)(hangerPWM[0][1] * 100),
     };
     int MDDMeca2Packet[4] = {
-        0, 0,
+        0,
+        0,
         (int)(hangerPWM[1][0] * 100),
         (int)(hangerPWM[1][1] * 100),
     };
@@ -1731,12 +1737,14 @@ int main(void)
     hanger[1].setEncoderPulse(clothHangEncoder[1].getPulses());
     hanger[1].update();
     int MDDMeca1Packet[4] = {
-        0, 0,
+        0,
+        0,
         (int)(hangerPWM[0][0] * 100),
         (int)(hangerPWM[0][1] * 100),
     };
     int MDDMeca2Packet[4] = {
-        0, 0,
+        0,
+        0,
         (int)(hangerPWM[1][0] * 100),
         (int)(hangerPWM[1][1] * 100),
     };
