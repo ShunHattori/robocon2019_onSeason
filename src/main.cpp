@@ -16,11 +16,13 @@
 #include "mbed.h"
 
 //#define GAME_MODECHANGE_ONBOARDSWITCH //基板上の青スイッチで動作切り替え（シーツ・バスタオル）
+#define BUDEGGER
+#define CONTROLPANEL
 //#define TEST_DRIVE
 //#define TEST_RojarArm_UpDownLoop
 //#define TEST_PEGLaunch      //tested on 6/20(Thur)
 //#define TEST_HangerMovement //tested on 6/20(Thur)
-#define TEST_HoldServo
+//#define TEST_HoldServo
 //#define TEST_RojarArmUpDownOnce
 
 enum gameMode
@@ -1587,6 +1589,70 @@ int main(void)
   }
 
 #endif //GAME_MODECHANGE_ONBOARDSWITCH
+
+#ifdef BUDEGGER
+  Timer printTimer;
+  printTimer.start();
+  IMU.setup();
+  STLinkTerminal.printf("\033[%d;%dH", 1, 0);
+  STLinkTerminal.printf("\033[2K");
+  STLinkTerminal.printf("Encoder\033[3CencoderXAxis\t\tencoderYAxis\t\trightRojarEncoder\tleftRojarEncoder\trightLauncherEncoder\tleftLauncherEncoder");
+  STLinkTerminal.printf("\033[%d;%dH", 4, 0);
+  STLinkTerminal.printf("\033[2K");
+  STLinkTerminal.printf("LimitSW\033[3CrightRojarSwitch\tleftRojarSwitch\t\tforwardRightDriveSwitch\tforwardleftDriveSwitch\trightDriveSwitch\tleftDriveSwitch");
+  while (1)
+  {
+    for (int i = 0; i < 2; i++)
+    {
+      rojarArm[i].setEncoderPulse(rojarArmEncoder[i].getPulses());
+      rojarArm[i].update();
+      pegAttacher[i].update();
+      hanger[i].setEncoderPulse(clothHangEncoder[i].getPulses());
+      hanger[i].update();
+      limitSwitchBar[i].update();
+      limitSwitchRojarArm[i].update();
+      limitSwitchSide[i].update();
+    }
+    accelAlgorithm.update();
+    accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+    OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), IMU.gyro_Yaw(), driverPWMOutput);
+    static unsigned long int prevPrint;
+    if ((printTimer.read_us() - prevPrint) > 1000)
+    {
+      STLinkTerminal.printf("\033[%d;%dH", 2, 11);
+      STLinkTerminal.printf("\033[2K%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d", encoderXAxis.getPulses(), encoderYAxis.getPulses(), rojarArmEncoder[right].getPulses(), rojarArmEncoder[left].getPulses(), clothHangEncoder[right].getPulses(), clothHangEncoder[left].getPulses());
+      STLinkTerminal.printf("\033[%d;%dH", 5, 11);
+      STLinkTerminal.printf("\033[2K%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d", limitSwitchRojarArm[right].stats(), limitSwitchRojarArm[left].stats(), limitSwitchBar[right].stats(), limitSwitchBar[left].stats(), limitSwitchSide[right].stats(), limitSwitchSide[left].stats());
+      STLinkTerminal.printf("\033[7;0H\033[2KINTERVAL TIME : %ld[us]", (long int)(printTimer.read_us() - prevPrint));
+      prevPrint = printTimer.read_us();
+    }
+  }
+#endif //BUDEGGER
+
+#ifdef CONTROLPANEL
+  union {
+    float currentPosition; //4 bytes
+    uint8_t byteToSend[sizeof(float)];
+  } xAxis, yAxis, yawAxis;
+
+  IMU.setup();
+  while (1)
+  {
+    accelAlgorithm.update();
+    accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+    xAxis.currentPosition = (float)accelAlgorithm.getCurrentXPosition();
+    yAxis.currentPosition = (float)accelAlgorithm.getCurrentYPosition();
+    yawAxis.currentPosition = (float)accelAlgorithm.getCurrentYawPosition();
+    uint8_t Packet[sizeof(float) * 3];
+    for (int i = 0; i < sizeof(float); i++)
+    {
+      Packet[i] = xAxis.byteToSend[i];
+      Packet[sizeof(float) + i] = yAxis.byteToSend[i];
+      Packet[(sizeof(float) * 2) + i] = yawAxis.byteToSend[i];
+    }
+    UIF.transmit(sizeof(float) * 3, (int*)Packet);
+  }
+#endif //CONTROLPANEL
 
 #ifdef TEST_DRIVE
   robotLocation.addPoint(0, -10, 0);
