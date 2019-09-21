@@ -9,7 +9,7 @@ ClothHang::ClothHang(double* variableToStore)
 
 bool ClothHang::stats(void)
 {
-  if ((lenghtTarget - 24) < lenghtCurrent && lenghtCurrent < (lenghtTarget + 24))
+  if ((lenghtTarget - 15) < lenghtCurrent && lenghtCurrent < (lenghtTarget + 15))
   {
     return 1;
   }
@@ -36,7 +36,7 @@ void ClothHang::setMaxPWM(float targetPwm)
 
 void ClothHang::update(void)
 {
-  if ((lenghtTarget - 24) < lenghtCurrent && lenghtCurrent < (lenghtTarget + 24))
+  if ((lenghtTarget - 15) < lenghtCurrent && lenghtCurrent < (lenghtTarget + 15))
   {
     motorPWM[0] = 0;
     motorPWM[1] = 0;
