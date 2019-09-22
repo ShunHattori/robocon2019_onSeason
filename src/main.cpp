@@ -1,3 +1,5 @@
+#include "CommunicationSource\NewHavenDisplay.h"
+#include "CommunicationSource\UnitProtocol.hpp"
 #include "DriveSource\DriveTrain.h"
 #include "DriveSource\LocationManager.h"
 #include "DriveSource\MWodometry.h"
@@ -8,22 +10,27 @@
 #include "MechanismSource\Peg.h"
 #include "MechanismSource\RojarArm.h"
 #include "MechanismSource\Servo.h"
-#include "NewHavenDisplay.h"
+#include "RobotParameters.hpp"
 #include "SensorSource\DebounceSwitch.h"
 #include "SensorSource\MPU9250.h"
 #include "SensorSource\QEI.h"
-#include "UnitProtocol.hpp"
 #include "mbed.h"
+#include "mbeddedPin.hpp"
 
-#define GAME_MODECHANGE_ONBOARDSWITCH //基板上の青スイッチで動作切り替え（シーツ・バスタオル）
+//#define GAME_MODECHANGE_ONBOARDSWITCH //基板上の青スイッチで動作切り替え（シーツ・バスタオル）
 //#define BUDEGGER
 //#define CONTROLPANEL
+#define CONTROLPANEL_GETMODE_TEST
 //#define TEST_DRIVE
 //#define TEST_RojarArm_UpDownLoop
 //#define TEST_PEGLaunch      //tested on 6/20(Thur)
 //#define TEST_HangerMovement //tested on 6/20(Thur)
 //#define TEST_HoldServo
 //#define TEST_RojarArmUpDownOnce
+
+void allUpdate();
+void updateDisplayDatas();
+bool getRobotModeWithSwitch();
 
 enum gameMode
 { //剰余計算のために作成中は順番を崩している
@@ -47,212 +54,6 @@ enum gameMode
   BLUE_BACK_Sheets,
 };
 
-struct baudRate
-{
-  const long HardwareSerial = 256000;
-  const int LCD = 9600;
-  const long I2C = 400000;
-} SerialBaud;
-
-struct parameter
-{
-  const int encoderPPRLow = 48;
-  const int encoderPPRHigh = 100;
-  const double encoderAttachedWheelRadius = 2.54; //mini(50) omni
-  const double permitErrorCircleRadius = 6.0;
-  const double driveDisableRadius = 1.5;
-  const int decreaseSpeedCircleRadius = 70;
-  const double estimateDriveMaxPWM = 0.5; // max:0.7, recommend:0.64 //DEFAULT 0.5
-  const double estimateDriveMinPWM = 0.11;
-  const double estimatePegMaxPWM = 0.45;
-  const double estimateHangerMaxPWM = 0.6;
-  const double estimateRojarArmMaxPWM = 0.75;
-  const double PegVoltageImpressionTime = 0.35;
-} Robot;
-
-struct CoordBias
-{
-  const int XAxis = 0; //全体を5cm左に動かす
-  const int Yaxis = 0;
-} FieldBias;
-
-struct
-{
-  PinName XAxisAPulse = PD_14;
-  PinName XAxisBPulse = PD_15;
-  PinName XAxisIndexPulse = NC;
-  PinName YAxisAPulse = PF_12;
-  PinName YAxisBPulse = PF_13;
-  PinName YAxisIndexPulse = NC;
-} OdometryPin;
-
-struct
-{
-  PinName LCD1TX = PE_1;
-  PinName LCD1RX = PE_0;
-  PinName UIFTX = PC_10; //user interface
-  PinName UIFRX = PC_11;
-  PinName MDD1TX = PD_5;
-  PinName MDD1RX = PD_6;
-  PinName MDD2TX = PB_6;
-  PinName MDD2RX = PB_15;
-  PinName MDD3TX = PC_6;
-  PinName MDD3RX = PC_7;
-} serialDevice;
-
-struct
-{
-  PinName toBegin = PE_15;
-  PinName frontR = PE_12;
-  PinName frontL = PE_10;
-  PinName sideR = PE_14;
-  PinName sideL = PE_15;
-  PinName rojarBottomR = PE_7;
-  PinName rojarBottomL = PE_8;
-} Switch;
-
-struct
-{
-  PinName IMUSDA = PB_11;
-  PinName IMUSCL = PB_10;
-} I2CPin;
-
-struct
-{
-  PinName clothHangRightEncoderAPulse = PC_2;
-  PinName clothHangRightEncoderBPulse = PB_1;
-  PinName clothHangLeftEncoderAPulse = PD_3;
-  PinName clothHangLeftEncoderBPulse = PD_4;
-  PinName rojarArmRightEncoderAPulse = PB_8;
-  PinName rojarArmRightEncoderBPulse = PB_9;
-  PinName rojarArmLeftEncoderAPulse = PA_6;
-  PinName rojarArmLeftEncoderBPulse = PA_5;
-  PinName holderRightServoR = PF_8; //pf6
-  PinName holderRightServoL = PF_7; //pf7
-  PinName holderLeftServoR = PE_6;
-  PinName holderLeftServoL = PE_5;
-} MecaPin;
-
-double driverPWMOutput[3];
-static double pegAttacherPWM[2][2];                             //right(CW,CCW),left(CW,CCW)
-static double hangerPWM[2][2];                                  //right(CW,CCW),left(CW,CCW)
-static double rojarArmPWM[2][2];                                //right(CW,CCW),left(CW,CCW)
-Serial STLinkTerminal(USBTX, USBRX, SerialBaud.HardwareSerial); //Surfaceのターミナルとの通信用ポート
-Serial serialLCD(serialDevice.LCD1TX, serialDevice.LCD1RX, SerialBaud.LCD);
-NewHavenDisplay LCDDriver(serialLCD);
-Timer TimerForQEI;                  //エンコーダクラス用共有タイマー
-Timer TimerForLCD;                  //LCD更新用タイマー
-Timer clothHangerTimer;             //機構シーケンス用タイマー
-DigitalOut modeIndicatorLED1(LED1); //一時的モード切替表示用LED
-DigitalOut modeIndicatorLED2(LED2); //一時的モード切替表示用LED
-DigitalOut modeIndicatorLED3(LED3); //一時的モード切替表示用LED
-MPU9250 IMU(I2CPin.IMUSDA, I2CPin.IMUSCL, SerialBaud.I2C);
-UnitProtocol UIF(serialDevice.UIFTX, serialDevice.UIFRX, 9600);
-enum MDDName
-{
-  Drive,
-  Meca1,
-  Meca2,
-} MDD;
-UnitProtocol MDDSlave[3] = {
-    UnitProtocol(serialDevice.MDD1TX, serialDevice.MDD1RX, SerialBaud.HardwareSerial),
-    UnitProtocol(serialDevice.MDD2TX, serialDevice.MDD2RX, SerialBaud.HardwareSerial),
-    UnitProtocol(serialDevice.MDD3TX, serialDevice.MDD3RX, SerialBaud.HardwareSerial),
-};
-DebounceSwitch onBoardSwitch(USER_BUTTON, DebounceSwitch::PULLDOWN);
-DebounceSwitch startButton(Switch.toBegin, DebounceSwitch::PULLUP); //create object using pin "PG_2" with PullUpped
-enum set
-{
-  right,
-  left,
-} mechaSet;
-DebounceSwitch limitSwitchBar[2]{
-    DebounceSwitch(Switch.frontR, DebounceSwitch::PULLUP),
-    DebounceSwitch(Switch.frontL, DebounceSwitch::PULLUP),
-};
-DebounceSwitch limitSwitchSide[2]{
-    DebounceSwitch(Switch.sideR, DebounceSwitch::PULLUP),
-    DebounceSwitch(Switch.sideL, DebounceSwitch::PULLUP),
-};
-DebounceSwitch limitSwitchRojarArm[2]{
-    DebounceSwitch(Switch.rojarBottomR, DebounceSwitch::PULLUP),
-    DebounceSwitch(Switch.rojarBottomL, DebounceSwitch::PULLUP),
-};
-ClothHold holder[2] = {
-    ClothHold(MecaPin.holderRightServoR, MecaPin.holderRightServoL), //right,leftServo
-    ClothHold(MecaPin.holderLeftServoR, MecaPin.holderLeftServoL),   //right,leftServo
-};
-Peg pegAttacher[2]{
-    Peg(Robot.estimatePegMaxPWM, Robot.PegVoltageImpressionTime, pegAttacherPWM[0]), //pwm, time
-    Peg(Robot.estimatePegMaxPWM, Robot.PegVoltageImpressionTime, pegAttacherPWM[1]), //pwm, time
-};
-ClothHang hanger[2]{
-    ClothHang(hangerPWM[right]),
-    ClothHang(hangerPWM[left]),
-};
-RojarArm rojarArm[2]{
-    RojarArm(rojarArmPWM[right], limitSwitchRojarArm[right]),
-    RojarArm(rojarArmPWM[left], limitSwitchRojarArm[left]),
-};
-QEI clothHangEncoder[2]{
-    QEI(MecaPin.clothHangRightEncoderAPulse, MecaPin.clothHangRightEncoderBPulse, NC, Robot.encoderPPRLow, &TimerForQEI, QEI::X4_ENCODING),
-    QEI(MecaPin.clothHangLeftEncoderAPulse, MecaPin.clothHangLeftEncoderBPulse, NC, Robot.encoderPPRLow, &TimerForQEI, QEI::X4_ENCODING),
-};
-QEI rojarArmEncoder[2]{
-    QEI(MecaPin.rojarArmRightEncoderAPulse, MecaPin.rojarArmRightEncoderBPulse, NC, Robot.encoderPPRLow, &TimerForQEI, QEI::X4_ENCODING),
-    QEI(MecaPin.rojarArmLeftEncoderAPulse, MecaPin.rojarArmLeftEncoderBPulse, NC, Robot.encoderPPRLow, &TimerForQEI, QEI::X4_ENCODING),
-};
-
-QEI encoderXAxis(OdometryPin.XAxisAPulse, OdometryPin.XAxisBPulse, OdometryPin.XAxisIndexPulse, Robot.encoderPPRHigh, &TimerForQEI, QEI::X4_ENCODING);
-QEI encoderYAxis(OdometryPin.YAxisAPulse, OdometryPin.YAxisBPulse, OdometryPin.YAxisIndexPulse, Robot.encoderPPRHigh, &TimerForQEI, QEI::X4_ENCODING);
-MWodometry odometryXAxis(encoderXAxis, Robot.encoderPPRHigh, Robot.encoderAttachedWheelRadius);
-MWodometry odometryYAxis(encoderYAxis, Robot.encoderPPRHigh, Robot.encoderAttachedWheelRadius);
-LocationManager<double> robotLocation(0, 0, 0);
-DriveTrain accelAlgorithm(robotLocation, odometryXAxis, odometryYAxis, IMU, Robot.permitErrorCircleRadius, Robot.driveDisableRadius, Robot.decreaseSpeedCircleRadius);
-OmniKinematics3WD OmniKinematics;
-
-void allUpdate()
-{
-  for (int i = 0; i < 2; i++)
-  {
-    rojarArm[i].setEncoderPulse(rojarArmEncoder[i].getPulses());
-    rojarArm[i].update();
-    pegAttacher[i].update();
-    hanger[i].setEncoderPulse(clothHangEncoder[i].getPulses());
-    hanger[i].update();
-  }
-  accelAlgorithm.update();
-  accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
-  OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), IMU.gyro_Yaw(), driverPWMOutput);
-  int MDDDrivePacket[6] = {
-      driverPWMOutput[0] < 0 ? 0 : (driverPWMOutput[0] * 100),
-      driverPWMOutput[0] > 0 ? 0 : -(driverPWMOutput[0] * 100),
-      driverPWMOutput[1] < 0 ? 0 : (driverPWMOutput[1] * 100),
-      driverPWMOutput[1] > 0 ? 0 : -(driverPWMOutput[1] * 100),
-      driverPWMOutput[2] < 0 ? 0 : (driverPWMOutput[2] * 100),
-      driverPWMOutput[2] > 0 ? 0 : -(driverPWMOutput[2] * 100),
-  };
-  int MDDMeca1Packet[6] = {
-      (rojarArmPWM[0][1] * 100),
-      (rojarArmPWM[0][0] * 100),
-      (hangerPWM[0][1] * 100),
-      (hangerPWM[0][0] * 100),
-      (pegAttacherPWM[0][1] * 100),
-      (pegAttacherPWM[0][0] * 100),
-  };
-  int MDDMeca2Packet[6] = {
-      (rojarArmPWM[1][0] * 100),
-      (rojarArmPWM[1][1] * 100),
-      (hangerPWM[1][1] * 100),
-      (hangerPWM[1][0] * 100),
-      (pegAttacherPWM[1][1] * 100),
-      (pegAttacherPWM[1][0] * 100),
-  };
-  MDDSlave[Drive].transmit(6, MDDDrivePacket);
-  MDDSlave[Meca1].transmit(6, MDDMeca1Packet);
-  MDDSlave[Meca2].transmit(6, MDDMeca2Packet);
-}
-
 int main(void)
 {
   accelAlgorithm.setCurrentXPosition((double)FieldBias.XAxis);
@@ -272,85 +73,15 @@ int main(void)
   //TimerForLCD.start();
   //serialLCD.printf("WAITING...");
 
-  static int currentRunningMode, whichMecha;
-  while (1) //ボタン待機
+  while (1)
   {
-    static bool stateHasChanged, previousState;
-    static unsigned int pushedCounter;
-    onBoardSwitch.update();
-    startButton.update();
-    if (onBoardSwitch.stats() != previousState)
-    {
-      stateHasChanged = 1;
-    }
-    else
-      stateHasChanged = 0;
-    if (onBoardSwitch.stats() != previousState)
-    {
-      stateHasChanged = 1;
-    }
-    else
-      stateHasChanged = 0;
-    if (onBoardSwitch.stats() && stateHasChanged)
-    {
-      pushedCounter++;
-      currentRunningMode = pushedCounter % 8;
-    }
-    previousState = onBoardSwitch.stats();
-    switch (currentRunningMode)
-    {
-      case 0:
-        modeIndicatorLED1 = 0;
-        modeIndicatorLED2 = 0;
-        modeIndicatorLED3 = 0;
-        break;
-      case 1:
-        modeIndicatorLED1 = 1;
-        modeIndicatorLED2 = 0;
-        modeIndicatorLED3 = 0;
-        break;
-      case 2:
-        modeIndicatorLED1 = 0;
-        modeIndicatorLED2 = 1;
-        modeIndicatorLED3 = 0;
-        break;
-      case 3:
-        modeIndicatorLED1 = 1;
-        modeIndicatorLED2 = 1;
-        modeIndicatorLED3 = 0;
-        break;
-      case 4:
-        modeIndicatorLED1 = 0;
-        modeIndicatorLED2 = 0;
-        modeIndicatorLED3 = 1;
-        break;
-      case 5:
-        modeIndicatorLED1 = 1;
-        modeIndicatorLED2 = 0;
-        modeIndicatorLED3 = 1;
-        break;
-      case 6:
-        modeIndicatorLED1 = 0;
-        modeIndicatorLED2 = 1;
-        modeIndicatorLED3 = 1;
-        break;
-      case 7:
-        modeIndicatorLED1 = 1;
-        modeIndicatorLED2 = 1;
-        modeIndicatorLED3 = 1;
-        break;
-    }
-    if (startButton.stats())
-      break;
-    /*
-    int UIFData[1];
+    //if(getRobotModeWithSwitch())break;
+    uint8_t UIFData[1];
     if (UIF.receive(UIFData))
     {
       currentRunningMode = UIFData[0];
-      while (1) {
-        STLinkTerminal.printf("111");
-      }
-    }*/
+      break;
+    }
   }
   switch (currentRunningMode)
   {
@@ -469,28 +200,14 @@ int main(void)
   }
   robotLocation.sendNext();
   accelAlgorithm.setPositionChangedFlag();
-  accelAlgorithm.setAllocateErrorCircleRadius(50);
+  accelAlgorithm.setAllocateErrorCircleRadius(40);
   while (1)
   {
     //STLinkTerminal.printf("%.1lf %.1lf %.1lf   ", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
     //STLinkTerminal.printf("%.3lf\t%.3lf\t%.3lf\r\n", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
     //STLinkTerminal.printf("%d\t%d\t%d\t%d\t%d\t%d\t\r\n", (int)(pegAttacherPWM[0][0] * 100), (int)(pegAttacherPWM[0][1] * 100), (int)(hangerPWM[0][0] * 100), (int)(hangerPWM[0][1] * 100), (int)(rojarArmPWM[0][0] * 100), (int)(rojarArmPWM[0][1] * 100));
     STLinkTerminal.printf("%d\t%d\t%d\t\r\n", (int)(driverPWMOutput[0] * 100), (int)(driverPWMOutput[1] * 100), (int)(driverPWMOutput[2]));
-    /*static unsigned long int prevDisplayed = 0;
-    if (((TimerForLCD.read_ms() - prevDisplayed) > 100)) //about 10Hz flash rate
-    {
-      LCDDriver.clear();
-      LCDDriver.home();
-      serialLCD.printf("posT:%d %d %d", robotLocation.getXLocationData(), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
-      LCDDriver.setCursor(2, 0);
-      serialLCD.printf("posC:%.1lf %.1lf %.1lf   ", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
-      LCDDriver.setCursor(3, 0);
-      serialLCD.printf("pwm:%.2lf %.2lf %.2lf   ", driverPWMOutput[0], driverPWMOutput[1], driverPWMOutput[2]);
-      LCDDriver.setCursor(4, 0);
-      serialLCD.printf("vec:%.2lf %.2lf %.2lf   ", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
-      prevDisplayed = TimerForLCD.read_ms();
-    }*/
-    static unsigned int wayPointSignature = 1;
+    updateDisplayDatas();
     allUpdate();
     switch (currentRunningMode)
     {
@@ -1734,6 +1451,16 @@ int main(void)
 
 #endif //CONTROLPANEL
 
+#ifdef CONTROLPANEL_GETMODE_TEST
+  while (1)
+  {
+    static uint8_t data[1], state;
+    state = UIF.receive(data);
+    STLinkTerminal.printf("%d, %d\r\n", state, data[0]);
+  }
+
+#endif //CONTROLPANEL_GETMODE_TEST
+
 #ifdef TEST_DRIVE
   robotLocation.addPoint(0, -10, 0);
   robotLocation.addPoint(10, -10, 0);
@@ -2003,4 +1730,136 @@ int main(void)
     MDDSlave[Meca2].transmit(2, MDDMeca2Packet);
   }
 #endif //TEST_RojarArmUpDownOnce
+}
+
+void allUpdate()
+{
+  for (int i = 0; i < 2; i++)
+  {
+    rojarArm[i].setEncoderPulse(rojarArmEncoder[i].getPulses());
+    rojarArm[i].update();
+    pegAttacher[i].update();
+    hanger[i].setEncoderPulse(clothHangEncoder[i].getPulses());
+    hanger[i].update();
+  }
+  accelAlgorithm.update();
+  accelAlgorithm.setCurrentYawPosition(IMU.gyro_Yaw());
+  OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), IMU.gyro_Yaw(), driverPWMOutput);
+  uint8_t MDDDrivePacket[6] = {
+      (uint8_t)driverPWMOutput[0] < 0 ? 0 : (uint8_t)(driverPWMOutput[0] * 100),
+      (uint8_t)driverPWMOutput[0] > 0 ? 0 : (uint8_t)(-driverPWMOutput[0] * 100),
+      (uint8_t)driverPWMOutput[1] < 0 ? 0 : (uint8_t)(driverPWMOutput[1] * 100),
+      (uint8_t)driverPWMOutput[1] > 0 ? 0 : (uint8_t)(-driverPWMOutput[1] * 100),
+      (uint8_t)driverPWMOutput[2] < 0 ? 0 : (uint8_t)(driverPWMOutput[2] * 100),
+      (uint8_t)driverPWMOutput[2] > 0 ? 0 : (uint8_t)(-driverPWMOutput[2] * 100),
+  };
+  uint8_t MDDMeca1Packet[6] = {
+      (uint8_t)(rojarArmPWM[0][1] * 100),
+      (uint8_t)(rojarArmPWM[0][0] * 100),
+      (uint8_t)(hangerPWM[0][1] * 100),
+      (uint8_t)(hangerPWM[0][0] * 100),
+      (uint8_t)(pegAttacherPWM[0][1] * 100),
+      (uint8_t)(pegAttacherPWM[0][0] * 100),
+  };
+  uint8_t MDDMeca2Packet[6] = {
+      (uint8_t)(rojarArmPWM[1][0] * 100),
+      (uint8_t)(rojarArmPWM[1][1] * 100),
+      (uint8_t)(hangerPWM[1][1] * 100),
+      (uint8_t)(hangerPWM[1][0] * 100),
+      (uint8_t)(pegAttacherPWM[1][1] * 100),
+      (uint8_t)(pegAttacherPWM[1][0] * 100),
+  };
+  MDDSlave[Drive].transmit(6, MDDDrivePacket);
+  MDDSlave[Meca1].transmit(6, MDDMeca1Packet);
+  MDDSlave[Meca2].transmit(6, MDDMeca2Packet);
+}
+
+void updateDisplayDatas()
+{
+  static unsigned long int prevDisplayed = 0;
+  if (((TimerForLCD.read_ms() - prevDisplayed) > 100)) //about 10Hz flash rate
+  {
+    LCDDriver.clear();
+    LCDDriver.home();
+    serialLCD.printf("posT:%d %d %d", robotLocation.getXLocationData(), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
+    LCDDriver.setCursor(2, 0);
+    serialLCD.printf("posC:%.1lf %.1lf %.1lf   ", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
+    LCDDriver.setCursor(3, 0);
+    serialLCD.printf("pwm:%.2lf %.2lf %.2lf   ", driverPWMOutput[0], driverPWMOutput[1], driverPWMOutput[2]);
+    LCDDriver.setCursor(4, 0);
+    serialLCD.printf("vec:%.2lf %.2lf %.2lf   ", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
+    prevDisplayed = TimerForLCD.read_ms();
+  }
+}
+
+bool getRobotModeWithSwitch()
+{
+  static bool stateHasChanged, previousState;
+  static unsigned int pushedCounter;
+  onBoardSwitch.update();
+  startButton.update();
+  if (onBoardSwitch.stats() != previousState)
+  {
+    stateHasChanged = 1;
+  }
+  else
+    stateHasChanged = 0;
+  if (onBoardSwitch.stats() != previousState)
+  {
+    stateHasChanged = 1;
+  }
+  else
+    stateHasChanged = 0;
+  if (onBoardSwitch.stats() && stateHasChanged)
+  {
+    pushedCounter++;
+    currentRunningMode = pushedCounter % 8;
+  }
+  previousState = onBoardSwitch.stats();
+  switch (currentRunningMode)
+  {
+    case 0:
+      modeIndicatorLED1 = 0;
+      modeIndicatorLED2 = 0;
+      modeIndicatorLED3 = 0;
+      break;
+    case 1:
+      modeIndicatorLED1 = 1;
+      modeIndicatorLED2 = 0;
+      modeIndicatorLED3 = 0;
+      break;
+    case 2:
+      modeIndicatorLED1 = 0;
+      modeIndicatorLED2 = 1;
+      modeIndicatorLED3 = 0;
+      break;
+    case 3:
+      modeIndicatorLED1 = 1;
+      modeIndicatorLED2 = 1;
+      modeIndicatorLED3 = 0;
+      break;
+    case 4:
+      modeIndicatorLED1 = 0;
+      modeIndicatorLED2 = 0;
+      modeIndicatorLED3 = 1;
+      break;
+    case 5:
+      modeIndicatorLED1 = 1;
+      modeIndicatorLED2 = 0;
+      modeIndicatorLED3 = 1;
+      break;
+    case 6:
+      modeIndicatorLED1 = 0;
+      modeIndicatorLED2 = 1;
+      modeIndicatorLED3 = 1;
+      break;
+    case 7:
+      modeIndicatorLED1 = 1;
+      modeIndicatorLED2 = 1;
+      modeIndicatorLED3 = 1;
+      break;
+  }
+  if (startButton.stats())
+    return 1;
+  return 0;
 }
