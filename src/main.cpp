@@ -251,6 +251,8 @@ int main(void)
     {
       currentRunningMode = UIFData[0];
       STLinkTerminal.printf("MODE RECEIVED. %d\r\n", currentRunningMode);
+      IMU.setYaw(0); //initialize Yaw Axis Value
+      accelAlgorithm.setCurrentYawPosition(0);
       break;
     }
   }
