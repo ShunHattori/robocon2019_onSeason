@@ -221,9 +221,10 @@ enum gameMode
   BLUE_BACK_FINAL_Sheets,
 };
 
-void updateLimitSwitchBar();
-bool getLimitSwitchBarStats();
-void driveAutoConverger();
+void updateLimitSwitchBar();   //前方リミットスイッチの状態を更新
+bool getLimitSwitchBarStats(); //前方リミットスイッチの状態を取得
+void driveAutoConverger();     //疑似自己位置収束関数
+void allMechaTestSequence();   //すべてのロボットの機構を動作させる関数（モーター回転方向、センサ状態確認用）
 
 int main(void)
 {
@@ -289,59 +290,13 @@ int main(void)
       robotLocation.addPoint((237), -(380));       //竿目印のところまで移動
       robotLocation.addPoint((237), -(390));       //ハサミつく位置まで前に
       robotLocation.addPoint((237), -(390));       //最初に直進
-      robotLocation.addPoint((237 + 100), -(400)); //洗濯物横に引っ張る
-      robotLocation.addPoint((237 + 100), -(385)); //ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint((237 + 100), -(370));
+      robotLocation.addPoint((237 + 103), -(400)); //洗濯物横に引っ張る
+      robotLocation.addPoint((237 + 103), -(385)); //ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint((237 + 103), -(370));
       robotLocation.addPoint(30, -(335)); //直線移動できる位置まで戻ってくる
       robotLocation.addPoint(30, 30);     //初期位置
       break;
     case RED_MIDDLE_PRE_bathTowelboth:
-      whichMecha = left; //途中で変わる!!
-      whichServo = left;
-      robotLocation.addPoint(10, -(390));          //1二本目のポール前
-      robotLocation.addPoint((117), -(395));       //2リミット接触前ちょこちょこ進む
-      robotLocation.addPoint((208), -(390));       //3竿目印のところまで移動
-      robotLocation.addPoint((208), -(390));       //4ハサミつく位置まで前に
-      robotLocation.addPoint((208), -(390));       //5最初に直進
-      robotLocation.addPoint((208 + 40), -(400));  //6洗濯物横に引っ張る
-      robotLocation.addPoint((208 + 40), -(385));  //7ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint((257), -(390));       //8竿目印のところまで移動     2つ目！
-      robotLocation.addPoint((257), -(390));       //9ハサミつく位置まで前に
-      robotLocation.addPoint((257 + 100), -(400)); //10洗濯物横に引っ張る
-      robotLocation.addPoint((257 + 100), -(385)); //11ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint((257 + 100), -(370)); //12
-      robotLocation.addPoint(30, -(335));          //13直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(30, 30);              //14初期位置
-      break;
-    case RED_MIDDLE_FINAL_bathTowelLeft:
-      whichMecha = left;
-      whichServo = left;
-      robotLocation.addPoint(10, -(390));          //二本目のポール前
-      robotLocation.addPoint((117), -(395));       //リミット接触前ちょこちょこ進む
-      robotLocation.addPoint((180), -(380));       //竿目印のところまで移動
-      robotLocation.addPoint((180), -(390));       //ハサミつく位置まで前に
-      robotLocation.addPoint((180), -(390));       //最初に直進
-      robotLocation.addPoint((180 + 100), -(400)); //洗濯物横に引っ張る
-      robotLocation.addPoint((180 + 100), -(390)); //ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint((180 + 100), -(370));
-      robotLocation.addPoint(30, -(335)); //直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(30, 30);     //初期位置
-      break;
-    case RED_MIDDLE_FINAL_bathTowelRight:
-      whichMecha = right;
-      whichServo = left;
-      robotLocation.addPoint(10, -(390));          //二本目のポール前
-      robotLocation.addPoint((117), -(395));       //リミット接触前ちょこちょこ進む
-      robotLocation.addPoint((275), -(380));       //竿目印のところまで移動
-      robotLocation.addPoint((275), -(390));       //ハサミつく位置まで前に
-      robotLocation.addPoint((275), -(390));       //最初に直進
-      robotLocation.addPoint((275 + 100), -(400)); //洗濯物横に引っ張る
-      robotLocation.addPoint((275 + 100), -(390)); //ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint((275 + 100), -(370));
-      robotLocation.addPoint(30, -(335)); //直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(30, 30);     //初期位置
-      break;
-    case RED_MIDDLE_FINAL_bathTowelboth:
       whichMecha = left; //途中で変わる!!
       whichServo = left;
       robotLocation.addPoint(10, -(390));          //1二本目のポール前
@@ -353,9 +308,55 @@ int main(void)
       robotLocation.addPoint((193 + 40), -(385));  //7ロジャー降ろしながら後ろに引く
       robotLocation.addPoint((237), -(390));       //8竿目印のところまで移動     2つ目！
       robotLocation.addPoint((237), -(390));       //9ハサミつく位置まで前に
-      robotLocation.addPoint((237 + 100), -(400)); //10洗濯物横に引っ張る
-      robotLocation.addPoint((237 + 100), -(385)); //11ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint((237 + 100), -(370)); //12
+      robotLocation.addPoint((237 + 103), -(400)); //10洗濯物横に引っ張る
+      robotLocation.addPoint((237 + 103), -(385)); //11ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint((237 + 103), -(370)); //12
+      robotLocation.addPoint(30, -(335));          //13直線移動できる位置まで戻ってくる
+      robotLocation.addPoint(30, 30);              //14初期位置
+      break;
+    case RED_MIDDLE_FINAL_bathTowelLeft:
+      whichMecha = left;
+      whichServo = left;
+      robotLocation.addPoint(10, -(390));          //二本目のポール前
+      robotLocation.addPoint((117), -(395));       //リミット接触前ちょこちょこ進む
+      robotLocation.addPoint((180), -(380));       //竿目印のところまで移動
+      robotLocation.addPoint((180), -(390));       //ハサミつく位置まで前に
+      robotLocation.addPoint((180), -(390));       //最初に直進
+      robotLocation.addPoint((180 + 103), -(400)); //洗濯物横に引っ張る
+      robotLocation.addPoint((180 + 103), -(390)); //ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint((180 + 103), -(370));
+      robotLocation.addPoint(30, -(335)); //直線移動できる位置まで戻ってくる
+      robotLocation.addPoint(30, 30);     //初期位置
+      break;
+    case RED_MIDDLE_FINAL_bathTowelRight:
+      whichMecha = right;
+      whichServo = left;
+      robotLocation.addPoint(10, -(390));          //二本目のポール前
+      robotLocation.addPoint((117), -(395));       //リミット接触前ちょこちょこ進む
+      robotLocation.addPoint((275), -(380));       //竿目印のところまで移動
+      robotLocation.addPoint((275), -(390));       //ハサミつく位置まで前に
+      robotLocation.addPoint((275), -(390));       //最初に直進
+      robotLocation.addPoint((275 + 103), -(400)); //洗濯物横に引っ張る
+      robotLocation.addPoint((275 + 103), -(390)); //ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint((275 + 103), -(370));
+      robotLocation.addPoint(30, -(335)); //直線移動できる位置まで戻ってくる
+      robotLocation.addPoint(30, 30);     //初期位置
+      break;
+    case RED_MIDDLE_FINAL_bathTowelboth:
+      whichMecha = left; //途中で変わる!!
+      whichServo = left;
+      robotLocation.addPoint(10, -(390));          //1二本目のポール前
+      robotLocation.addPoint((117), -(395));       //2リミット接触前ちょこちょこ進む
+      robotLocation.addPoint((180), -(390));       //3竿目印のところまで移動
+      robotLocation.addPoint((180), -(390));       //4ハサミつく位置まで前に
+      robotLocation.addPoint((180), -(390));       //5最初に直進
+      robotLocation.addPoint((180 + 103), -(400)); //6洗濯物横に引っ張る
+      robotLocation.addPoint((180 + 103), -(390)); //7ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint((275), -(390));       //8竿目印のところまで移動     2つ目！
+      robotLocation.addPoint((275), -(390));       //9ハサミつく位置まで前に
+      robotLocation.addPoint((275 + 103), -(400)); //10洗濯物横に引っ張る
+      robotLocation.addPoint((275 + 103), -(385)); //11ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint((275 + 103), -(370)); //12
       robotLocation.addPoint(30, -(335));          //13直線移動できる位置まで戻ってくる
       robotLocation.addPoint(30, 30);              //14初期位置
       break;
@@ -366,7 +367,7 @@ int main(void)
       robotLocation.addPoint(10, -(520));
       robotLocation.addPoint((133), -(570));
       robotLocation.addPoint((170), -(590));
-      robotLocation.addPoint((340), -(600)); //右リミットスイッチが接触しないから596に変更
+      robotLocation.addPoint((340), -(600));
       robotLocation.addPoint((375), -(575));
       robotLocation.addPoint(40, -(520));
       robotLocation.addPoint(25, 20);
@@ -437,9 +438,9 @@ int main(void)
       robotLocation.addPoint(-(180), -(380));       //竿目印のところまで移動
       robotLocation.addPoint(-(180), -(390));       //ハサミつく位置まで前に
       robotLocation.addPoint(-(180), -(390));       //最初に直進
-      robotLocation.addPoint(-(180 + 100), -(400)); //洗濯物横に引っ張る
-      robotLocation.addPoint(-(180 + 100), -(390)); //ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint(-(180 + 100), -(370));
+      robotLocation.addPoint(-(180 + 103), -(400)); //洗濯物横に引っ張る
+      robotLocation.addPoint(-(180 + 103), -(390)); //ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint(-(180 + 103), -(370));
       robotLocation.addPoint(-30, -(335)); //直線移動できる位置まで戻ってくる
       robotLocation.addPoint(-30, 30);     //初期位置
       break;
@@ -451,9 +452,9 @@ int main(void)
       robotLocation.addPoint(-(275), -(380));       //竿目印のところまで移動
       robotLocation.addPoint(-(275), -(390));       //ハサミつく位置まで前に
       robotLocation.addPoint(-(275), -(390));       //最初に直進
-      robotLocation.addPoint(-(275 + 100), -(400)); //洗濯物横に引っ張る
-      robotLocation.addPoint(-(275 + 100), -(390)); //ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint(-(275 + 100), -(370));
+      robotLocation.addPoint(-(275 + 103), -(400)); //洗濯物横に引っ張る
+      robotLocation.addPoint(-(275 + 103), -(390)); //ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint(-(275 + 103), -(370));
       robotLocation.addPoint(-30, -(335)); //直線移動できる位置まで戻ってくる
       robotLocation.addPoint(-30, 30);     //初期位置
       break;
@@ -465,13 +466,13 @@ int main(void)
       robotLocation.addPoint(-(180), -(390));       //3竿目印のところまで移動
       robotLocation.addPoint(-(180), -(390));       //4ハサミつく位置まで前に
       robotLocation.addPoint(-(180), -(390));       //5最初に直進
-      robotLocation.addPoint(-(180 + 100), -(400)); //6洗濯物横に引っ張る
-      robotLocation.addPoint(-(180 + 100), -(390)); //7ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint(-(180 + 103), -(400)); //6洗濯物横に引っ張る
+      robotLocation.addPoint(-(180 + 103), -(390)); //7ロジャー降ろしながら後ろに引く
       robotLocation.addPoint(-(275), -(390));       //8竿目印のところまで移動     2つ目！
       robotLocation.addPoint(-(275), -(390));       //9ハサミつく位置まで前に
-      robotLocation.addPoint(-(275 + 100), -(400)); //10洗濯物横に引っ張る
-      robotLocation.addPoint(-(275 + 100), -(385)); //11ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint(-(275 + 100), -(370)); //12
+      robotLocation.addPoint(-(275 + 103), -(400)); //10洗濯物横に引っ張る
+      robotLocation.addPoint(-(275 + 103), -(385)); //11ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint(-(275 + 103), -(370)); //12
       robotLocation.addPoint(-30, -(335));          //13直線移動できる位置まで戻ってくる
       robotLocation.addPoint(-30, 30);              //14初期位置
       break;
@@ -482,7 +483,7 @@ int main(void)
       robotLocation.addPoint(-10, -(520));
       robotLocation.addPoint(-(133), -(570));
       robotLocation.addPoint(-(170), -(590));
-      robotLocation.addPoint(-(340), -(600)); //右リミットスイッチが接触しないから596に変更
+      robotLocation.addPoint(-(340), -(600));
       robotLocation.addPoint(-(375), -(575));
       robotLocation.addPoint(-40, -(520));
       robotLocation.addPoint(-25, 20);
@@ -492,6 +493,7 @@ int main(void)
   {
     holder[i].grasp(right);
     holder[i].grasp(left);
+    pegAttacher[i].reload();
   }
   //holder[whichMecha].setFieldMode(9 < currentRunningMode ? 1 : 0); //10以上
   //holder[whichMecha].grasp(!whichServo);
@@ -501,13 +503,14 @@ int main(void)
   accelAlgorithm.setAllocateErrorCircleRadius(40);
   while (1)
   {
-    STLinkTerminal.printf("%.1lf %.1lf %.1lf   \r\n", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
+    //STLinkTerminal.printf("%.1lf %.1lf %.1lf   \r\n", accelAlgorithm.getCurrentXPosition(), accelAlgorithm.getCurrentYPosition(), IMU.gyro_Yaw());
     //STLinkTerminal.printf("%.3lf\t%.3lf\t%.3lf\r\n", accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector());
     //STLinkTerminal.printf("%d\t%d\t%d\t%d\t%d\t%d\t\r\n", (int)(pegAttacherPWM[0][0] * 100), (int)(pegAttacherPWM[0][1] * 100), (int)(hangerPWM[0][0] * 100), (int)(hangerPWM[0][1] * 100), (int)(rojarArmPWM[0][0] * 100), (int)(rojarArmPWM[0][1] * 100));
     //STLinkTerminal.printf("%d\t%d\t%d\t\r\n", (int)(driverPWMOutput[0] * 100), (int)(driverPWMOutput[1] * 100), (int)(driverPWMOutput[2]));
     //updateDisplayDatas();
-    allUpdate();
     //driveAutoConverger();
+    //allMechaTestSequence();
+    allUpdate();
     switch (currentRunningMode)
     {
       case RED_FRONT_PRE_bathTowelLeft:
@@ -2179,5 +2182,197 @@ void driveAutoConverger()
     prevXLocation = currentXLocation;
     prevYLocation = currentYLocation;
     loopTime = pidLoopTimer.read_ms();
+  }
+}
+
+struct testCourse
+{
+  bool drive;
+  bool leftRojar;
+  bool leftHanger;
+  bool rightRojar;
+  bool rightHanger;
+  bool servo[4]; //Left-Left, Left-Right, Right-Left, Right-Right
+} testEnableFlag;
+Timer testSequenceTimer;
+
+void allMechaTestSequence()
+{
+  testEnableFlag.drive = 1;
+  testEnableFlag.leftRojar = 1;
+  testEnableFlag.leftHanger = 1;
+  testEnableFlag.rightRojar = 1;
+  testEnableFlag.rightHanger = 1;
+  testEnableFlag.servo[0] = 1;
+  testEnableFlag.servo[1] = 1;
+  testEnableFlag.servo[2] = 1;
+  testEnableFlag.servo[3] = 1;
+
+  testSequenceTimer.start();
+
+  /*
+  *   すべての処理更新をかけながら時間に応じて現在目標位置を更新することでモーターの回転方向を確認する
+  */
+  while (testEnableFlag.drive)
+  {
+    static uint64_t runningTime = 0;
+    static uint8_t driveDirection = 0;
+    if ((testSequenceTimer.read_ms() - runningTime) > 1500)
+    {
+      driveDirection++;
+      runningTime = 0;
+    }
+    switch (driveDirection) //1.5sごとに更新
+    {
+      case 0: //forward
+        robotLocation.setCurrentPoint(0, -100, 0);
+        break;
+      case 1: //behind
+        robotLocation.setCurrentPoint(0, 100, 0);
+        break;
+      case 2: //right
+        robotLocation.setCurrentPoint(100, 0, 0);
+        break;
+      case 3: //left
+        robotLocation.setCurrentPoint(-100, 0, 0);
+        break;
+      case 4: //turn-right
+        robotLocation.setCurrentPoint(0, 0, 5);
+        break;
+      case 5: //turn-left
+        robotLocation.setCurrentPoint(0, 0, -5);
+        break;
+      case 6:
+        accelAlgorithm.setCurrentXPosition(0); //外乱で微妙に動いている可能性があるので三軸初期化
+        accelAlgorithm.setCurrentYPosition(0);
+        accelAlgorithm.setCurrentYawPosition(0);
+        robotLocation.setCurrentPoint(0, 0, 0); //原点に設定
+        testSequenceTimer.stop();
+        testSequenceTimer.reset();
+        testEnableFlag.drive = 0; //driveテスト終了
+        break;
+    }
+    allUpdate();
+  }
+
+  while (testEnableFlag.leftRojar)
+  {
+    static uint64_t runningTime = 0;
+    static uint8_t phaseCounter = 0;
+    if ((testSequenceTimer.read_ms() - runningTime) > 1500)
+    {
+      phaseCounter++;
+      runningTime = 0;
+    }
+    switch (phaseCounter)
+    {
+      case 1:
+        rojarArm[left].setHeight(500);
+        break;
+      case 2:
+        rojarArm[left].setHeight(0);
+        break;
+      default:
+        if (rojarArm[left].stats() && phaseCounter > 2)
+        {
+          testSequenceTimer.stop();
+          testSequenceTimer.reset();
+          testEnableFlag.leftRojar = 0;
+        }
+        break;
+    }
+    allUpdate();
+  }
+
+  while (testEnableFlag.rightRojar)
+  {
+    static uint64_t runningTime = 0;
+    static uint8_t phaseCounter = 0;
+    if ((testSequenceTimer.read_ms() - runningTime) > 1500)
+    {
+      phaseCounter++;
+      runningTime = 0;
+    }
+    switch (phaseCounter)
+    {
+      case 1:
+        rojarArm[right].setHeight(500);
+        break;
+      case 2:
+        rojarArm[right].setHeight(0);
+        break;
+      default:
+        if (rojarArm[right].stats() && phaseCounter > 2)
+        {
+          testSequenceTimer.stop();
+          testSequenceTimer.reset();
+          testEnableFlag.rightRojar = 0;
+        }
+        break;
+    }
+    allUpdate();
+  }
+
+  while (testEnableFlag.leftHanger)
+  {
+    static uint64_t runningTime = 0;
+    static uint8_t phaseCounter = 0;
+    if ((testSequenceTimer.read_ms() - runningTime) > 1500)
+    {
+      phaseCounter++;
+      runningTime = 0;
+    }
+    switch (phaseCounter)
+    {
+      case 1:
+        hanger[left].setLength(300);
+        break;
+      case 2:
+        hanger[left].setLength(0);
+        break;
+      default:
+        if (hanger[left].stats() && phaseCounter > 2)
+        {
+          testSequenceTimer.stop();
+          testSequenceTimer.reset();
+          testEnableFlag.leftHanger = 0;
+        }
+        break;
+    }
+    allUpdate();
+  }
+
+  while (testEnableFlag.rightHanger)
+  {
+    static uint64_t runningTime = 0;
+    static uint8_t phaseCounter = 0;
+    if ((testSequenceTimer.read_ms() - runningTime) > 1500)
+    {
+      phaseCounter++;
+      runningTime = 0;
+    }
+    switch (phaseCounter)
+    {
+      case 1:
+        hanger[right].setLength(300);
+        break;
+      case 2:
+        hanger[right].setLength(0);
+        break;
+      default:
+        if (hanger[right].stats() && phaseCounter > 2)
+        {
+          testSequenceTimer.stop();
+          testSequenceTimer.reset();
+          testEnableFlag.rightHanger = 0;
+        }
+        break;
+    }
+    allUpdate();
+  }
+
+  while (1) //テスト終了
+  {
+    allUpdate();
   }
 }
