@@ -1218,6 +1218,8 @@ int main(void)
               OmniKinematics.setMaxPWM(0.15);
               robotLocation.sendNext(); //横移動 6
               accelAlgorithm.setPositionChangedFlag();
+              rojarArm[!whichMecha].setHeight(1600); //横移動のタイミングで反対側のロジャーアームを展開し始める
+              rojarArm[!whichMecha].update();
               wayPointSignature++;
               break;
             case 7:
@@ -1260,12 +1262,7 @@ int main(void)
               rojarArm[whichMecha].setHeight(0);
               rojarArm[whichMecha].setMaxPWM(Robot.estimateRojarArmMaxPWM);
               rojarArm[whichMecha].update();
-              rojarArm[!whichMecha].setHeight(1600);
-              rojarArm[!whichMecha].update();
-              if (rojarArm[whichMecha].stats())
-              {
-                wayPointSignature++;
-              }
+              wayPointSignature++;
               break;
             case 10:
               whichMecha = !whichMecha; //途中で機構入れ替え！！
@@ -1273,7 +1270,7 @@ int main(void)
               break;
             case 11:
               static int armPhaseRight = 1, hangerHasDoneFlagRight = 0; //phase1=洗濯物掛ける, phase2=洗濯ばさみつける
-              if (rojarArm[whichMecha].stats() && armPhaseRight == 1)   //ロジャーアーム展開完了
+              if (rojarArm[whichMecha].stats() && armPhaseRight == 1)   //横移動中に展開開始したロジャーアームのステータスを確認
               {
                 static int initialHangerFlag = 1;
                 if (initialHangerFlag) //ロジャー展開後初めての処理
