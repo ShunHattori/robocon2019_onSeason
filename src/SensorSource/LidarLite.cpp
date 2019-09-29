@@ -1,24 +1,15 @@
-/*
- *  Library for easy interface of LidarLite with mbed using I2C
- *  
- *  Akash Vibhute   <akash . roboticist [at] gmail . com>
- *  
- *  v0.1, 17/Feb/2015 - First version of library, tested using LPC1768 [powered via mbed 3.3v, no additional pullups on I2C necessary]
- *
- */
- 
 #include "LidarLite.h"
 
 LidarLite::LidarLite(PinName sda, PinName scl)
 {
     i2c_ = new I2C(sda, scl);
-    i2c_->frequency(400000); //I2C @ 100kHz
+    i2c_->frequency(400000); //I2C @ 400kHz
     wait(0.5);
 }
 LidarLite::LidarLite(PinName sda, PinName scl, char currentAddress)
 {
     i2c_ = new I2C(sda, scl);
-    i2c_->frequency(400000); //I2C @ 100kHz
+    i2c_->frequency(400000); //I2C @ 400kHz
     wait(0.5);    
 }  
 

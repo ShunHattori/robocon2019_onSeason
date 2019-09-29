@@ -17,10 +17,22 @@ public:
   {
     return ButtonStats;
   }
+  void disableStateUpdate()
+  {
+    isEnableUpdating = 0;
+  }
+  void enableStateUpdate()
+  {
+    isEnableUpdating = 1;
+  }
+  void setButtonState(bool state)
+  {
+    ButtonStats = state;
+  }
 
 private:
   Timer samplingTimer;
   DigitalIn _switch;
   int detectFlagNumber, samplingPeriod, mode, buttonPressCount;
-  bool ButtonStats;
+  bool ButtonStats, isEnableUpdating;
 };

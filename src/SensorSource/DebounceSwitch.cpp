@@ -15,10 +15,13 @@ DebounceSwitch::DebounceSwitch(PinName inputPin, Pinmode pinmode) : _switch(inpu
   samplingPeriod = 10;
   detectFlagNumber = 3;
   ButtonStats = 0;
+  isEnableUpdating = 1;
 }
 
 void DebounceSwitch::update()
 {
+  if (!isEnableUpdating)
+    return;
   if (samplingPeriod < samplingTimer.read_ms()) //サンプリング方式
   {
     switch (mode) //カウントアップ方式
