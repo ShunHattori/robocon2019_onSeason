@@ -495,7 +495,6 @@ int main(void)
   {
     holder[i].grasp(right);
     holder[i].grasp(left);
-    pegAttacher[i].reload();
   }
   //holder[whichMecha].setFieldMode(9 < currentRunningMode ? 1 : 0); //10以上
   //holder[whichMecha].grasp(!whichServo);
@@ -687,6 +686,7 @@ int main(void)
             case 9:
               holder[whichMecha].free(!whichServo); //右
               holder[whichMecha].free(whichServo);
+              pegAttacher[whichMecha].reload();
               while (1)
               {
                 allUpdate();
@@ -2219,7 +2219,7 @@ void allMechaTestSequence()
     if ((testSequenceTimer.read_ms() - runningTime) > 1500)
     {
       driveDirection++;
-      runningTime = 0;
+      runningTime = testSequenceTimer.read_ms();
     }
     switch (driveDirection) //1.5sごとに更新
     {
@@ -2246,7 +2246,6 @@ void allMechaTestSequence()
         accelAlgorithm.setCurrentYPosition(0);
         accelAlgorithm.setCurrentYawPosition(0);
         robotLocation.setCurrentPoint(0, 0, 0); //原点に設定
-        testSequenceTimer.stop();
         testSequenceTimer.reset();
         testEnableFlag.drive = 0; //driveテスト終了
         break;
@@ -2261,7 +2260,7 @@ void allMechaTestSequence()
     if ((testSequenceTimer.read_ms() - runningTime) > 1500)
     {
       phaseCounter++;
-      runningTime = 0;
+      runningTime = testSequenceTimer.read_ms();
     }
     switch (phaseCounter)
     {
@@ -2274,7 +2273,6 @@ void allMechaTestSequence()
       default:
         if (rojarArm[left].stats() && phaseCounter > 2)
         {
-          testSequenceTimer.stop();
           testSequenceTimer.reset();
           testEnableFlag.leftRojar = 0;
         }
@@ -2290,7 +2288,7 @@ void allMechaTestSequence()
     if ((testSequenceTimer.read_ms() - runningTime) > 1500)
     {
       phaseCounter++;
-      runningTime = 0;
+      runningTime = testSequenceTimer.read_ms();
     }
     switch (phaseCounter)
     {
@@ -2303,7 +2301,6 @@ void allMechaTestSequence()
       default:
         if (rojarArm[right].stats() && phaseCounter > 2)
         {
-          testSequenceTimer.stop();
           testSequenceTimer.reset();
           testEnableFlag.rightRojar = 0;
         }
@@ -2319,7 +2316,7 @@ void allMechaTestSequence()
     if ((testSequenceTimer.read_ms() - runningTime) > 1500)
     {
       phaseCounter++;
-      runningTime = 0;
+      runningTime = testSequenceTimer.read_ms();
     }
     switch (phaseCounter)
     {
@@ -2332,7 +2329,6 @@ void allMechaTestSequence()
       default:
         if (hanger[left].stats() && phaseCounter > 2)
         {
-          testSequenceTimer.stop();
           testSequenceTimer.reset();
           testEnableFlag.leftHanger = 0;
         }
@@ -2348,7 +2344,7 @@ void allMechaTestSequence()
     if ((testSequenceTimer.read_ms() - runningTime) > 1500)
     {
       phaseCounter++;
-      runningTime = 0;
+      runningTime = testSequenceTimer.read_ms();
     }
     switch (phaseCounter)
     {
@@ -2361,7 +2357,6 @@ void allMechaTestSequence()
       default:
         if (hanger[right].stats() && phaseCounter > 2)
         {
-          testSequenceTimer.stop();
           testSequenceTimer.reset();
           testEnableFlag.rightHanger = 0;
         }
