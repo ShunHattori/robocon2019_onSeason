@@ -9,50 +9,100 @@ ClothHold::ClothHold(PinName servoRightPin, PinName servoLeftPin)
   servoLeft->calibrate(0.00095F, 180.0F);
   runningModeRight = 0;
   runningModeLeft = 0;
+  blueModeFlag = 0;
 }
 
-void ClothHold::release(char whichServo)
+void ClothHold::setFieldMode(int whichMode)
 {
-  switch (whichServo)
+  if (whichMode)
   {
-    case 'r':
-      runningModeRight = 0;                 //0 for release
-      servoRight->write(workingPattern[0]); //数字は適当
-      break;
-    case 'l':
-      runningModeLeft = 0;
-      servoLeft->write(workingPattern[1]); //数字は適当
-      break;
-    default:
-      break;
+    blueModeFlag = 1;
+  }
+  else
+    blueModeFlag = 0;
+  return;
+}
+
+void ClothHold::release(int whichServo)
+{
+  if (blueModeFlag)
+  {
+    switch (whichServo)
+    {
+      case 0:
+        runningModeRight = 0;                 //0 for release
+        servoRight->write(workingPattern[0]); //数字は適当
+        break;
+      case 1:
+        runningModeLeft = 0;
+        servoLeft->write(workingPattern[1]); //数字は適当
+        break;
+      default:
+        break;
+    }
+  }
+  else
+  {
+    switch (whichServo)
+    {
+      case 0:
+        runningModeRight = 0;                 //0 for release
+        servoRight->write(workingPattern[1]); //数字は適当
+        break;
+      case 1:
+        runningModeLeft = 0;
+        servoLeft->write(workingPattern[0]); //数字は適当
+        break;
+      default:
+        break;
+    }
   }
 }
 
-void ClothHold::grasp(char whichServo)
+void ClothHold::grasp(int whichServo)
 {
-  switch (whichServo)
+  if (blueModeFlag)
   {
-    case 'r':
-      runningModeRight = 1;                 //1 for grasp
-      servoRight->write(workingPattern[1]); //数字は適当
-      break;
-    case 'l':
-      runningModeLeft = 1;
-      servoLeft->write(workingPattern[0]); //数字は適当
-      break;
-    default:
-      break;
+    switch (whichServo)
+    {
+      case 0:
+        runningModeRight = 0;                 //0 for release
+        servoRight->write(workingPattern[1]); //数字は適当
+        break;
+      case 1:
+        runningModeLeft = 0;
+        servoLeft->write(workingPattern[0]); //数字は適当
+        break;
+      default:
+        break;
+    }
+  }
+  else
+  {
+    switch (whichServo)
+    {
+      case 0:
+        runningModeRight = 0;                 //0 for release
+        servoRight->write(workingPattern[0]); //数字は適当
+        break;
+      case 1:
+        runningModeLeft = 0;
+        servoLeft->write(workingPattern[1]); //数字は適当
+        break;
+      default:
+        break;
+    }
   }
 }
 
-void ClothHold::center(char whichServo)
+void ClothHold::center(int whichServo)
 {
   switch (whichServo)
   {
-    case 'r':
+    case 0:
       servoRight->write(workingPattern[2]); //数字は適当
       break;
-    case 'l':
+    case 1:
       servoLeft->write(workingPattern[3]); //数字は適当
       break;
     default:
@@ -60,14 +110,14 @@ void ClothHold::center(char whichServo)
   }
 }
 
-void ClothHold::half(char whichServo)
+void ClothHold::half(int whichServo)
 {
   switch (whichServo)
   {
-    case 'r':
+    case 0:
       servoRight->write(workingPattern[3]); //数字は適当
       break;
-    case 'l':
+    case 1:
       servoLeft->write(workingPattern[2]); //数字は適当
       break;
     default:
@@ -75,15 +125,15 @@ void ClothHold::half(char whichServo)
   }
 }
 
-void ClothHold::free(char whichServo)
+void ClothHold::free(int whichServo)
 {
   switch (whichServo)
   {
-    case 'r':
+    case 0:
       servoRight->free();
       break;
 
-    case 'l':
+    case 1:
       servoLeft->free();
       break;
 
@@ -92,12 +142,12 @@ void ClothHold::free(char whichServo)
   }
 }
 
-bool ClothHold::stats(char whichServo)
+bool ClothHold::stats(int whichServo)
 {
   switch (whichServo)
   {
     float currentPosition;
-    case 'r':
+    case 0:
       currentPosition = servoRight->read();
       if (runningModeRight) //enter when grasping
       {
@@ -122,7 +172,7 @@ bool ClothHold::stats(char whichServo)
         }
       }
       break;
-    case 'l':
+    case 1:
       currentPosition = servoLeft->read();
       if (runningModeRight) //enter when grasping
       {

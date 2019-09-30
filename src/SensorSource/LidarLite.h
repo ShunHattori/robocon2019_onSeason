@@ -1,11 +1,6 @@
 /*
- *  Library for easy interface of LidarLite with mbed using I2C
- *  
- *  Akash Vibhute   <akash . roboticist [at] gmail . com>
- *  
- *  v0.1, 17/Feb/2015 - First version of library, tested using LPC1768 [powered via mbed 3.3v, no additional pullups on I2C necessary]
- *
- */
+powered via mbed 3.3v, no additional pullups on I2C necessary]
+*/
  
 #ifndef LidarLite_H
 #define LidarLite_H 
