@@ -28,7 +28,7 @@ public:
   /*
         モータに印加するPWMを指定する
      */
-  void setMaxPWM(float);
+  void setMaxPWM(double);
 
   /*
         追加された機構タスクを処理する
@@ -38,5 +38,6 @@ public:
 private:
   double *motorPWM;
   int16_t lenghtTarget, lenghtCurrent;
-  float pwm;
+  double pwm, aroundZeroPointPWM;
+  bool isTargetLenghtAroundZeroPoint;
 };

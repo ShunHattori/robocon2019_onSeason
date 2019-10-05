@@ -44,6 +44,6 @@ private:
   DebounceSwitch *bottomSwitch;
   double *motorPWM;
   double userPWM, aroundZeroPointPWM;
-  int heightTarget, heightCurrent;
+  int heightTarget, heightCurrent, heightBias;
   bool isTargetHeightAroundZeroPoint;
 };
