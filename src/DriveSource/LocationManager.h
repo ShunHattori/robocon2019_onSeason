@@ -59,7 +59,7 @@ public:
   {
     XPointArray.push_back(x);
     YPointArray.push_back(y);
-    YawPointArray.push_back(getYawStatsData());
+    YawPointArray.push_back(0);
   }
 
   /*

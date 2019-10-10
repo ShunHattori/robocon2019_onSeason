@@ -16,6 +16,11 @@ public:
   void launch(void);
 
   void reload(void);
+  
+  void setPWM(double pwm)
+  {
+    maxPwm = pwm;
+  }
 
   /*
         設定された秒数に応じてピンを制御する

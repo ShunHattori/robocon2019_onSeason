@@ -48,7 +48,7 @@ void Peg::update(void)
       reduceFlag = 1;
       extendFlag = 0;
     }
-    else if (reduceFlag && timer->read() > timePerOnce / 2)
+    else if (reduceFlag && timer->read() > timePerOnce / 3)
     {
       reduceFlag = 0;
       reloadFlag = 0;
@@ -62,7 +62,7 @@ void Peg::update(void)
   else if (reduceFlag)
   {
     outputPWM[0] = 0;
-    outputPWM[1] = maxPwm / 2;
+    outputPWM[1] = 0.25;
   }
   else
   {

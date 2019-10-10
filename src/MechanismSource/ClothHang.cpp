@@ -6,7 +6,7 @@ ClothHang::ClothHang(double* variableToStore)
   lenghtCurrent = 0;
   lenghtTarget = 0;
   isTargetLenghtAroundZeroPoint = 1;
-  aroundZeroPointPWM = 0.2;
+  aroundZeroPointPWM = 0.22;
 }
 
 bool ClothHang::stats(void)

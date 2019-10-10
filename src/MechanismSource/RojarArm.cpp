@@ -4,6 +4,7 @@ RojarArm::RojarArm(double* variableToStore, DebounceSwitch& mySwitch)
 {
   bottomSwitch = &mySwitch;
   motorPWM = variableToStore;
+  heightBias = 0;
   heightCurrent = 0;
   heightTarget = 0;
   isTargetHeightAroundZeroPoint = 1;
@@ -19,7 +20,7 @@ bool RojarArm::stats(void)
     return 0;
   }
 
-  if ((heightTarget - 20) < heightCurrent && heightCurrent < (heightTarget + 20))
+  if ((heightTarget - 20) < (heightCurrent - heightBias) && (heightCurrent - heightBias) < (heightTarget + 20))
   {
     return 1;
   }
