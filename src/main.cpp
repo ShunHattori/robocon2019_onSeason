@@ -57,8 +57,12 @@ struct
   PinName toBegin = PE_15;
   PinName frontR = PE_12;
   PinName frontL = PE_10;
-  PinName sideR = PE_14;
-  PinName sideL = PE_15;
+  PinName sideRF = PE_14;
+  PinName sideRB = PD_12;
+  PinName sideLF = PE_15;
+  PinName sideLB = PD_13;
+  PinName clothHangerR = PB_2;
+  PinName clothHangerL = PF_4;
   PinName rojarBottomR = PE_7;
   PinName rojarBottomL = PE_8;
 } Switch;
@@ -101,10 +105,10 @@ struct parameter
   const double permitErrorCircleRadius = 6.0;
   const double driveDisableRadius = 1.3;
   const int decreaseSpeedCircleRadius = 70;
-  const double estimateDriveMaxPWM = 0.5; // max:0.7, recommend:0.64 //DEFAULT 0.5
-  const double estimateDriveMinPWM = 0.10;
+  const double estimateDriveMaxPWM = 0.55; // max:0.7, recommend:0.64 //DEFAULT 0.5
+  const double estimateDriveMinPWM = 0.11;
   const double estimatePegMaxPWMSingle = 0.57;
-  const double estimatePegMaxPWMDouble = 0.62;
+  const double estimatePegMaxPWMDouble = 0.65;
   const double estimateHangerMaxPWM = 0.8;
   const double estimateRojarArmMaxPWM = 0.75;
   const double PegVoltageImpressionTime = 0.666666;
@@ -157,9 +161,13 @@ DebounceSwitch limitSwitchBar[2]{
     DebounceSwitch(Switch.frontR, DebounceSwitch::PULLUP),
     DebounceSwitch(Switch.frontL, DebounceSwitch::PULLUP),
 };
-DebounceSwitch limitSwitchSide[2]{
-    DebounceSwitch(Switch.sideR, DebounceSwitch::PULLUP),
-    DebounceSwitch(Switch.sideL, DebounceSwitch::PULLUP),
+DebounceSwitch limitSwitchSideFoward[2]{
+    DebounceSwitch(Switch.sideRF, DebounceSwitch::PULLUP),
+    DebounceSwitch(Switch.sideLF, DebounceSwitch::PULLUP),
+};
+DebounceSwitch limitSwitchSideBehind[2]{
+    DebounceSwitch(Switch.sideRB, DebounceSwitch::PULLUP),
+    DebounceSwitch(Switch.sideLB, DebounceSwitch::PULLUP),
 };
 DebounceSwitch limitSwitchRojarArm[2]{
     DebounceSwitch(Switch.rojarBottomR, DebounceSwitch::PULLUP),
@@ -170,8 +178,8 @@ ClothHold holder[2] = {
     ClothHold(MecaPin.holderLeftServoR, MecaPin.holderLeftServoL),   //right,leftServo
 };
 Peg pegAttacher[2]{
-    Peg(Robot.estimatePegMaxPWMSingle, Robot.PegVoltageImpressionTime, pegAttacherPWM[0]), //pwm, time
-    Peg(Robot.estimatePegMaxPWMSingle, Robot.PegVoltageImpressionTime, pegAttacherPWM[1]), //pwm, time
+    Peg(Robot.estimatePegMaxPWMDouble, Robot.PegVoltageImpressionTime, pegAttacherPWM[0]), //pwm, time
+    Peg(Robot.estimatePegMaxPWMDouble, Robot.PegVoltageImpressionTime, pegAttacherPWM[1]), //pwm, time
 };
 ClothHang hanger[2]{
     ClothHang(hangerPWM[right]),
@@ -249,6 +257,17 @@ int main(void)
     /*if (getRobotModeWithSwitch())
       break;*/
     uint8_t UIFData[1];
+    updateLimitSwitchBar();
+    if (limitSwitchBar[right].stats())
+    {
+      holder[right].grasp(right);
+      holder[right].grasp(left);
+    }
+    if (limitSwitchBar[left].stats())
+    {
+      holder[left].grasp(right);
+      holder[left].grasp(left);
+    }
     if (UIF.receive(UIFData))
     {
       currentRunningMode = UIFData[0];
@@ -1519,8 +1538,8 @@ int main(void)
           flag++;
         }
 
-        limitSwitchSide[whichMecha].update();
-        if (limitSwitchSide[whichMecha].stats() && wayPointSignature == 5)
+        limitSwitchSideFoward[whichMecha].update();
+        if (limitSwitchSideFoward[whichMecha].stats() && wayPointSignature == 5)
         {
           accelAlgorithm.setCurrentXPosition(9 < currentRunningMode ? -377 : 377);
           robotLocation.setCurrentPoint(9 < currentRunningMode ? -377 : 377, robotLocation.getYLocationData(), robotLocation.getYawStatsData());
@@ -1636,8 +1655,8 @@ int main(void)
               break;
 
             case 5:
-              limitSwitchSide[whichMecha].update();
-              if (!limitSwitchSide[whichMecha].stats())
+              limitSwitchSideFoward[whichMecha].update();
+              if (!limitSwitchSideFoward[whichMecha].stats())
               {
                 OmniKinematics.setMaxPWM(0.13);
                 robotLocation.setCurrentPoint(9 < currentRunningMode ? (robotLocation.getXLocationData() - 10) : (robotLocation.getXLocationData() + 10), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
@@ -1724,7 +1743,7 @@ int main(void)
       hanger[i].update();
       limitSwitchBar[i].update();
       limitSwitchRojarArm[i].update();
-      limitSwitchSide[i].update();
+      limitSwitchSideFoward[i].update();
     }
     //accelAlgorithm.update();
     accelAlgorithm.setCurrentYawPosition(IMU.getYaw());
@@ -1735,7 +1754,7 @@ int main(void)
       STLinkTerminal.printf("\033[%d;%dH", 2, 11);
       STLinkTerminal.printf("\033[2K%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d", encoderXAxis.getPulses(), encoderYAxis.getPulses(), rojarArmEncoder[right].getPulses(), rojarArmEncoder[left].getPulses(), clothHangEncoder[right].getPulses(), clothHangEncoder[left].getPulses());
       STLinkTerminal.printf("\033[%d;%dH", 5, 11);
-      STLinkTerminal.printf("\033[2K%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d", limitSwitchRojarArm[right].stats(), limitSwitchRojarArm[left].stats(), limitSwitchBar[right].stats(), limitSwitchBar[left].stats(), limitSwitchSide[right].stats(), limitSwitchSide[left].stats());
+      STLinkTerminal.printf("\033[2K%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d", limitSwitchRojarArm[right].stats(), limitSwitchRojarArm[left].stats(), limitSwitchBar[right].stats(), limitSwitchBar[left].stats(), limitSwitchSideFoward[right].stats(), limitSwitchSideFoward[left].stats());
       STLinkTerminal.printf("\033[7;0H\033[2KINTERVAL TIME : %ld[us]", (long int)(printTimer.read_us() - prevPrint));
       prevPrint = printTimer.read_us();
     }
@@ -2234,10 +2253,10 @@ void driveAutoConverger()
   pidLoopTimer.start();
   limitSwitchBar[right].disableStateUpdate();
   limitSwitchBar[left].disableStateUpdate();
-  limitSwitchSide[right].disableStateUpdate();
+  limitSwitchSideFoward[right].disableStateUpdate();
   limitSwitchBar[right].setButtonState(1);
   limitSwitchBar[left].setButtonState(1);
-  limitSwitchSide[right].setButtonState(1);
+  limitSwitchSideFoward[right].setButtonState(1);
   if ((pidLoopTimer.read_ms() - loopTime) > 30)
   {
     double error[2];
