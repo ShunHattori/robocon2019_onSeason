@@ -1923,6 +1923,7 @@ int main(void)
   while (1)
   {
     pegAttacher[fieldColorisRed].update();
+    sendPacketToSlave();
   }
 #endif // TEST_PEGLaunch
 
@@ -2112,6 +2113,10 @@ void allUpdate()
   IMU.update();
   accelAlgorithm.setCurrentYawPosition(IMU.getYaw());
   OmniKinematics.getOutput(accelAlgorithm.getXVector(), accelAlgorithm.getYVector(), accelAlgorithm.getYawVector(), IMU.getYaw(), driverPWMOutput);
+  sendPacketToSlave();
+}
+
+void sendPacketToSlave(){
   uint8_t MDDDrivePacket[6] = {
       (uint8_t)driverPWMOutput[0] < 0 ? 0 : (uint8_t)(driverPWMOutput[0] * 100),
       (uint8_t)driverPWMOutput[0] > 0 ? 0 : (uint8_t)(-driverPWMOutput[0] * 100),
