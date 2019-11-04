@@ -102,14 +102,14 @@ struct parameter
   const int encoderPPRLow = 48;
   const int encoderPPRHigh = 100;
   const double encoderAttachedWheelRadius = 2.54; //mini(50) omni
-  const double permitErrorCircleRadius = 6.0;
+  const double permitErrorCircleRadius = 5.0;
   const double driveDisableRadius = 1.3;
   const int decreaseSpeedCircleRadius = 70;
   const double estimateDriveMaxPWM = 0.52; // max:0.7, recommend:0.64 //DEFAULT 0.5
   const double estimateDriveMinPWM = 0.11;
   const double estimatePegMaxPWMSingle = 0.57;
   const double estimatePegMaxPWMDouble = 0.67;
-  const double estimateHangerMaxPWM = 0.70;
+  const double estimateHangerMaxPWM = 0.6;
   const double estimateRojarArmMaxPWM = 0.75;
   const double PegVoltageImpressionTime = 0.666666;
 } Robot;
@@ -290,7 +290,7 @@ int main(void)
     case RED_FRONT_PRE_bathTowelLeft:
       whichMecha = left;
       whichServo = left;
-      robotLocation.addPoint((117), -(200));              //近づいてリミット監視開始 初期位置ずれてるから長めになってる！
+      robotLocation.addPoint((117), -(200));      //近づいてリミット監視開始 初期位置ずれてるから長めになってる！
       robotLocation.addPoint((210), -(190));      //竿目印のところまで移動(ちょっと後ろ目)
       robotLocation.addPoint((210), -(190));      //ハサミつく位置まで前に
       robotLocation.addPoint((210), -(190));      //最初に直進 //198
@@ -414,10 +414,10 @@ int main(void)
     case BLUE_FRONT_PRE_bathTowelRight:
       whichMecha = right;
       whichServo = right;
-      robotLocation.addPoint(-(117), -(200));       //近づいてリミット監視開始 初期位置ずれてるから長めになってる！
-      robotLocation.addPoint(-(207), -(190));       //竿目印のところまで移動(ちょっと後ろ目)
-      robotLocation.addPoint(-(207), -(190));       //ハサミつく位置まで前に
-      robotLocation.addPoint(-(207), -(190));       //最初に直進 //198
+      robotLocation.addPoint(-(117), -(200));      //近づいてリミット監視開始 初期位置ずれてるから長めになってる！
+      robotLocation.addPoint(-(207), -(190));      //竿目印のところまで移動(ちょっと後ろ目)
+      robotLocation.addPoint(-(207), -(190));      //ハサミつく位置まで前に
+      robotLocation.addPoint(-(207), -(190));      //最初に直進 //198
       robotLocation.addPoint(-(207 + 97), -(200)); //洗濯物横に引っ張る //202
       robotLocation.addPoint(-(207 + 97), -(190)); //ロジャー降ろしながら後ろに引く
       robotLocation.addPoint(-(207 + 97), -(170));
@@ -609,6 +609,7 @@ int main(void)
                 static int initialHangerFlag = 1;
                 if (initialHangerFlag) //ロジャー展開後初めての処理
                 {
+                  hanger[whichMecha].setMaxPWM(0.4);
                   hanger[whichMecha].setLength(1020); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
                   hanger[whichMecha].update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
                   initialHangerFlag = 0;
@@ -825,6 +826,7 @@ int main(void)
                 static int initialHangerFlag = 1;
                 if (initialHangerFlag) //ロジャー展開後初めての処理
                 {
+                  hanger[whichMecha].setMaxPWM(0.4);
                   hanger[whichMecha].setLength(1020); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
                   hanger[whichMecha].update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
                   initialHangerFlag = 0;
@@ -1415,6 +1417,7 @@ int main(void)
                 static int initialHangerFlag = 1;
                 if (initialHangerFlag) //ロジャー展開後初めての処理
                 {
+                  hanger[whichMecha].setMaxPWM(0.4);
                   hanger[whichMecha].setLength(1020); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
                   hanger[whichMecha].update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
                   initialHangerFlag = 0;

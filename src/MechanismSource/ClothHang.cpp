@@ -60,13 +60,13 @@ void ClothHang::update(void)
   {
     if (lenghtCurrent < lenghtTarget)
     {
-      motorPWM[0] = 0.60;
+      motorPWM[0] = pwm;
       motorPWM[1] = 0;
     }
     else if (lenghtCurrent > lenghtTarget)
     {
       motorPWM[0] = 0;
-      motorPWM[1] = 0.5;
+      motorPWM[1] = pwm - 0.1;
     }
   }
   if (!isTargetLenghtAroundZeroPoint)

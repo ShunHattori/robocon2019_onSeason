@@ -56,6 +56,16 @@ int RojarArm::getHeight(void)
 
 void RojarArm::update(void)
 {
+  static bool exitFlag = 0;
+  if (heightCurrent < -350)
+  {
+    exitFlag = 1;
+  }
+  if (exitFlag)
+  {
+    motorPWM[0] = 0;
+    motorPWM[1] = 0;
+  }
   bottomSwitch->update();
   if (bottomSwitch->stats())
   { //最下点スイッチが押されている
