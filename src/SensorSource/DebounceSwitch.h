@@ -5,7 +5,8 @@
 class DebounceSwitch
 {
 public:
-  typedef enum Pinmode {
+  typedef enum Pinmode
+  {
     PULLUP,
     PULLDOWN,
   } Pinmode;
