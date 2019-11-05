@@ -105,8 +105,8 @@ struct parameter
   const double permitErrorCircleRadius = 5.0;
   const double driveDisableRadius = 1.3;
   const int decreaseSpeedCircleRadius = 70;
-  const double estimateDriveMaxPWM = 0.52; // max:0.7, recommend:0.64 //DEFAULT 0.5
-  const double estimateDriveMinPWM = 0.11;
+  const double estimateDriveMaxPWM = 0.45; // max:0.7, recommend:0.64 //DEFAULT 0.5
+  const double estimateDriveMinPWM = 0.1;
   const double estimatePegMaxPWMSingle = 0.57;
   const double estimatePegMaxPWMDouble = 0.67;
   const double estimateHangerMaxPWM = 0.6;
@@ -886,7 +886,7 @@ int main(void)
                     clothHangerTimer.reset();
                     robotLocation.sendNext();
                     accelAlgorithm.setPositionChangedFlag();
-                    rojarArm[whichMecha].setHeight(1910); //2100
+                    rojarArm[whichMecha].setHeight(1800); //2100
                     wayPointSignature++;
                   }
                 }
@@ -913,25 +913,27 @@ int main(void)
               static bool initialFlag = 1, releasedFlag = 0;
               if (initialFlag)
               {
-                OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
                 clothHangerTimer.start();
                 initialFlag = 0;
               }
-              if (clothHangerTimer.read_ms() > 300)
+              if (clothHangerTimer.read_ms() > 300 && !initialFlag && !releasedFlag)
               {
                 robotLocation.sendNext();
                 accelAlgorithm.setPositionChangedFlag();
-                rojarArm[whichMecha].setHeight(1530);
+                rojarArm[whichMecha].setHeight(1700);
                 rojarArm[whichMecha].setMaxPWM(0.35);
                 rojarArm[whichMecha].update();
                 clothHangerTimer.stop();
                 clothHangerTimer.reset();
+                clothHangerTimer.start();
                 releasedFlag = 1;
               }
-              if (rojarArm[whichMecha].stats() && releasedFlag)
+              if (clothHangerTimer.read_ms() > 650 && rojarArm[whichMecha].stats() && releasedFlag)
               {
                 holder[whichMecha].half(!whichServo);
                 wayPointSignature++;
+                clothHangerTimer.stop();
+                clothHangerTimer.reset();
                 clothHangerTimer.start();
               }
               break;
@@ -946,6 +948,7 @@ int main(void)
               }
               break;
             case 11:
+              OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
               rojarArm[whichMecha].setHeight(0);
               rojarArm[whichMecha].setMaxPWM(Robot.estimateRojarArmMaxPWM);
               robotLocation.sendNext();
@@ -1110,7 +1113,7 @@ int main(void)
                     robotLocation.sendNext();
                     accelAlgorithm.setPositionChangedFlag();
                     rojarArm[whichMecha].setMaxPWM(0.4);
-                    rojarArm[whichMecha].setHeight(1910); //2100
+                    rojarArm[whichMecha].setHeight(1800); //2100
                     wayPointSignature++;
                   }
                 }
@@ -1137,25 +1140,27 @@ int main(void)
               static bool initialFlag = 1, releasedFlag = 0;
               if (initialFlag)
               {
-                OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
                 clothHangerTimer.start();
                 initialFlag = 0;
               }
-              if (clothHangerTimer.read_ms() > 300)
+              if (clothHangerTimer.read_ms() > 300 && !initialFlag && !releasedFlag)
               {
                 robotLocation.sendNext();
                 accelAlgorithm.setPositionChangedFlag();
-                rojarArm[whichMecha].setHeight(1530);
+                rojarArm[whichMecha].setHeight(1700);
                 rojarArm[whichMecha].setMaxPWM(0.35);
                 rojarArm[whichMecha].update();
                 clothHangerTimer.stop();
                 clothHangerTimer.reset();
+                clothHangerTimer.start();
                 releasedFlag = 1;
               }
-              if (rojarArm[whichMecha].stats() && releasedFlag)
+              if (clothHangerTimer.read_ms() > 650 && rojarArm[whichMecha].stats() && releasedFlag)
               {
                 holder[whichMecha].half(!whichServo);
                 wayPointSignature++;
+                clothHangerTimer.stop();
+                clothHangerTimer.reset();
                 clothHangerTimer.start();
               }
               break;
@@ -1338,7 +1343,7 @@ int main(void)
                     clothHangerTimer.reset();
                     robotLocation.sendNext();
                     accelAlgorithm.setPositionChangedFlag();
-                    rojarArm[whichMecha].setHeight(1910);
+                    rojarArm[whichMecha].setHeight(1800);
                     rojarArm[whichMecha].update();
                     wayPointSignature++;
                   }
@@ -1376,7 +1381,7 @@ int main(void)
               {
                 robotLocation.sendNext(); //7
                 accelAlgorithm.setPositionChangedFlag();
-                rojarArm[whichMecha].setHeight(1530);
+                rojarArm[whichMecha].setHeight(1700);
                 rojarArm[whichMecha].update();
                 clothHangerTimer.stop();
                 clothHangerTimer.reset();
