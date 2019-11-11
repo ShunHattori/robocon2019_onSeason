@@ -106,10 +106,10 @@ struct parameter
   const double driveDisableRadius = 1.3;
   const int decreaseSpeedCircleRadius = 70;
   const double estimateDriveMaxPWM = 0.45; // max:0.7, recommend:0.64 //DEFAULT 0.5
-  const double estimateDriveMinPWM = 0.1;
+  const double estimateDriveMinPWM = 0.12;
   const double estimatePegMaxPWMSingle = 0.57;
   const double estimatePegMaxPWMDouble = 0.67;
-  const double estimateHangerMaxPWM = 0.6;
+  const double estimateHangerMaxPWM = 0.72;
   const double estimateRojarArmMaxPWM = 0.75;
   const double PegVoltageImpressionTime = 0.666666;
 } Robot;
@@ -1175,6 +1175,7 @@ int main(void)
               }
               break;
             case 11:
+              OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
               rojarArm[whichMecha].setHeight(0);
               rojarArm[whichMecha].setMaxPWM(Robot.estimateRojarArmMaxPWM);
               robotLocation.sendNext();
@@ -1362,7 +1363,7 @@ int main(void)
               wayPointSignature++;
               break;
             case 8:
-              OmniKinematics.setMaxPWM(0.15);
+              OmniKinematics.setMaxPWM(0.16);
               robotLocation.sendNext(); //横移動 6
               accelAlgorithm.setPositionChangedFlag();
               rojarArm[!whichMecha].setHeight(1600); //横移動のタイミングで反対側のロジャーアームを展開し始める
@@ -1458,7 +1459,7 @@ int main(void)
                   armPhaseRight = 2;
                   clothHangerTimer.stop();
                   clothHangerTimer.reset();
-                  rojarArm[whichMecha].setHeight(1350);
+                  rojarArm[whichMecha].setHeight(1500);
                 }
               }
               if (armPhaseRight == 2)
@@ -1482,7 +1483,8 @@ int main(void)
                     clothHangerTimer.reset();
                     robotLocation.sendNext(); //9
                     accelAlgorithm.setPositionChangedFlag();
-                    rojarArm[whichMecha].setHeight(1910);
+                    rojarArm[whichMecha].setMaxPWM(0.4);
+                    rojarArm[whichMecha].setHeight(1800);
                     wayPointSignature++;
                   }
                 }
@@ -1500,7 +1502,7 @@ int main(void)
               wayPointSignature++;
               break;
             case 16:
-              OmniKinematics.setMaxPWM(0.155);
+              OmniKinematics.setMaxPWM(0.17);
               robotLocation.sendNext(); //横移動 10
               accelAlgorithm.setPositionChangedFlag();
               wayPointSignature++;
@@ -1509,25 +1511,28 @@ int main(void)
               static bool initialFlagSec = 1, releasedFlagSec = 0;
               if (initialFlagSec)
               {
-                OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
+                clothHangerTimer.reset();
                 clothHangerTimer.start();
                 initialFlagSec = 0;
               }
-              if (clothHangerTimer.read_ms() > 300)
+              if (clothHangerTimer.read_ms() > 300 && !initialFlagSec && !releasedFlagSec)
               {
                 robotLocation.sendNext(); //11
                 accelAlgorithm.setPositionChangedFlag();
+                rojarArm[whichMecha].setHeight(1700);
                 rojarArm[whichMecha].setMaxPWM(0.35);
-                rojarArm[whichMecha].setHeight(1530);
                 rojarArm[whichMecha].update();
                 clothHangerTimer.stop();
                 clothHangerTimer.reset();
+                clothHangerTimer.start();
                 releasedFlagSec = 1;
               }
-              if (rojarArm[whichMecha].stats() && releasedFlagSec)
+              if (clothHangerTimer.read_ms() > 650 && rojarArm[whichMecha].stats() && releasedFlagSec)
               {
                 holder[whichMecha].half(!whichServo);
                 wayPointSignature++;
+                clothHangerTimer.stop();
+                clothHangerTimer.reset();
                 clothHangerTimer.start();
               }
               break;
@@ -1542,6 +1547,7 @@ int main(void)
               }
               break;
             case 19:
+              OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
               rojarArm[whichMecha].setHeight(0);
               rojarArm[whichMecha].setMaxPWM(Robot.estimateRojarArmMaxPWM);
               robotLocation.sendNext(); //13
@@ -1687,7 +1693,7 @@ int main(void)
                 if (800 < clothHangerTimer.read_ms() && seq == 2)
                 {
                   holder[whichMecha].grasp(whichServo);
-                  rojarArm[whichMecha].setHeight(2540);
+                  rojarArm[whichMecha].setHeight(2540 + 200);
                   rojarArm[whichMecha].update();
                   seq = 3;
                 }
