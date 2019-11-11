@@ -259,6 +259,10 @@ int main(void)
 #ifdef GAME_MODECHANGE_CTP
 
   IMU.setup();
+  uint8_t UIFLEDData[2];
+  UIFLEDData[0] = 0; //race
+  UIFLEDData[1] = 2; //both
+  UIF.transmit(2, UIFLEDData);
   while (1)
   {
     /*if (getRobotModeWithSwitch())
@@ -580,6 +584,9 @@ int main(void)
             accelAlgorithm.setPositionChangedFlag();
             accelAlgorithm.update();
             wayPointSignature++;
+            UIFLEDData[0] = 0;
+            UIFLEDData[1] = 2;
+            UIF.transmit(2, UIFLEDData);
           }
           flag++;
         }
@@ -591,6 +598,8 @@ int main(void)
               OmniKinematics.setMaxPWM(0.2); //0.12
               accelAlgorithm.setAllocateErrorCircleRadius(Robot.permitErrorCircleRadius);
               updateLimitSwitchBar();
+              UIFLEDData[0] = 1;
+              UIF.transmit(2, UIFLEDData);
               if (!getLimitSwitchBarStats())
               {
                 robotLocation.setCurrentPoint(robotLocation.getXLocationData(), robotLocation.getYLocationData() - 15, robotLocation.getYawStatsData());
@@ -609,6 +618,9 @@ int main(void)
                 static int initialHangerFlag = 1;
                 if (initialHangerFlag) //ロジャー展開後初めての処理
                 {
+                  UIFLEDData[0] = 2;
+                  UIFLEDData[1] = currentRunningMode > 9 ? 0 : 1;
+                  UIF.transmit(2, UIFLEDData);
                   hanger[whichMecha].setMaxPWM(0.4);
                   hanger[whichMecha].setLength(1020); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
                   hanger[whichMecha].update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
@@ -716,6 +728,9 @@ int main(void)
             case 7:
               if (650 < clothHangerTimer.read_ms())
               {
+                UIFLEDData[0] = 0;
+                UIFLEDData[1] = 2;
+                UIF.transmit(2, UIFLEDData);
                 robotLocation.sendNext();
                 accelAlgorithm.setPositionChangedFlag();
                 wayPointSignature++;
