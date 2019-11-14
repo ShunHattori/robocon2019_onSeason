@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SensorSource\DebounceSwitch.h"
+#include "SensorSource\QEI.h"
 #include "mbed.h"
 
 class ClothHang
@@ -9,7 +10,7 @@ public:
   /*
         PWM割り当てがされているピンx2
     */
-  ClothHang(double *, DebounceSwitch &);
+  ClothHang(double *, DebounceSwitch &, QEI &);
 
   /*
         現在の移動状況を取得する　(移動完了== 1, 移動中 == 0)
@@ -38,8 +39,9 @@ public:
 
 private:
   DebounceSwitch *upsideLimitSW;
+  QEI *encoder;
   double *motorPWM;
   int16_t lenghtTarget, lenghtCurrent, lenghtBias;
   double pwm, aroundZeroPointPWM;
-  bool isTargetLenghtAroundZeroPoint;
+  bool isTargetLenghtAroundZeroPoint, flag;
 };

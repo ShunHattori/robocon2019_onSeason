@@ -1,8 +1,9 @@
 #include "ClothHang.h"
 
-ClothHang::ClothHang(double* variableToStore, DebounceSwitch& mySwitch)
+ClothHang::ClothHang(double* variableToStore, DebounceSwitch& mySwitch, QEI& myEncoder)
 {
   upsideLimitSW = &mySwitch;
+  encoder = &myEncoder;
   motorPWM = variableToStore;
   lenghtCurrent = 0;
   lenghtTarget = 0;
@@ -26,15 +27,17 @@ bool ClothHang::stats(void)
 void ClothHang::setLength(int targetValue)
 {
   if (!targetValue)
+  {
     isTargetLenghtAroundZeroPoint = 1;
+  }
   else
     isTargetLenghtAroundZeroPoint = 0;
-  lenghtTarget = targetValue;
+  lenghtTarget = flag ? targetValue + 100 : targetValue;
 }
 
 void ClothHang::setEncoderPulse(int pulse)
 {
-  lenghtCurrent = lenghtBias + pulse;
+  lenghtCurrent = pulse;
 }
 
 void ClothHang::setMaxPWM(double targetPwm)
@@ -44,11 +47,12 @@ void ClothHang::setMaxPWM(double targetPwm)
 
 void ClothHang::update(void)
 {
-  printf("%d\t%d\t%d\r\n", lenghtCurrent, lenghtBias, upsideLimitSW->stats());
   upsideLimitSW->update();
-  if (upsideLimitSW->stats())
+  if (upsideLimitSW->stats() && lenghtTarget > 500)
   {
-    lenghtBias = (lenghtTarget - lenghtCurrent) > lenghtBias ? (lenghtTarget - lenghtCurrent) : lenghtBias;
+    encoder->set(lenghtTarget, 0);
+    flag = 1;
+    lenghtCurrent = lenghtTarget;
   }
 
   if ((lenghtTarget - 15) < lenghtCurrent && lenghtCurrent < (lenghtTarget + 15))
