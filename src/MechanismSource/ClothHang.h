@@ -17,10 +17,8 @@ public:
      */
   bool stats(void);
 
-  /*
-        ハンガーの展開長さを指定する
-     */
-  void setLength(int);
+  void setTop();
+  void setBottom();
 
   /*
         エンコーダの値を入力するセッター
@@ -43,5 +41,5 @@ private:
   double *motorPWM;
   int16_t lenghtTarget, lenghtCurrent, lenghtBias;
   double pwm, aroundZeroPointPWM;
-  bool isTargetLenghtAroundZeroPoint, flag;
+  bool isTargetLenghtAroundZeroPoint, flagTop, flagBottom, switchState;
 };

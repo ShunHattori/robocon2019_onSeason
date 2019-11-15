@@ -109,7 +109,7 @@ struct parameter
   const double estimateDriveMinPWM = 0.115;
   const double estimatePegMaxPWMSingle = 0.57;
   const double estimatePegMaxPWMDouble = 0.67;
-  const double estimateHangerMaxPWM = 0.65;
+  const double estimateHangerMaxPWM = 0.6; //65
   const double estimateRojarArmMaxPWM = 0.75;
   const double PegVoltageImpressionTime = 0.666666;
 } Robot;
@@ -624,14 +624,14 @@ int main(void)
                   UIF.transmit(1, UIFLEDData);
 
                   //hanger[whichMecha].setMaxPWM(0.4);
-                  hanger[whichMecha].setLength(1020); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
-                  hanger[whichMecha].update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
+                  hanger[whichMecha].setTop(); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
+                  hanger[whichMecha].update(); //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
                   initialHangerFlag = 0;
                 }
                 if (hanger[whichMecha].stats() && !initialHangerFlag && !hangerHasDoneFlag)
                 {
                   hangerHasDoneFlag = 1;
-                  hanger[whichMecha].setLength(100);
+                  hanger[whichMecha].setBottom();
                   hanger[whichMecha].update();
                   rojarArm[whichMecha].setHeight(0);
                 }
@@ -857,14 +857,14 @@ int main(void)
                   UIF.transmit(1, UIFLEDData);
 
                   //hanger[whichMecha].setMaxPWM(0.4);
-                  hanger[whichMecha].setLength(1020); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
-                  hanger[whichMecha].update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
+                  hanger[whichMecha].setTop(); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
+                  hanger[whichMecha].update(); //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
                   initialHangerFlag = 0;
                 }
                 if (hanger[whichMecha].stats() && !initialHangerFlag && !hangerHasDoneFlag)
                 {
                   hangerHasDoneFlag = 1;
-                  hanger[whichMecha].setLength(100);
+                  hanger[whichMecha].setBottom();
                   hanger[whichMecha].update();
                   rojarArm[whichMecha].setHeight(1270); //洗濯物離すために大幅に下げる
                 }
@@ -1100,14 +1100,14 @@ int main(void)
                   UIFLEDData[0] = 2;
                   UIF.transmit(1, UIFLEDData);
 
-                  hanger[whichMecha].setLength(1020); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
-                  hanger[whichMecha].update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
+                  hanger[whichMecha].setTop(); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
+                  hanger[whichMecha].update(); //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
                   initialHangerFlag = 0;
                 }
                 if (hanger[whichMecha].stats() && !initialHangerFlag && !hangerHasDoneFlag)
                 {
                   hangerHasDoneFlag = 1;
-                  hanger[whichMecha].setLength(100);
+                  hanger[whichMecha].setBottom();
                   hanger[whichMecha].update();
                   rojarArm[whichMecha].setHeight(1270); //洗濯物離すために大幅に下げる
                 }
@@ -1349,14 +1349,14 @@ int main(void)
                   UIFLEDData[0] = 2;
                   UIF.transmit(1, UIFLEDData);
 
-                  hanger[whichMecha].setLength(1020); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
-                  hanger[whichMecha].update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
+                  hanger[whichMecha].setTop(); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
+                  hanger[whichMecha].update(); //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
                   initialHangerFlag = 0;
                 }
                 if (hanger[whichMecha].stats() && !initialHangerFlag && !hangerHasDoneFlagLeft)
                 {
                   hangerHasDoneFlagLeft = 1;
-                  hanger[whichMecha].setLength(100);
+                  hanger[whichMecha].setBottom();
                   hanger[whichMecha].update();
                   rojarArm[whichMecha].setHeight(1270); //洗濯物離すために大幅に下げる
                 }
@@ -1488,14 +1488,14 @@ int main(void)
                 if (initialHangerFlag) //ロジャー展開後初めての処理
                 {
                   //hanger[whichMecha].setMaxPWM(0.4);
-                  hanger[whichMecha].setLength(1020); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
-                  hanger[whichMecha].update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
+                  hanger[whichMecha].setTop(); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
+                  hanger[whichMecha].update(); //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
                   initialHangerFlag = 0;
                 }
                 if (hanger[whichMecha].stats() && !initialHangerFlag && !hangerHasDoneFlagRight)
                 {
                   hangerHasDoneFlagRight = 1;
-                  hanger[whichMecha].setLength(100);
+                  hanger[whichMecha].setBottom();
                   hanger[whichMecha].update();
                   rojarArm[whichMecha].setHeight(1270); //洗濯物離すために大幅に下げる
                 }
@@ -1747,14 +1747,14 @@ int main(void)
                   UIFLEDData[0] = 2;
                   UIF.transmit(1, UIFLEDData);
 
-                  hanger[whichMecha].setLength(1020); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
-                  hanger[whichMecha].update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
+                  hanger[whichMecha].setTop(); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
+                  hanger[whichMecha].update(); //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
                   initialHangerFlag = 0;
                 }
                 if (hanger[whichMecha].stats() && !initialHangerFlag && !hangerHasDoneFlag)
                 {
                   hangerHasDoneFlag = 1;
-                  hanger[whichMecha].setLength(100);
+                  hanger[whichMecha].setBottom();
                   hanger[whichMecha].update();
                 }
               }
@@ -2641,10 +2641,10 @@ void allMechaTestSequence()
     switch (phaseCounter)
     {
       case 1:
-        hanger[left].setLength(300);
+        hanger[left].setTop();
         break;
       case 2:
-        hanger[left].setLength(0);
+        hanger[left].setBottom();
         break;
       default:
         if (hanger[left].stats() && phaseCounter > 2)
@@ -2669,10 +2669,10 @@ void allMechaTestSequence()
     switch (phaseCounter)
     {
       case 1:
-        hanger[right].setLength(300);
+        hanger[right].setTop();
         break;
       case 2:
-        hanger[right].setLength(0);
+        hanger[right].setBottom();
         break;
       default:
         if (hanger[right].stats() && phaseCounter > 2)
