@@ -102,14 +102,15 @@ struct parameter
   const int encoderPPRLow = 48;
   const int encoderPPRHigh = 100;
   const double encoderAttachedWheelRadius = 2.54; //mini(50) omni
-  const double permitErrorCircleRadius = 6.0;
-  const double driveDisableRadius = 1.3;
-  const int decreaseSpeedCircleRadius = 70;
-  const double estimateDriveMaxPWM = 0.52; // max:0.7, recommend:0.64 //DEFAULT 0.5
-  const double estimateDriveMinPWM = 0.11;
+  const double permitErrorCircleRadius = 3;
+  const double driveDisableRadius = 1.2;
+  const int decreaseSpeedCircleRadius = 100;
+  const double estimateDriveMaxPWM = 0.5; // max:0.7, recommend:0.64 //DEFAULT 0.40375
+  const double estimateDriveMinPWM = 0.12;
   const double estimatePegMaxPWMSingle = 0.57;
   const double estimatePegMaxPWMDouble = 0.67;
-  const double estimateHangerMaxPWM = 0.70;
+  const double estimateHangerMaxPWMWithoutSheet = 0.6; //65
+  const double estimateHangerMaxPWMOnlySheet = 0.70;
   const double estimateRojarArmMaxPWM = 0.75;
   const double PegVoltageImpressionTime = 0.666666;
 } Robot;
@@ -185,10 +186,7 @@ Peg pegAttacher[2]{
     Peg(Robot.estimatePegMaxPWMDouble, Robot.PegVoltageImpressionTime, pegAttacherPWM[0]), //pwm, time
     Peg(Robot.estimatePegMaxPWMDouble, Robot.PegVoltageImpressionTime, pegAttacherPWM[1]), //pwm, time
 };
-ClothHang hanger[2]{
-    ClothHang(hangerPWM[right], limitSwitchClothHanger[right]),
-    ClothHang(hangerPWM[left], limitSwitchClothHanger[left]),
-};
+
 RojarArm rojarArm[2]{
     RojarArm(rojarArmPWM[right], limitSwitchRojarArm[right]),
     RojarArm(rojarArmPWM[left], limitSwitchRojarArm[left]),
@@ -200,6 +198,11 @@ QEI clothHangEncoder[2]{
 QEI rojarArmEncoder[2]{
     QEI(MecaPin.rojarArmRightEncoderAPulse, MecaPin.rojarArmRightEncoderBPulse, NC, Robot.encoderPPRLow, &TimerForQEI, QEI::X4_ENCODING),
     QEI(MecaPin.rojarArmLeftEncoderAPulse, MecaPin.rojarArmLeftEncoderBPulse, NC, Robot.encoderPPRLow, &TimerForQEI, QEI::X4_ENCODING),
+};
+
+ClothHang hanger[2]{
+    ClothHang(hangerPWM[right], limitSwitchClothHanger[right], clothHangEncoder[right]),
+    ClothHang(hangerPWM[left], limitSwitchClothHanger[left], clothHangEncoder[left]),
 };
 
 QEI encoderXAxis(OdometryPin.XAxisAPulse, OdometryPin.XAxisBPulse, OdometryPin.XAxisIndexPulse, Robot.encoderPPRHigh, &TimerForQEI, QEI::X4_ENCODING);
@@ -248,7 +251,7 @@ int main(void)
   accelAlgorithm.setCurrentXPosition((double)FieldBias.XAxis);
   for (int i = 0; i < 2; i++)
   {
-    hanger[i].setMaxPWM(Robot.estimateHangerMaxPWM);
+    hanger[i].setMaxPWM(Robot.estimateHangerMaxPWMWithoutSheet);
     rojarArm[i].setMaxPWM(Robot.estimateRojarArmMaxPWM);
     holder[i].free(right);
     holder[i].free(left);
@@ -259,6 +262,9 @@ int main(void)
 #ifdef GAME_MODECHANGE_CTP
 
   IMU.setup();
+  uint8_t UIFLEDData[1];
+  UIFLEDData[0] = 0; //race
+  UIF.transmit(1, UIFLEDData);
   while (1)
   {
     /*if (getRobotModeWithSwitch())
@@ -290,14 +296,14 @@ int main(void)
     case RED_FRONT_PRE_bathTowelLeft:
       whichMecha = left;
       whichServo = left;
-      robotLocation.addPoint((117), -(200));              //近づいてリミット監視開始 初期位置ずれてるから長めになってる！
+      robotLocation.addPoint((117), -(200));      //近づいてリミット監視開始 初期位置ずれてるから長めになってる！
       robotLocation.addPoint((210), -(190));      //竿目印のところまで移動(ちょっと後ろ目)
       robotLocation.addPoint((210), -(190));      //ハサミつく位置まで前に
       robotLocation.addPoint((210), -(190));      //最初に直進 //198
-      robotLocation.addPoint((210 + 97), -(200)); //洗濯物横に引っ張る //202
-      robotLocation.addPoint((210 + 97), -(190)); //ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint((210 + 97), -(170));
-      robotLocation.addPoint(20, 30); //初期位置
+      robotLocation.addPoint((210 + 95), -(200)); //洗濯物横に引っ張る //202
+      robotLocation.addPoint((210 + 95), -(190)); //ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint((210 + 95), -(170));
+      robotLocation.addPoint(30, 30); //初期位置
       break;
     case RED_MIDDLE_PRE_bathTowelLeft:
       whichMecha = left;
@@ -311,8 +317,8 @@ int main(void)
       robotLocation.addPoint((203 + 40 + 5), -(400)); //洗濯物横に引っ張る
       robotLocation.addPoint((203 + 40 + 5), -(390)); //ロジャー降ろしながら後ろに引く
       robotLocation.addPoint((203 + 40 + 5), -(370));
-      robotLocation.addPoint(50, -(335)); //直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(20, 30);     //初期位置
+      robotLocation.addPoint(55, -(335)); //直線移動できる位置まで戻ってくる
+      robotLocation.addPoint(30, 30);     //初期位置
       break;
     case RED_MIDDLE_PRE_bathTowelRight:
       whichMecha = right;
@@ -323,11 +329,11 @@ int main(void)
       robotLocation.addPoint((247 + 5 + 1), -(390));      //ハサミつく位置まで前に
       robotLocation.addPoint((247 + 5 + 1), -(390));      //最初に直進
       robotLocation.addPoint((247 + 5 + 1), -(400));      //引っ張る前に前に進む
-      robotLocation.addPoint((247 + 97 + 5 + 1), -(400)); //洗濯物横に引っ張る
-      robotLocation.addPoint((247 + 97 + 5 + 1), -(385)); //ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint((247 + 97 + 5 + 1), -(370));
-      robotLocation.addPoint(50, -(335)); //直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(20, 30);     //初期位置
+      robotLocation.addPoint((247 + 95 + 5 + 1), -(400)); //洗濯物横に引っ張る
+      robotLocation.addPoint((247 + 95 + 5 + 1), -(385)); //ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint((247 + 95 + 5 + 1), -(370));
+      robotLocation.addPoint(55, -(335)); //直線移動できる位置まで戻ってくる
+      robotLocation.addPoint(30, 30);     //初期位置
       break;
     case RED_MIDDLE_PRE_bathTowelboth:
       whichMecha = left; //途中で変わる!!
@@ -343,11 +349,11 @@ int main(void)
       robotLocation.addPoint((245 + 5 + 1), -(390));      //8竿目印のところまで移動     2つ目！
       robotLocation.addPoint((245 + 5 + 1), -(390));      //9ハサミつく位置まで前に
       robotLocation.addPoint((245 + 5 + 1), -(400));      //引っ張る前に前に進む
-      robotLocation.addPoint((245 + 97 + 5 + 1), -(400)); //10洗濯物横に引っ張る
-      robotLocation.addPoint((245 + 97 + 5 + 1), -(385)); //11ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint((245 + 97 + 5 + 1), -(370)); //12
-      robotLocation.addPoint(50, -(335));                 //13直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(20, 30);                     //14初期位置
+      robotLocation.addPoint((245 + 95 + 5 + 1), -(400)); //10洗濯物横に引っ張る
+      robotLocation.addPoint((245 + 95 + 5 + 1), -(385)); //11ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint((245 + 95 + 5 + 1), -(370)); //12
+      robotLocation.addPoint(55, -(335));                 //13直線移動できる位置まで戻ってくる
+      robotLocation.addPoint(30, 30);                     //14初期位置
       break;
     case RED_MIDDLE_FINAL_bathTowelLeft:
       whichMecha = left;
@@ -361,8 +367,8 @@ int main(void)
       robotLocation.addPoint((180 + 100), -(400)); //洗濯物横に引っ張る
       robotLocation.addPoint((180 + 100), -(385)); //ロジャー降ろしながら後ろに引く
       robotLocation.addPoint((180 + 100), -(370));
-      robotLocation.addPoint(50, -(335)); //直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(20, 30);     //初期位置
+      robotLocation.addPoint(55, -(335)); //直線移動できる位置まで戻ってくる
+      robotLocation.addPoint(30, 30);     //初期位置
       break;
     case RED_MIDDLE_FINAL_bathTowelRight:
       whichMecha = right;
@@ -376,8 +382,8 @@ int main(void)
       robotLocation.addPoint((273 + 100), -(400)); //洗濯物横に引っ張る
       robotLocation.addPoint((273 + 100), -(385)); //ロジャー降ろしながら後ろに引く
       robotLocation.addPoint((273 + 100), -(370));
-      robotLocation.addPoint(50, -(335)); //直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(20, 30);     //初期位置
+      robotLocation.addPoint(55, -(335)); //直線移動できる位置まで戻ってくる
+      robotLocation.addPoint(30, 30);     //初期位置
       break;
     case RED_MIDDLE_FINAL_bathTowelboth:
       whichMecha = left; //途中で変わる!!
@@ -396,32 +402,33 @@ int main(void)
       robotLocation.addPoint((273 + 100 + 5), -(400)); //10洗濯物横に引っ張る
       robotLocation.addPoint((273 + 100 + 5), -(385)); //11ロジャー降ろしながら後ろに引く
       robotLocation.addPoint((273 + 100 + 5), -(370)); //12
-      robotLocation.addPoint(50, -(335));              //13直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(20, 30);                  //14初期位置
+      robotLocation.addPoint(55, -(335));              //13直線移動できる位置まで戻ってくる
+      robotLocation.addPoint(30, 30);                  //14初期位置
       break;
     case RED_BACK_PRE_Sheets:
     case RED_BACK_FINAL_Sheets:
       whichMecha = right;
       whichServo = left;
-      robotLocation.addPoint(20, -(535));
+      robotLocation.addPoint(20, -(560));
       robotLocation.addPoint((138), -(570));
       robotLocation.addPoint((170), -(590));
       robotLocation.addPoint((340), -(603));
       robotLocation.addPoint((375), -(575));
-      robotLocation.addPoint(50, -(535));
-      robotLocation.addPoint(20, 20);
+      robotLocation.addPoint((375), -(560));
+      robotLocation.addPoint(55, -(535));
+      robotLocation.addPoint(30, 25);
       break;
     case BLUE_FRONT_PRE_bathTowelRight:
       whichMecha = right;
       whichServo = right;
-      robotLocation.addPoint(-(117), -(200));       //近づいてリミット監視開始 初期位置ずれてるから長めになってる！
-      robotLocation.addPoint(-(207), -(190));       //竿目印のところまで移動(ちょっと後ろ目)
-      robotLocation.addPoint(-(207), -(190));       //ハサミつく位置まで前に
-      robotLocation.addPoint(-(207), -(190));       //最初に直進 //198
-      robotLocation.addPoint(-(207 + 97), -(200)); //洗濯物横に引っ張る //202
-      robotLocation.addPoint(-(207 + 97), -(190)); //ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint(-(207 + 97), -(170));
-      robotLocation.addPoint(-20, 30); //初期位置
+      robotLocation.addPoint(-(117), -(200));      //近づいてリミット監視開始 初期位置ずれてるから長めになってる！
+      robotLocation.addPoint(-(207), -(190));      //竿目印のところまで移動(ちょっと後ろ目)
+      robotLocation.addPoint(-(207), -(190));      //ハサミつく位置まで前に
+      robotLocation.addPoint(-(207), -(190));      //最初に直進 //198
+      robotLocation.addPoint(-(207 + 95), -(200)); //洗濯物横に引っ張る //202
+      robotLocation.addPoint(-(207 + 95), -(190)); //ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint(-(207 + 95), -(170));
+      robotLocation.addPoint(-30, 30); //初期位置
       break;
     case BLUE_MIDDLE_PRE_bathTowelRight:
       whichMecha = right;
@@ -435,8 +442,8 @@ int main(void)
       robotLocation.addPoint(-(193 + 40), -(400)); //洗濯物横に引っ張る
       robotLocation.addPoint(-(193 + 40), -(390)); //ロジャー降ろしながら後ろに引く
       robotLocation.addPoint(-(193 + 40), -(370));
-      robotLocation.addPoint(-50, -(335)); //直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(-20, 30);     //初期位置
+      robotLocation.addPoint(-55, -(335)); //直線移動できる位置まで戻ってくる
+      robotLocation.addPoint(-30, 30);     //初期位置
       break;
     case BLUE_MIDDLE_PRE_bathTowelLeft:
       whichMecha = left; //バスタオル1.5m縦掛け
@@ -447,11 +454,11 @@ int main(void)
       robotLocation.addPoint(-(249), -(390));      //ハサミつく位置まで前に
       robotLocation.addPoint(-(249), -(390));      //最初に直進
       robotLocation.addPoint(-(249), -(400));      //引っ張る前に前に進む
-      robotLocation.addPoint(-(249 + 97), -(400)); //洗濯物横に引っ張る
-      robotLocation.addPoint(-(249 + 97), -(385)); //ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint(-(249 + 97), -(370));
-      robotLocation.addPoint(-50, -(335)); //直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(-20, 30);     //初期位置
+      robotLocation.addPoint(-(249 + 95), -(400)); //洗濯物横に引っ張る
+      robotLocation.addPoint(-(249 + 95), -(385)); //ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint(-(249 + 95), -(370));
+      robotLocation.addPoint(-55, -(335)); //直線移動できる位置まで戻ってくる
+      robotLocation.addPoint(-30, 30);     //初期位置
       break;
     case BLUE_MIDDLE_PRE_bathTowelboth:
       whichMecha = right; //途中で変わる!!
@@ -467,11 +474,11 @@ int main(void)
       robotLocation.addPoint(-(249), -(390));      //8竿目印のところまで移動     2つ目！
       robotLocation.addPoint(-(249), -(390));      //9ハサミつく位置まで前に
       robotLocation.addPoint(-(249), -(400));      //引っ張る前に前に進む
-      robotLocation.addPoint(-(249 + 97), -(400)); //10洗濯物横に引っ張る
-      robotLocation.addPoint(-(249 + 97), -(385)); //11ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint(-(249 + 97), -(370)); //12
-      robotLocation.addPoint(-50, -(335));         //13直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(-20, 30);             //14初期位置
+      robotLocation.addPoint(-(249 + 95), -(400)); //10洗濯物横に引っ張る
+      robotLocation.addPoint(-(249 + 95), -(385)); //11ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint(-(249 + 95), -(370)); //12
+      robotLocation.addPoint(-55, -(335));         //13直線移動できる位置まで戻ってくる
+      robotLocation.addPoint(-30, 30);             //14初期位置
       break;
     case BLUE_MIDDLE_FINAL_bathTowelRight:
       whichMecha = right;
@@ -482,11 +489,11 @@ int main(void)
       robotLocation.addPoint(-(180), -(390));       //ハサミつく位置まで前に
       robotLocation.addPoint(-(180), -(390));       //最初に直進
       robotLocation.addPoint(-(180), -(400));       //
-      robotLocation.addPoint(-(180 + 103), -(400)); //洗濯物横に引っ張る
-      robotLocation.addPoint(-(180 + 103), -(390)); //ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint(-(180 + 103), -(370));
-      robotLocation.addPoint(-50, -(335)); //直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(-20, 30);     //初期位置
+      robotLocation.addPoint(-(180 + 95), -(400)); //洗濯物横に引っ張る
+      robotLocation.addPoint(-(180 + 95), -(390)); //ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint(-(180 + 95), -(370));
+      robotLocation.addPoint(-55, -(335)); //直線移動できる位置まで戻ってくる
+      robotLocation.addPoint(-30, 30);     //初期位置
       break;
     case BLUE_MIDDLE_FINAL_bathTowelLeft:
       whichMecha = left;
@@ -497,11 +504,11 @@ int main(void)
       robotLocation.addPoint(-(275), -(390));       //ハサミつく位置まで前に
       robotLocation.addPoint(-(275), -(390));       //最初に直進
       robotLocation.addPoint(-(275), -(400));       //
-      robotLocation.addPoint(-(275 + 103), -(400)); //洗濯物横に引っ張る
-      robotLocation.addPoint(-(275 + 103), -(390)); //ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint(-(275 + 103), -(370));
-      robotLocation.addPoint(-50, -(335)); //直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(-20, 30);     //初期位置
+      robotLocation.addPoint(-(275 + 95), -(400)); //洗濯物横に引っ張る
+      robotLocation.addPoint(-(275 + 95), -(390)); //ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint(-(275 + 95), -(370));
+      robotLocation.addPoint(-55, -(335)); //直線移動できる位置まで戻ってくる
+      robotLocation.addPoint(-30, 30);     //初期位置
       break;
     case BLUE_MIDDLE_FINAL_bathTowelboth:
       whichMecha = right; //途中で変わる!!
@@ -512,28 +519,29 @@ int main(void)
       robotLocation.addPoint(-(180), -(390));       //4ハサミつく位置まで前に
       robotLocation.addPoint(-(180), -(390));       //5最初に直進
       robotLocation.addPoint(-(180), -(400));       //
-      robotLocation.addPoint(-(180 + 103), -(400)); //6洗濯物横に引っ張る
-      robotLocation.addPoint(-(180 + 103), -(390)); //7ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint(-(180 + 95), -(400)); //6洗濯物横に引っ張る
+      robotLocation.addPoint(-(180 + 95), -(390)); //7ロジャー降ろしながら後ろに引く
       robotLocation.addPoint(-(275), -(390));       //8竿目印のところまで移動     2つ目！
       robotLocation.addPoint(-(275), -(390));       //9ハサミつく位置まで前に
       robotLocation.addPoint(-(275), -(400));       //
-      robotLocation.addPoint(-(275 + 103), -(400)); //10洗濯物横に引っ張る
-      robotLocation.addPoint(-(275 + 103), -(385)); //11ロジャー降ろしながら後ろに引く
-      robotLocation.addPoint(-(275 + 103), -(370)); //12
-      robotLocation.addPoint(-50, -(335));          //13直線移動できる位置まで戻ってくる
-      robotLocation.addPoint(-20, 30);              //14初期位置
+      robotLocation.addPoint(-(275 + 95), -(400)); //10洗濯物横に引っ張る
+      robotLocation.addPoint(-(275 + 95), -(385)); //11ロジャー降ろしながら後ろに引く
+      robotLocation.addPoint(-(275 + 95), -(370)); //12
+      robotLocation.addPoint(-55, -(335));          //13直線移動できる位置まで戻ってくる
+      robotLocation.addPoint(-30, 30);              //14初期位置
       break;
     case BLUE_BACK_PRE_Sheets:
     case BLUE_BACK_FINAL_Sheets:
       whichMecha = left;
       whichServo = right;
-      robotLocation.addPoint(-20, -(535));
-      robotLocation.addPoint(-(138), -(570));
+      robotLocation.addPoint(-20, -(560));
+      robotLocation.addPoint(-(138), -(570)); //138
       robotLocation.addPoint(-(170), -(590));
       robotLocation.addPoint(-(340), -(603));
       robotLocation.addPoint(-(375), -(575));
-      robotLocation.addPoint(-50, -(535));
-      robotLocation.addPoint(-20, 20);
+      robotLocation.addPoint(-(375), -(560));
+      robotLocation.addPoint(-55, -(535));
+      robotLocation.addPoint(-30, 25);
       break;
   }
   for (int i = 0; i < 2; i++)
@@ -574,12 +582,14 @@ int main(void)
             accelAlgorithm.setCurrentYPosition(-(190));
             robotLocation.setCurrentPoint(robotLocation.getXLocationData(), -(190), robotLocation.getYawStatsData());
             //IMU.setYaw(0);
-            rojarArm[whichMecha].setHeight(300);
+            rojarArm[whichMecha].setHeight(300 - 300);
             OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
             robotLocation.sendNext();
             accelAlgorithm.setPositionChangedFlag();
             accelAlgorithm.update();
             wayPointSignature++;
+            UIFLEDData[0] = 0;
+            UIF.transmit(1, UIFLEDData);
           }
           flag++;
         }
@@ -591,6 +601,9 @@ int main(void)
               OmniKinematics.setMaxPWM(0.2); //0.12
               accelAlgorithm.setAllocateErrorCircleRadius(Robot.permitErrorCircleRadius);
               updateLimitSwitchBar();
+              UIFLEDData[0] = 1;
+              UIF.transmit(1, UIFLEDData);
+
               if (!getLimitSwitchBarStats())
               {
                 robotLocation.setCurrentPoint(robotLocation.getXLocationData(), robotLocation.getYLocationData() - 15, robotLocation.getYawStatsData());
@@ -600,6 +613,7 @@ int main(void)
             case 2:
               robotLocation.sendNext();
               accelAlgorithm.setPositionChangedFlag();
+              accelAlgorithm.setAllocateErrorCircleRadius(Robot.driveDisableRadius);
               wayPointSignature++;
               break;
             case 3:
@@ -609,14 +623,19 @@ int main(void)
                 static int initialHangerFlag = 1;
                 if (initialHangerFlag) //ロジャー展開後初めての処理
                 {
-                  hanger[whichMecha].setLength(1020); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
-                  hanger[whichMecha].update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
+                  accelAlgorithm.setAllocateErrorCircleRadius(Robot.permitErrorCircleRadius);
+                  UIFLEDData[0] = 2;
+                  UIF.transmit(1, UIFLEDData);
+
+                  //hanger[whichMecha].setMaxPWM(0.4);
+                  hanger[whichMecha].setTop(); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
+                  hanger[whichMecha].update(); //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
                   initialHangerFlag = 0;
                 }
                 if (hanger[whichMecha].stats() && !initialHangerFlag && !hangerHasDoneFlag)
                 {
                   hangerHasDoneFlag = 1;
-                  hanger[whichMecha].setLength(100);
+                  hanger[whichMecha].setBottom();
                   hanger[whichMecha].update();
                   rojarArm[whichMecha].setHeight(0);
                 }
@@ -626,6 +645,7 @@ int main(void)
                 static unsigned int seq = 1, timerStartFlag = 1;
                 if (timerStartFlag)
                 {
+                  clothHangerTimer.reset();
                   clothHangerTimer.start();
                   timerStartFlag = 0;
                 }
@@ -634,12 +654,12 @@ int main(void)
                   holder[whichMecha].release(whichServo);
                   seq = 2;
                 }
-                if (1300 < clothHangerTimer.read_ms() && seq == 2)
+                if (900 < clothHangerTimer.read_ms() && seq == 2)
                 {
                   holder[whichMecha].grasp(whichServo);
                   seq = 3;
                 }
-                if (2200 < clothHangerTimer.read_ms() && seq == 3)
+                if (1800 < clothHangerTimer.read_ms() && seq == 3)
                 {
                   armPhase = 2;
                   clothHangerTimer.stop();
@@ -713,8 +733,10 @@ int main(void)
               }
               break;
             case 7:
-              if (650 < clothHangerTimer.read_ms())
+              if (655 < clothHangerTimer.read_ms())
               {
+                UIFLEDData[0] = 0;
+                UIF.transmit(1, UIFLEDData);
                 robotLocation.sendNext();
                 accelAlgorithm.setPositionChangedFlag();
                 wayPointSignature++;
@@ -756,9 +778,11 @@ int main(void)
         updateLimitSwitchSide();
         if (getLimitSwitchSide(9 < currentRunningMode ? right : left) && wayPointSignature == 1 && initialWayPointPassedFlag)
         {
+          UIFLEDData[0] = 0;
+          UIF.transmit(1, UIFLEDData);
           robotLocation.setCurrentPoint(0, accelAlgorithm.getCurrentYPosition(), 0); //フェンス方向に過剰修正したx軸ターゲット座標を0に設定
           accelAlgorithm.setCurrentXPosition(0);                                     //x軸方向ロボットの自己位置を0に修正
-          IMU.setYaw(0);
+          //IMU.setYaw(0);
           wayPointSignature++;
         }
         if (getLimitSwitchBarStats() && wayPointSignature == 3)
@@ -775,12 +799,14 @@ int main(void)
           {
             accelAlgorithm.setCurrentYPosition(-(390));
             robotLocation.setCurrentPoint(robotLocation.getXLocationData(), -(390), robotLocation.getYawStatsData());
-            IMU.setYaw(0);
+            //IMU.setYaw(0);
             OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
             robotLocation.sendNext();
             accelAlgorithm.setPositionChangedFlag();
             accelAlgorithm.update();
             wayPointSignature++;
+            UIFLEDData[0] = 0;
+            UIF.transmit(1, UIFLEDData);
           }
           flag++;
         }
@@ -792,6 +818,9 @@ int main(void)
               initialWayPointPassedFlag = 1;
               accelAlgorithm.setAllocateErrorCircleRadius(Robot.permitErrorCircleRadius);
               updateLimitSwitchSide();
+              UIFLEDData[0] = 1;
+              UIF.transmit(1, UIFLEDData);
+
               if (!getLimitSwitchSide(9 < currentRunningMode ? right : left))
               {
                 robotLocation.setCurrentPoint(robotLocation.getXLocationData() + (9 < currentRunningMode ? 10 : -10), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
@@ -802,13 +831,16 @@ int main(void)
               OmniKinematics.setMaxPWM(0.3);
               robotLocation.sendNext();
               accelAlgorithm.setPositionChangedFlag();
-              rojarArm[whichMecha].setHeight(1600); //押し出す前に大幅に上げる
+              rojarArm[whichMecha].setHeight(1600 - 300); //押し出す前に大幅に上げる
               wayPointSignature++;
               break;
             case 3:
               updateLimitSwitchBar();
               if (!getLimitSwitchBarStats())
               {
+                UIFLEDData[0] = 1;
+                UIF.transmit(1, UIFLEDData);
+
                 robotLocation.setCurrentPoint(robotLocation.getXLocationData(), robotLocation.getYLocationData() - 20, robotLocation.getYawStatsData());
                 break;
               }
@@ -816,6 +848,7 @@ int main(void)
             case 4:
               robotLocation.sendNext();
               accelAlgorithm.setPositionChangedFlag();
+              accelAlgorithm.setAllocateErrorCircleRadius(Robot.driveDisableRadius);
               wayPointSignature++;
               break;
             case 5:
@@ -825,14 +858,19 @@ int main(void)
                 static int initialHangerFlag = 1;
                 if (initialHangerFlag) //ロジャー展開後初めての処理
                 {
-                  hanger[whichMecha].setLength(1020); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
-                  hanger[whichMecha].update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
+                  accelAlgorithm.setAllocateErrorCircleRadius(Robot.permitErrorCircleRadius);
+                  UIFLEDData[0] = 2;
+                  UIF.transmit(1, UIFLEDData);
+
+                  //hanger[whichMecha].setMaxPWM(0.4);
+                  hanger[whichMecha].setTop(); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
+                  hanger[whichMecha].update(); //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
                   initialHangerFlag = 0;
                 }
                 if (hanger[whichMecha].stats() && !initialHangerFlag && !hangerHasDoneFlag)
                 {
                   hangerHasDoneFlag = 1;
-                  hanger[whichMecha].setLength(100);
+                  hanger[whichMecha].setBottom();
                   hanger[whichMecha].update();
                   rojarArm[whichMecha].setHeight(1270); //洗濯物離すために大幅に下げる
                 }
@@ -850,17 +888,17 @@ int main(void)
                   holder[whichMecha].release(whichServo);
                   seq = 2;
                 }
-                if (1300 < clothHangerTimer.read_ms() && seq == 2)
+                if (900 < clothHangerTimer.read_ms() && seq == 2)
                 {
                   holder[whichMecha].grasp(whichServo);
                   seq = 3;
                 }
-                if (2200 < clothHangerTimer.read_ms() && seq == 3)
+                if (1800 < clothHangerTimer.read_ms() && seq == 3)
                 {
                   armPhase = 2;
                   clothHangerTimer.stop();
                   clothHangerTimer.reset();
-                  rojarArm[whichMecha].setHeight(1500);
+                  rojarArm[whichMecha].setHeight(1550);
                 }
               }
               if (armPhase == 2)
@@ -884,7 +922,7 @@ int main(void)
                     clothHangerTimer.reset();
                     robotLocation.sendNext();
                     accelAlgorithm.setPositionChangedFlag();
-                    rojarArm[whichMecha].setHeight(1910); //2100
+                    rojarArm[whichMecha].setHeight(1800); //2100
                     wayPointSignature++;
                   }
                 }
@@ -911,31 +949,35 @@ int main(void)
               static bool initialFlag = 1, releasedFlag = 0;
               if (initialFlag)
               {
-                OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
                 clothHangerTimer.start();
                 initialFlag = 0;
               }
-              if (clothHangerTimer.read_ms() > 300)
+              if (clothHangerTimer.read_ms() > 300 && !initialFlag && !releasedFlag)
               {
                 robotLocation.sendNext();
                 accelAlgorithm.setPositionChangedFlag();
-                rojarArm[whichMecha].setHeight(1530);
+                rojarArm[whichMecha].setHeight(1700);
                 rojarArm[whichMecha].setMaxPWM(0.35);
                 rojarArm[whichMecha].update();
                 clothHangerTimer.stop();
                 clothHangerTimer.reset();
+                clothHangerTimer.start();
                 releasedFlag = 1;
               }
-              if (rojarArm[whichMecha].stats() && releasedFlag)
+              if (clothHangerTimer.read_ms() > 650 && rojarArm[whichMecha].stats() && releasedFlag)
               {
                 holder[whichMecha].half(!whichServo);
                 wayPointSignature++;
+                clothHangerTimer.stop();
+                clothHangerTimer.reset();
                 clothHangerTimer.start();
               }
               break;
             case 10:
               if (650 < clothHangerTimer.read_ms())
               {
+                UIFLEDData[0] = 0;
+                UIF.transmit(1, UIFLEDData);
                 robotLocation.sendNext();
                 accelAlgorithm.setPositionChangedFlag();
                 wayPointSignature++;
@@ -944,6 +986,7 @@ int main(void)
               }
               break;
             case 11:
+              OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
               rojarArm[whichMecha].setHeight(0);
               rojarArm[whichMecha].setMaxPWM(Robot.estimateRojarArmMaxPWM);
               robotLocation.sendNext();
@@ -961,10 +1004,10 @@ int main(void)
             case 13:
               holder[whichMecha].free(!whichServo);
               holder[whichMecha].free(whichServo);
-              while (1)
-              {
-                allUpdate();
-              }
+              wayPointSignature++;
+              break;
+            case 14:
+              robotLocation.setCurrentPoint(robotLocation.getXLocationData() + (9 < currentRunningMode ? 10 : -10), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
               break;
             default:
               while (1)
@@ -980,6 +1023,8 @@ int main(void)
         updateLimitSwitchBar();
         if (getLimitSwitchSide(9 < currentRunningMode ? right : left) && wayPointSignature == 1 && initialWayPointPassedFlag)
         {
+          UIFLEDData[0] = 0;
+          UIF.transmit(1, UIFLEDData);
           robotLocation.setCurrentPoint(0, accelAlgorithm.getCurrentYPosition(), 0); //フェンス方向に過剰修正したx軸ターゲット座標を0に設定
           accelAlgorithm.setCurrentXPosition(0);                                     //x軸方向ロボットの自己位置を0に修正
           IMU.setYaw(0);
@@ -999,12 +1044,14 @@ int main(void)
           {
             accelAlgorithm.setCurrentYPosition(-(390));
             robotLocation.setCurrentPoint(robotLocation.getXLocationData(), -(390), robotLocation.getYawStatsData());
-            IMU.setYaw(0);
+            //IMU.setYaw(0);
             OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
             robotLocation.sendNext();
             accelAlgorithm.setPositionChangedFlag();
             accelAlgorithm.update();
             wayPointSignature++;
+            UIFLEDData[0] = 0;
+            UIF.transmit(1, UIFLEDData);
           }
           flag++;
         }
@@ -1016,6 +1063,9 @@ int main(void)
               initialWayPointPassedFlag = 1;
               accelAlgorithm.setAllocateErrorCircleRadius(Robot.permitErrorCircleRadius);
               updateLimitSwitchSide();
+              UIFLEDData[0] = 1;
+              UIF.transmit(1, UIFLEDData);
+
               if (!getLimitSwitchSide(9 < currentRunningMode ? right : left))
               {
                 robotLocation.setCurrentPoint(robotLocation.getXLocationData() + (9 < currentRunningMode ? 10 : -10), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
@@ -1025,13 +1075,17 @@ int main(void)
               OmniKinematics.setMaxPWM(0.3);
               robotLocation.sendNext();
               accelAlgorithm.setPositionChangedFlag();
-              rojarArm[whichMecha].setHeight(1600); //押し出す前に大幅に上げる
+              rojarArm[whichMecha].setHeight(1600 - 300); //押し出す前に大幅に上げる
               wayPointSignature++;
               break;
             case 3:
               updateLimitSwitchBar();
               if (!getLimitSwitchBarStats())
               {
+
+                UIFLEDData[0] = 1;
+                UIF.transmit(1, UIFLEDData);
+
                 robotLocation.setCurrentPoint(robotLocation.getXLocationData(), robotLocation.getYLocationData() - 20, robotLocation.getYawStatsData());
                 break;
               }
@@ -1039,6 +1093,7 @@ int main(void)
             case 4:
               robotLocation.sendNext();
               accelAlgorithm.setPositionChangedFlag();
+              accelAlgorithm.setAllocateErrorCircleRadius(Robot.driveDisableRadius);
               wayPointSignature++;
               break;
             case 5:
@@ -1048,14 +1103,19 @@ int main(void)
                 static int initialHangerFlag = 1;
                 if (initialHangerFlag) //ロジャー展開後初めての処理
                 {
-                  hanger[whichMecha].setLength(1020); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
-                  hanger[whichMecha].update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
+                  accelAlgorithm.setAllocateErrorCircleRadius(Robot.permitErrorCircleRadius);
+
+                  UIFLEDData[0] = 2;
+                  UIF.transmit(1, UIFLEDData);
+
+                  hanger[whichMecha].setTop(); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
+                  hanger[whichMecha].update(); //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
                   initialHangerFlag = 0;
                 }
                 if (hanger[whichMecha].stats() && !initialHangerFlag && !hangerHasDoneFlag)
                 {
                   hangerHasDoneFlag = 1;
-                  hanger[whichMecha].setLength(100);
+                  hanger[whichMecha].setBottom();
                   hanger[whichMecha].update();
                   rojarArm[whichMecha].setHeight(1270); //洗濯物離すために大幅に下げる
                 }
@@ -1073,12 +1133,12 @@ int main(void)
                   holder[whichMecha].release(whichServo);
                   seq = 2;
                 }
-                if (1300 < clothHangerTimer.read_ms() && seq == 2)
+                if (900 < clothHangerTimer.read_ms() && seq == 2)
                 {
                   holder[whichMecha].grasp(whichServo);
                   seq = 3;
                 }
-                if (3000 < clothHangerTimer.read_ms() && seq == 3)
+                if (1800 < clothHangerTimer.read_ms() && seq == 3)
                 {
                   armPhase = 2;
                   clothHangerTimer.stop();
@@ -1108,7 +1168,7 @@ int main(void)
                     robotLocation.sendNext();
                     accelAlgorithm.setPositionChangedFlag();
                     rojarArm[whichMecha].setMaxPWM(0.4);
-                    rojarArm[whichMecha].setHeight(1910); //2100
+                    rojarArm[whichMecha].setHeight(1800); //2100
                     wayPointSignature++;
                   }
                 }
@@ -1135,31 +1195,35 @@ int main(void)
               static bool initialFlag = 1, releasedFlag = 0;
               if (initialFlag)
               {
-                OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
                 clothHangerTimer.start();
                 initialFlag = 0;
               }
-              if (clothHangerTimer.read_ms() > 300)
+              if (clothHangerTimer.read_ms() > 300 && !initialFlag && !releasedFlag)
               {
                 robotLocation.sendNext();
                 accelAlgorithm.setPositionChangedFlag();
-                rojarArm[whichMecha].setHeight(1530);
+                rojarArm[whichMecha].setHeight(1700);
                 rojarArm[whichMecha].setMaxPWM(0.35);
                 rojarArm[whichMecha].update();
                 clothHangerTimer.stop();
                 clothHangerTimer.reset();
+                clothHangerTimer.start();
                 releasedFlag = 1;
               }
-              if (rojarArm[whichMecha].stats() && releasedFlag)
+              if (clothHangerTimer.read_ms() > 650 && rojarArm[whichMecha].stats() && releasedFlag)
               {
                 holder[whichMecha].half(!whichServo);
                 wayPointSignature++;
+                clothHangerTimer.stop();
+                clothHangerTimer.reset();
                 clothHangerTimer.start();
               }
               break;
             case 10:
               if (650 < clothHangerTimer.read_ms())
               {
+                UIFLEDData[0] = 0;
+                UIF.transmit(1, UIFLEDData);
                 robotLocation.sendNext();
                 accelAlgorithm.setPositionChangedFlag();
                 wayPointSignature++;
@@ -1168,6 +1232,7 @@ int main(void)
               }
               break;
             case 11:
+              OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
               rojarArm[whichMecha].setHeight(0);
               rojarArm[whichMecha].setMaxPWM(Robot.estimateRojarArmMaxPWM);
               robotLocation.sendNext();
@@ -1185,10 +1250,10 @@ int main(void)
             case 13:
               holder[whichMecha].free(!whichServo);
               holder[whichMecha].free(whichServo);
-              while (1)
-              {
-                allUpdate();
-              }
+              wayPointSignature++;
+              break;
+            case 14:
+              robotLocation.setCurrentPoint(robotLocation.getXLocationData() + (9 < currentRunningMode ? 10 : -10), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
               break;
             default:
               while (1)
@@ -1204,9 +1269,11 @@ int main(void)
         updateLimitSwitchBar();
         if (getLimitSwitchSide(9 < currentRunningMode ? right : left) && wayPointSignature == 1 && initialWayPointPassedFlag)
         {
+          UIFLEDData[0] = 0;
+          UIF.transmit(1, UIFLEDData);
           robotLocation.setCurrentPoint(0, accelAlgorithm.getCurrentYPosition(), 0); //フェンス方向に過剰修正したx軸ターゲット座標を0に設定
           accelAlgorithm.setCurrentXPosition(0);                                     //x軸方向ロボットの自己位置を0に修正
-          IMU.setYaw(0);
+          //IMU.setYaw(0);
           wayPointSignature++;
         }
         if (getLimitSwitchBarStats() && wayPointSignature == 3)
@@ -1223,12 +1290,14 @@ int main(void)
           {
             accelAlgorithm.setCurrentYPosition(-(390));
             robotLocation.setCurrentPoint(robotLocation.getXLocationData(), -(390), robotLocation.getYawStatsData());
-            IMU.setYaw(0);
+            //IMU.setYaw(0);
             OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
             robotLocation.sendNext();
             accelAlgorithm.setPositionChangedFlag();
             accelAlgorithm.update();
             wayPointSignature++;
+            UIFLEDData[0] = 0;
+            UIF.transmit(1, UIFLEDData);
           }
           flag++;
         }
@@ -1245,6 +1314,9 @@ int main(void)
               initialWayPointPassedFlag = 1;
               accelAlgorithm.setAllocateErrorCircleRadius(Robot.permitErrorCircleRadius);
               updateLimitSwitchSide();
+              UIFLEDData[0] = 1;
+              UIF.transmit(1, UIFLEDData);
+
               if (!getLimitSwitchSide(9 < currentRunningMode ? right : left))
               {
                 robotLocation.setCurrentPoint(robotLocation.getXLocationData() + (9 < currentRunningMode ? 10 : -10), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
@@ -1254,13 +1326,17 @@ int main(void)
               OmniKinematics.setMaxPWM(0.3);
               robotLocation.sendNext();
               accelAlgorithm.setPositionChangedFlag();
-              rojarArm[whichMecha].setHeight(1600);
+              rojarArm[whichMecha].setHeight(1600 - 300);
               wayPointSignature++;
               break;
             case 3:
               updateLimitSwitchBar();
               if (!getLimitSwitchBarStats())
               {
+
+                UIFLEDData[0] = 1;
+                UIF.transmit(1, UIFLEDData);
+
                 robotLocation.setCurrentPoint(robotLocation.getXLocationData(), robotLocation.getYLocationData() - 20, robotLocation.getYawStatsData());
                 break;
               }
@@ -1268,6 +1344,7 @@ int main(void)
             case 4:
               robotLocation.sendNext();
               accelAlgorithm.setPositionChangedFlag();
+              accelAlgorithm.setAllocateErrorCircleRadius(Robot.driveDisableRadius);
               wayPointSignature++;
               break;
             case 5:
@@ -1277,14 +1354,19 @@ int main(void)
                 static int initialHangerFlag = 1;
                 if (initialHangerFlag) //ロジャー展開後初めての処理
                 {
-                  hanger[whichMecha].setLength(1020); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
-                  hanger[whichMecha].update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
+                  accelAlgorithm.setAllocateErrorCircleRadius(Robot.permitErrorCircleRadius);
+
+                  UIFLEDData[0] = 2;
+                  UIF.transmit(1, UIFLEDData);
+
+                  hanger[whichMecha].setTop(); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
+                  hanger[whichMecha].update(); //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
                   initialHangerFlag = 0;
                 }
                 if (hanger[whichMecha].stats() && !initialHangerFlag && !hangerHasDoneFlagLeft)
                 {
                   hangerHasDoneFlagLeft = 1;
-                  hanger[whichMecha].setLength(100);
+                  hanger[whichMecha].setBottom();
                   hanger[whichMecha].update();
                   rojarArm[whichMecha].setHeight(1270); //洗濯物離すために大幅に下げる
                 }
@@ -1302,12 +1384,12 @@ int main(void)
                   holder[whichMecha].release(whichServo);
                   seq = 2;
                 }
-                if (800 < clothHangerTimer.read_ms() && seq == 2)
+                if (900 < clothHangerTimer.read_ms() && seq == 2)
                 {
                   holder[whichMecha].grasp(whichServo);
                   seq = 3;
                 }
-                if (1600 < clothHangerTimer.read_ms() && seq == 3)
+                if (1800 < clothHangerTimer.read_ms() && seq == 3)
                 {
                   armPhaseLeft = 2;
                   clothHangerTimer.stop();
@@ -1336,7 +1418,7 @@ int main(void)
                     clothHangerTimer.reset();
                     robotLocation.sendNext();
                     accelAlgorithm.setPositionChangedFlag();
-                    rojarArm[whichMecha].setHeight(1910);
+                    rojarArm[whichMecha].setHeight(1800);
                     rojarArm[whichMecha].update();
                     wayPointSignature++;
                   }
@@ -1355,10 +1437,10 @@ int main(void)
               wayPointSignature++;
               break;
             case 8:
-              OmniKinematics.setMaxPWM(0.15);
+              OmniKinematics.setMaxPWM(0.16);
               robotLocation.sendNext(); //横移動 6
               accelAlgorithm.setPositionChangedFlag();
-              rojarArm[!whichMecha].setHeight(1600); //横移動のタイミングで反対側のロジャーアームを展開し始める
+              rojarArm[!whichMecha].setHeight(1600 - 300); //横移動のタイミングで反対側のロジャーアームを展開し始める
               rojarArm[!whichMecha].update();
               wayPointSignature++;
               break;
@@ -1374,7 +1456,7 @@ int main(void)
               {
                 robotLocation.sendNext(); //7
                 accelAlgorithm.setPositionChangedFlag();
-                rojarArm[whichMecha].setHeight(1530);
+                rojarArm[whichMecha].setHeight(1700);
                 rojarArm[whichMecha].update();
                 clothHangerTimer.stop();
                 clothHangerTimer.reset();
@@ -1392,6 +1474,7 @@ int main(void)
               {
                 robotLocation.sendNext(); //8
                 accelAlgorithm.setPositionChangedFlag();
+                accelAlgorithm.setAllocateErrorCircleRadius(Robot.driveDisableRadius);
                 holder[whichMecha].grasp(!whichServo);
                 wayPointSignature++;
                 clothHangerTimer.stop();
@@ -1415,14 +1498,16 @@ int main(void)
                 static int initialHangerFlag = 1;
                 if (initialHangerFlag) //ロジャー展開後初めての処理
                 {
-                  hanger[whichMecha].setLength(1020); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
-                  hanger[whichMecha].update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
+                  //hanger[whichMecha].setMaxPWM(0.4);
+                  accelAlgorithm.setAllocateErrorCircleRadius(Robot.permitErrorCircleRadius);
+                  hanger[whichMecha].setTop(); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
+                  hanger[whichMecha].update(); //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
                   initialHangerFlag = 0;
                 }
                 if (hanger[whichMecha].stats() && !initialHangerFlag && !hangerHasDoneFlagRight)
                 {
                   hangerHasDoneFlagRight = 1;
-                  hanger[whichMecha].setLength(100);
+                  hanger[whichMecha].setBottom();
                   hanger[whichMecha].update();
                   rojarArm[whichMecha].setHeight(1270); //洗濯物離すために大幅に下げる
                 }
@@ -1440,17 +1525,17 @@ int main(void)
                   holder[whichMecha].release(whichServo);
                   seq = 2;
                 }
-                if (800 < clothHangerTimer.read_ms() && seq == 2)
+                if (900 < clothHangerTimer.read_ms() && seq == 2)
                 {
                   holder[whichMecha].grasp(whichServo);
                   seq = 3;
                 }
-                if (1600 < clothHangerTimer.read_ms() && seq == 3)
+                if (1800 < clothHangerTimer.read_ms() && seq == 3)
                 {
                   armPhaseRight = 2;
                   clothHangerTimer.stop();
                   clothHangerTimer.reset();
-                  rojarArm[whichMecha].setHeight(1350);
+                  rojarArm[whichMecha].setHeight(1500);
                 }
               }
               if (armPhaseRight == 2)
@@ -1474,7 +1559,8 @@ int main(void)
                     clothHangerTimer.reset();
                     robotLocation.sendNext(); //9
                     accelAlgorithm.setPositionChangedFlag();
-                    rojarArm[whichMecha].setHeight(1910);
+                    rojarArm[whichMecha].setMaxPWM(0.4);
+                    rojarArm[whichMecha].setHeight(1800);
                     wayPointSignature++;
                   }
                 }
@@ -1492,7 +1578,7 @@ int main(void)
               wayPointSignature++;
               break;
             case 16:
-              OmniKinematics.setMaxPWM(0.155);
+              OmniKinematics.setMaxPWM(0.17);
               robotLocation.sendNext(); //横移動 10
               accelAlgorithm.setPositionChangedFlag();
               wayPointSignature++;
@@ -1501,31 +1587,36 @@ int main(void)
               static bool initialFlagSec = 1, releasedFlagSec = 0;
               if (initialFlagSec)
               {
-                OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
+                clothHangerTimer.reset();
                 clothHangerTimer.start();
                 initialFlagSec = 0;
               }
-              if (clothHangerTimer.read_ms() > 300)
+              if (clothHangerTimer.read_ms() > 300 && !initialFlagSec && !releasedFlagSec)
               {
                 robotLocation.sendNext(); //11
                 accelAlgorithm.setPositionChangedFlag();
+                rojarArm[whichMecha].setHeight(1700);
                 rojarArm[whichMecha].setMaxPWM(0.35);
-                rojarArm[whichMecha].setHeight(1530);
                 rojarArm[whichMecha].update();
                 clothHangerTimer.stop();
                 clothHangerTimer.reset();
+                clothHangerTimer.start();
                 releasedFlagSec = 1;
               }
-              if (rojarArm[whichMecha].stats() && releasedFlagSec)
+              if (clothHangerTimer.read_ms() > 650 && rojarArm[whichMecha].stats() && releasedFlagSec)
               {
                 holder[whichMecha].half(!whichServo);
                 wayPointSignature++;
+                clothHangerTimer.stop();
+                clothHangerTimer.reset();
                 clothHangerTimer.start();
               }
               break;
             case 18:
               if (650 < clothHangerTimer.read_ms())
               {
+                UIFLEDData[0] = 0;
+                UIF.transmit(1, UIFLEDData);
                 robotLocation.sendNext(); //12
                 accelAlgorithm.setPositionChangedFlag();
                 wayPointSignature++;
@@ -1534,6 +1625,7 @@ int main(void)
               }
               break;
             case 19:
+              OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
               rojarArm[whichMecha].setHeight(0);
               rojarArm[whichMecha].setMaxPWM(Robot.estimateRojarArmMaxPWM);
               robotLocation.sendNext(); //13
@@ -1557,10 +1649,10 @@ int main(void)
               holder[right].free(whichServo);
               holder[left].free(!whichServo);
               holder[left].free(whichServo);
-              while (1)
-              {
-                allUpdate();
-              }
+              wayPointSignature++;
+              break;
+            case 22:
+              robotLocation.setCurrentPoint(robotLocation.getXLocationData() + (9 < currentRunningMode ? 10 : -10), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
               break;
             default:
               while (1)
@@ -1574,11 +1666,14 @@ int main(void)
       case BLUE_BACK_FINAL_Sheets:
         updateLimitSwitchSide();
         updateLimitSwitchBar();
+
         if (getLimitSwitchSide(9 < currentRunningMode ? right : left) && wayPointSignature == 1 && initialWayPointPassedFlag)
         {
+          UIFLEDData[0] = 0;
+          UIF.transmit(1, UIFLEDData);
           robotLocation.setCurrentPoint(0, accelAlgorithm.getCurrentYPosition(), 0); //フェンス方向に過剰修正したx軸ターゲット座標を0に設定
           accelAlgorithm.setCurrentXPosition(0);                                     //x軸方向ロボットの自己位置を0に修正
-          IMU.setYaw(0);
+          //IMU.setYaw(0);
           wayPointSignature++;
         }
         if (getLimitSwitchBarStats() && wayPointSignature == 3)
@@ -1591,13 +1686,15 @@ int main(void)
             robotLocation.setCurrentPoint(robotLocation.getXLocationData(), -(590 + 10), robotLocation.getYawStatsData());
             initialFlag = 0;
           }
-          if (flag == 300)
+          if (flag == 100) //before 300
           {
             accelAlgorithm.setCurrentYPosition(-(590));
             robotLocation.setCurrentPoint(robotLocation.getXLocationData(), -(590), robotLocation.getYawStatsData());
             //IMU.setYaw(0);
             OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
             wayPointSignature++;
+            UIFLEDData[0] = 0;
+            UIF.transmit(1, UIFLEDData);
           }
           flag++;
         }
@@ -1605,8 +1702,8 @@ int main(void)
         limitSwitchSideFoward[whichMecha].update();
         if (limitSwitchSideFoward[whichMecha].stats() && wayPointSignature == 6)
         {
-          accelAlgorithm.setCurrentXPosition(9 < currentRunningMode ? -377 : 377);
-          robotLocation.setCurrentPoint(9 < currentRunningMode ? -377 : 377, robotLocation.getYLocationData(), robotLocation.getYawStatsData());
+          accelAlgorithm.setCurrentXPosition(9 < currentRunningMode ? -370 : 370);
+          robotLocation.setCurrentPoint(9 < currentRunningMode ? -370 : 370, robotLocation.getYLocationData(), robotLocation.getYawStatsData());
           static int flag = 0;
           if (flag == 100)
           {
@@ -1623,6 +1720,9 @@ int main(void)
               initialWayPointPassedFlag = 1;
               accelAlgorithm.setAllocateErrorCircleRadius(Robot.permitErrorCircleRadius);
               updateLimitSwitchSide();
+              UIFLEDData[0] = 1;
+              UIF.transmit(1, UIFLEDData);
+
               if (!getLimitSwitchSide(9 < currentRunningMode ? right : left))
               {
                 robotLocation.setCurrentPoint(robotLocation.getXLocationData() + (9 < currentRunningMode ? 10 : -10), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
@@ -1640,6 +1740,10 @@ int main(void)
               updateLimitSwitchBar();
               if (!getLimitSwitchBarStats())
               {
+
+                UIFLEDData[0] = 1;
+                UIF.transmit(1, UIFLEDData);
+
                 robotLocation.setCurrentPoint(robotLocation.getXLocationData(), robotLocation.getYLocationData() - 20, robotLocation.getYawStatsData());
               }
               break;
@@ -1648,18 +1752,31 @@ int main(void)
               static int armPhase = 1, hangerHasDoneFlag = 0;    //phase1=洗濯物掛ける, phase2=洗濯ばさみつける
               if (rojarArm[whichMecha].stats() && armPhase == 1) //ロジャーアーム展開完了
               {
-                static int initialHangerFlag = 1;
+                static int initialHangerFlag = 1, timerStartedFlag = 1;
                 if (initialHangerFlag) //ロジャー展開後初めての処理
                 {
-                  hanger[whichMecha].setLength(1150); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
-                  hanger[whichMecha].update();        //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
+
+                  UIFLEDData[0] = 2;
+                  UIF.transmit(1, UIFLEDData);
+                  hanger[whichMecha].setMaxPWM(Robot.estimateHangerMaxPWMOnlySheet);
+                  hanger[whichMecha].setTop(); //洗濯物掛ける //1000 for test , 1600 for max lenght, recommend:1530
+                  hanger[whichMecha].update(); //すぐ下のstats判定のために一度状態を更新し判定フラグを未完了に設定する
                   initialHangerFlag = 0;
                 }
-                if (hanger[whichMecha].stats() && !initialHangerFlag && !hangerHasDoneFlag)
+                if (hanger[whichMecha].stats() && !initialHangerFlag && !hangerHasDoneFlag && timerStartedFlag)
+                {
+                  clothHangerTimer.stop();
+                  clothHangerTimer.reset();
+                  clothHangerTimer.start();
+                  timerStartedFlag = 0;
+                }
+                if (clothHangerTimer.read_ms() > 0 && !initialHangerFlag && !hangerHasDoneFlag) //500
                 {
                   hangerHasDoneFlag = 1;
-                  hanger[whichMecha].setLength(100);
+                  hanger[whichMecha].setBottom();
                   hanger[whichMecha].update();
+                  clothHangerTimer.stop();
+                  clothHangerTimer.reset();
                 }
               }
               static int initialChangeHeightFlag = 1;
@@ -1676,14 +1793,14 @@ int main(void)
                   holder[whichMecha].release(whichServo);
                   seq = 2;
                 }
-                if (800 < clothHangerTimer.read_ms() && seq == 2)
+                if (900 < clothHangerTimer.read_ms() && seq == 2)
                 {
                   holder[whichMecha].grasp(whichServo);
                   rojarArm[whichMecha].setHeight(2540);
                   rojarArm[whichMecha].update();
                   seq = 3;
                 }
-                if (1600 < clothHangerTimer.read_ms() && seq == 3)
+                if (1800 < clothHangerTimer.read_ms() && seq == 3)
                 {
                   armPhase = 2;
                   clothHangerTimer.stop();
@@ -1711,8 +1828,11 @@ int main(void)
                   {
                     seq = 3;
                   }
-                  if (700 < clothHangerTimer.read_ms() && seq == 3)
+                  if (500 < clothHangerTimer.read_ms() && seq == 3)
                   {
+                    clothHangerTimer.stop();
+                    clothHangerTimer.reset();
+                    OmniKinematics.setMaxPWM(0.33);
                     robotLocation.sendNext(); //次の座標を送信
                     accelAlgorithm.setPositionChangedFlag();
                     wayPointSignature++;
@@ -1721,41 +1841,71 @@ int main(void)
               }
               break;
             case 5:
-              robotLocation.sendNext();
+              robotLocation.sendNext(); //横移動
               accelAlgorithm.setPositionChangedFlag();
               wayPointSignature++;
               break;
 
-            case 6:
+            case 6: //スイッチが当たるまで移動
               limitSwitchSideFoward[whichMecha].update();
               if (!limitSwitchSideFoward[whichMecha].stats())
               {
+
+                UIFLEDData[0] = 1;
+                UIF.transmit(1, UIFLEDData);
+
                 OmniKinematics.setMaxPWM(0.13);
                 robotLocation.setCurrentPoint(9 < currentRunningMode ? (robotLocation.getXLocationData() - 10) : (robotLocation.getXLocationData() + 10), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
                 break;
               }
               break;
 
-            case 7:
-              static bool initialFlag = 1;
+            case 7: //スイッチが台に当たったら
+              static bool initialFlag = 1, releaseFlag = 0;
               if (initialFlag)
+              {
+                clothHangerTimer.start();
+                UIFLEDData[0] = 2;
+                UIF.transmit(1, UIFLEDData);
+                initialFlag = 0;
+              }
+              if (clothHangerTimer.read_ms() > 300 && !initialFlag && !releaseFlag)
               {
                 robotLocation.sendNext();
                 accelAlgorithm.setPositionChangedFlag();
-                OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
-                rojarArm[whichMecha].setMaxPWM(0.4);
                 rojarArm[whichMecha].setHeight(1930);
+                rojarArm[whichMecha].setMaxPWM(0.4);
                 rojarArm[whichMecha].update();
-                initialFlag = 0;
+                clothHangerTimer.stop();
+                clothHangerTimer.reset();
+                clothHangerTimer.start();
+                releaseFlag = 1;
               }
-              if (rojarArm[whichMecha].stats())
+              if (clothHangerTimer.read_ms() > 650 && rojarArm[whichMecha].stats() && releaseFlag)
               {
+                holder[whichMecha].release(!whichServo);
                 wayPointSignature++;
+                clothHangerTimer.stop();
+                clothHangerTimer.reset();
+                clothHangerTimer.start();
+              }
+              break;
+            case 8:
+              if (clothHangerTimer.read_ms() > 650)
+              {
+                robotLocation.sendNext();
+                accelAlgorithm.setPositionChangedFlag();
+                wayPointSignature++;
+                clothHangerTimer.stop();
+                clothHangerTimer.reset();
               }
               break;
 
-            case 8:
-              holder[whichMecha].release(!whichServo);
+            case 9:
+              UIFLEDData[0] = 0;
+              UIF.transmit(1, UIFLEDData);
+
+              OmniKinematics.setMaxPWM(0.33);
               rojarArm[whichMecha].setMaxPWM(Robot.estimateRojarArmMaxPWM);
               rojarArm[whichMecha].setHeight(0);
               robotLocation.sendNext();
@@ -1763,7 +1913,8 @@ int main(void)
               wayPointSignature++;
               break;
 
-            case 9:
+            case 10:
+              OmniKinematics.setMaxPWM(Robot.estimateDriveMaxPWM);
               holder[whichMecha].grasp(whichServo);
               holder[whichMecha].grasp(!whichServo);
               robotLocation.sendNext();
@@ -1771,18 +1922,17 @@ int main(void)
               wayPointSignature++;
               break;
 
-            case 10:
+            case 11:
               pegAttacher[whichMecha].reload();
               holder[whichMecha].free(whichServo);
               holder[whichMecha].free(!whichServo);
               holder[!whichMecha].free(whichServo);
               holder[!whichMecha].free(!whichServo);
-              while (1)
-              {
-                allUpdate();
-              }
+              wayPointSignature++;
               break;
-
+            case 12:
+              robotLocation.setCurrentPoint(robotLocation.getXLocationData() + (9 < currentRunningMode ? 10 : -10), robotLocation.getYLocationData(), robotLocation.getYawStatsData());
+              break;
             default:
               while (1)
               {
@@ -1977,12 +2127,6 @@ int main(void)
 #endif //TEST_DRIVE
 
 #ifdef TEST_RojarArm_UpDownLoop
-  while (1)
-  {
-    startButton.update();
-    if (startButton.stats())
-      break;
-  }
   while (1)
   {
     rojarArm[right].setEncoderPulse(rojarArmEncoder[right].getPulses());
@@ -2533,10 +2677,10 @@ void allMechaTestSequence()
     switch (phaseCounter)
     {
       case 1:
-        hanger[left].setLength(300);
+        hanger[left].setTop();
         break;
       case 2:
-        hanger[left].setLength(0);
+        hanger[left].setBottom();
         break;
       default:
         if (hanger[left].stats() && phaseCounter > 2)
@@ -2561,10 +2705,10 @@ void allMechaTestSequence()
     switch (phaseCounter)
     {
       case 1:
-        hanger[right].setLength(300);
+        hanger[right].setTop();
         break;
       case 2:
-        hanger[right].setLength(0);
+        hanger[right].setBottom();
         break;
       default:
         if (hanger[right].stats() && phaseCounter > 2)

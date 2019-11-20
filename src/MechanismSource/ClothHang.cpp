@@ -1,40 +1,58 @@
 #include "ClothHang.h"
 
-ClothHang::ClothHang(double* variableToStore, DebounceSwitch& mySwitch)
+ClothHang::ClothHang(double* variableToStore, DebounceSwitch& mySwitch, QEI& myEncoder)
 {
   upsideLimitSW = &mySwitch;
+  encoder = &myEncoder;
   motorPWM = variableToStore;
   lenghtCurrent = 0;
   lenghtTarget = 0;
   lenghtBias = 0;
   isTargetLenghtAroundZeroPoint = 1;
   aroundZeroPointPWM = 0.20;
+  motorPWM[0] = 0;
+  motorPWM[1] = 0;
+  flagTop = 0;
+  flagBottom = 0;
+  switchState = 0;
 }
 
 bool ClothHang::stats(void)
 {
-  if ((lenghtTarget - 120) < lenghtCurrent && lenghtCurrent < (lenghtTarget + 15))
+  if (flagTop)
   {
-    return 1;
+    if (switchState)
+    {
+      return 1;
+    }
   }
-  else
+  if (flagBottom)
   {
-    return 0;
+    if (-300 < lenghtCurrent && lenghtCurrent < 300)
+    {
+      return 1;
+    }
   }
+  return 0;
 }
 
-void ClothHang::setLength(int targetValue)
+void ClothHang::setTop()
 {
-  if (!targetValue)
-    isTargetLenghtAroundZeroPoint = 1;
-  else
-    isTargetLenghtAroundZeroPoint = 0;
-  lenghtTarget = targetValue;
+  flagTop = 1;
+  flagBottom = 0;
+}
+
+void ClothHang::setBottom()
+{
+  encoder->set(850, 0);
+  flagTop = 0;
+  flagBottom = 1;
+  timer.start();
 }
 
 void ClothHang::setEncoderPulse(int pulse)
 {
-  lenghtCurrent = lenghtBias + pulse;
+  lenghtCurrent = pulse;
 }
 
 void ClothHang::setMaxPWM(double targetPwm)
@@ -44,46 +62,40 @@ void ClothHang::setMaxPWM(double targetPwm)
 
 void ClothHang::update(void)
 {
-  printf("%d\t%d\t%d\r\n", lenghtCurrent, lenghtBias, upsideLimitSW->stats());
   upsideLimitSW->update();
-  if (upsideLimitSW->stats())
-  {
-    lenghtBias = (lenghtTarget - lenghtCurrent) > lenghtBias ? (lenghtTarget - lenghtCurrent) : lenghtBias;
-  }
+  switchState = upsideLimitSW->stats();
 
-  if ((lenghtTarget - 15) < lenghtCurrent && lenghtCurrent < (lenghtTarget + 15))
+  if (flagTop)
+  {
+    motorPWM[0] = pwm;
+    motorPWM[1] = 0;
+  }
+  else if (flagBottom)
+  {
+    motorPWM[0] = 0;
+    motorPWM[1] = 0.4;
+  }
+  if (lenghtCurrent < 0 && flagBottom)
+  {
+    motorPWM[0] = 0.4;
+    motorPWM[1] = 0;
+  }
+  if (-50 < lenghtCurrent && lenghtCurrent < 50 && flagBottom)
   {
     motorPWM[0] = 0;
     motorPWM[1] = 0;
   }
-  else
-  {
-    if (lenghtCurrent < lenghtTarget)
-    {
-      motorPWM[0] = 0.60;
-      motorPWM[1] = 0;
-    }
-    else if (lenghtCurrent > lenghtTarget)
-    {
-      motorPWM[0] = 0;
-      motorPWM[1] = 0.5;
-    }
-  }
-  if (!isTargetLenghtAroundZeroPoint)
-  { //目標停止位置が０
-    return;
-  }
-  if (!(lenghtCurrent < 200))
-  { //現在の高さが200パルスよりも小さいか？
-    return;
-  }
-  if (0 < lenghtCurrent)
+
+  if (switchState && !flagBottom)
   {
     motorPWM[0] = 0;
-    motorPWM[1] = aroundZeroPointPWM;
+    motorPWM[1] = 0;
   }
-  if ((lenghtTarget - 15) < lenghtCurrent && lenghtCurrent < (lenghtTarget + 15))
+
+  if (timer.read_ms() > 1100) //エンコーダ読まなかったよう緊急停止（シーケンスは進める）
   {
+    encoder->set(0,0);
+    lenghtCurrent = 0;
     motorPWM[0] = 0;
     motorPWM[1] = 0;
   }
