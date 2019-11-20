@@ -38,8 +38,10 @@ public:
 private:
   DebounceSwitch *upsideLimitSW;
   QEI *encoder;
+  Timer timer;
   double *motorPWM;
   int16_t lenghtTarget, lenghtCurrent, lenghtBias;
+  uint64_t bottomStartTime;
   double pwm, aroundZeroPointPWM;
   bool isTargetLenghtAroundZeroPoint, flagTop, flagBottom, switchState;
 };

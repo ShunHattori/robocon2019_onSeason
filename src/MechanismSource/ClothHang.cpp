@@ -28,7 +28,7 @@ bool ClothHang::stats(void)
   }
   if (flagBottom)
   {
-    if (-200 < lenghtCurrent && lenghtCurrent < 200)
+    if (-300 < lenghtCurrent && lenghtCurrent < 300)
     {
       return 1;
     }
@@ -44,8 +44,10 @@ void ClothHang::setTop()
 
 void ClothHang::setBottom()
 {
+  encoder->set(850, 0);
   flagTop = 0;
   flagBottom = 1;
+  timer.start();
 }
 
 void ClothHang::setEncoderPulse(int pulse)
@@ -73,8 +75,12 @@ void ClothHang::update(void)
     motorPWM[0] = 0;
     motorPWM[1] = 0.4;
   }
-
-  if (-20 < lenghtCurrent && lenghtCurrent < 20 && flagBottom)
+  if (lenghtCurrent < 0 && flagBottom)
+  {
+    motorPWM[0] = 0.4;
+    motorPWM[1] = 0;
+  }
+  if (-50 < lenghtCurrent && lenghtCurrent < 50 && flagBottom)
   {
     motorPWM[0] = 0;
     motorPWM[1] = 0;
@@ -82,6 +88,14 @@ void ClothHang::update(void)
 
   if (switchState && !flagBottom)
   {
+    motorPWM[0] = 0;
+    motorPWM[1] = 0;
+  }
+
+  if (timer.read_ms() > 1100) //エンコーダ読まなかったよう緊急停止（シーケンスは進める）
+  {
+    encoder->set(0,0);
+    lenghtCurrent = 0;
     motorPWM[0] = 0;
     motorPWM[1] = 0;
   }
