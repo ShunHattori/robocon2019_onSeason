@@ -9,12 +9,10 @@
 #include "MechanismSource\Peg.h"
 #include "MechanismSource\RojarArm.h"
 #include "MechanismSource\Servo.h"
-#include "RobotParameters.hpp"
 #include "SensorSource\DebounceSwitch.h"
 #include "SensorSource\MPU9250.h"
 #include "SensorSource\QEI.h"
 #include "mbed.h"
-#include "mbeddedPin.hpp"
 
 #define GAME_MODECHANGE_CTP //コントロールパネル操作で動作切り替え（シーツ・バスタオル）
 //#define BUDEGGER
@@ -117,7 +115,7 @@ struct parameter
 
 struct CoordBias
 {
-  const int XAxis = 0; //全体を5cm左に動かす
+  const int XAxis = 0;
   const int Yaxis = 0;
 } FieldBias;
 

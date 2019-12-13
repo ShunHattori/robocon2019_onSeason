@@ -29,7 +29,7 @@ void MPU9250::setup()
 
   int16_t rawGyroZ = 0;
 
-  for (int i = 0; i < 3000; i++) // loop for calclation offsets 6000times
+  for (int i = 0; i < 3000; i++) // loop for calclation offsets 3000times
   {
     uint8_t readGyro[2];
 
